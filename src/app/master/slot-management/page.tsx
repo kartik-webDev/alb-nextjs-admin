@@ -47,71 +47,9 @@ const SlotManagement: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [updatingSlotId, setUpdatingSlotId] = useState<string | null>(null);
 
-  const [inputFieldDetail, setInputFieldDetail] = useState({ slot_duration: '' });
-  const [inputFieldError, setInputFieldError] = useState({ slot_duration: '' });
 
-  //* Handle Input Field : Error
-  const handleInputFieldError = (input: string, value: string) => {
-    setInputFieldError((prev) => ({ ...prev, [input]: value }));
-  };
 
-  //* Handle Input Field : Data
-  const handleInputField = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setInputFieldDetail({ ...inputFieldDetail, [name]: value ? Number(value) : '' });
-    handleInputFieldError(name, '');
-  };
 
-  //* Handle Validation
-  const handleValidation = (): boolean => {
-    let isValid = true;
-    const { slot_duration } = inputFieldDetail;
-
-    const duration = Number(slot_duration);
-    if (!slot_duration || duration <= 0) {
-      handleInputFieldError('slot_duration', 'Please enter a valid slot duration');
-      isValid = false;
-    }
-
-    return isValid;
-  };
-
-  //* Handle Submit
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!handleValidation()) return;
-
-    const { slot_duration } = inputFieldDetail;
-
-    try {
-      const res = await fetch(`${base_url}api/admin/create_slots_duration`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ slotDuration: slot_duration }),
-      });
-
-      if (!res.ok) throw new Error('Failed to create slot duration');
-
-      await Swal.fire({
-        icon: 'success',
-        title: 'Success!',
-        text: 'Slot duration created successfully!',
-        confirmButtonColor: '#3085d6',
-      });
-
-      setInputFieldDetail({ slot_duration: '' });
-      await fetchSlotDurations();
-    } catch (error) {
-      console.error('Error creating slot duration:', error);
-      await Swal.fire({
-        icon: 'error',
-        title: 'Error!',
-        text: 'Failed to create slot duration. Please try again.',
-        confirmButtonColor: '#d33',
-      });
-    }
-  };
 
   //* Fetch Slot Durations
   const fetchSlotDurations = async () => {
@@ -289,89 +227,14 @@ const SlotManagement: React.FC = () => {
   //* Render
   return (
     <>
-      {/* Form Section */}
-      <div
-        style={{
-          padding: '20px',
-          backgroundColor: '#fff',
-          marginBottom: '20px',
-          boxShadow: '0px 0px 5px lightgrey',
-          borderRadius: '10px',
-        }}
-      >
-        <div
-          style={{
-            fontSize: '22px',
-            fontWeight: '500',
-            color: '#000',
-            marginBottom: '30px',
-          }}
-        >
-          Slot Management
-        </div>
-
-        <form onSubmit={handleSubmit}>
-          <div style={{ display: 'grid', gap: '20px' }}>
-            <div>
-              <label
-                style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}
-              >
-                Slot Duration (in minutes) <span style={{ color: 'red' }}>*</span>
-              </label>
-              <input
-                type="number"
-                name="slot_duration"
-                value={inputFieldDetail.slot_duration}
-                onChange={handleInputField}
-                onFocus={() => handleInputFieldError('slot_duration', '')}
-                placeholder="e.g., 30"
-                style={{
-                  width: '100%',
-                  padding: '12px 16px',
-                  borderRadius: '6px',
-                  border: inputFieldError.slot_duration
-                    ? '1px solid red'
-                    : '1px solid #ccc',
-                  fontSize: '15px',
-                  outline: 'none',
-                  boxShadow: '0px 0px 5px rgba(0, 0, 0, 0.1)',
-                }}
-              />
-              {inputFieldError.slot_duration && (
-                <p style={{ color: 'red', fontSize: '13px', margin: '5px 0 0' }}>
-                  {inputFieldError.slot_duration}
-                </p>
-              )}
-            </div>
-
-            <div>
-              <button
-                type="submit"
-                style={{
-                  fontWeight: '500',
-                  backgroundColor: '#e63946',
-                  color: '#fff',
-                  padding: '10px 20px',
-                  borderRadius: '5px',
-                  cursor: 'pointer',
-                  fontSize: '15px',
-                  border: 'none',
-                  outline: 'none',
-                }}
-              >
-                Submit
-              </button>
-            </div>
-          </div>
-        </form>
-      </div>
+     
 
     
         <MainDatatable
           columns={columns}
           data={filteredData}
           title="Slot Management"
-          url="/master/slot-management"
+          url="/master/slot-management/add-slot"
           isLoading={loading}
         />
 
