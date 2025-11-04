@@ -235,7 +235,7 @@ const AstroblogPage: React.FC = () => {
       },
       {
         name: "Date",
-        selector: (row) => moment(row?.createdAt).format("DD MMM YYYY"),
+        selector: (row) => moment(row?.createdAt).format("DD/MM/YYYY"),
         width: "150px",
       },
       {

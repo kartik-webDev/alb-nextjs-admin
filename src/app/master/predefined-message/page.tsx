@@ -205,11 +205,12 @@ const PredefinedMessage: React.FC = () => {
             {row.message || 'N/A'}
           </div>
         ),
+        center: true,
       },
       {
         name: 'Created At',
         selector: (row: PredefinedMessage) =>
-          row?.createdAt ? moment(row.createdAt).format('DD MMM YYYY @ hh:mm a') : '-',
+          row?.createdAt ? moment(row.createdAt).format('DD/MM/YYYY @ hh:mm a') : '-',
         sortable: true,
         width: '200px',
       },

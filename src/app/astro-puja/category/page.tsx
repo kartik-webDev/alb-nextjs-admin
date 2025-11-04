@@ -125,7 +125,7 @@ const Category = () => {
     },
     { 
       name: 'Created Date', 
-      selector: (row: PujaCategory) => moment(row?.createdAt)?.format('DD-MMM-YYYY @ hh:mm a') 
+      selector: (row: PujaCategory) => moment(row?.createdAt)?.format('DD/MM/YYYY @ hh:mm a') 
     },
     {
       name: 'Action',

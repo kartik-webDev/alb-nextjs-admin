@@ -203,6 +203,7 @@ const SlotManagement: React.FC = () => {
       {
         name: 'Slot Duration (mins)',
         selector: (row: any) => row?.slotDuration ?? '-',
+        center: true,
       },
       {
         name: 'Status',

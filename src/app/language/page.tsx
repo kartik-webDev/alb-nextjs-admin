@@ -26,7 +26,8 @@ const Language = () => {
         },
         { 
             name: 'Language', 
-            selector: (row: LanguageData) => row?.languageName 
+            selector: (row: LanguageData) => row?.languageName,
+            center: true
         },
         {
             name: 'Action',

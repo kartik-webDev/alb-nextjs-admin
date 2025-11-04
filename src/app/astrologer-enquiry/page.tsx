@@ -260,7 +260,7 @@ const AstrologerEnquiryClient = () => {
     { 
       name: 'Email', 
       selector: (row: Astrologer) => row.email, 
-      width: '200px' 
+      width: '240px' 
     },
     { 
       name: 'Mobile', 
@@ -276,12 +276,12 @@ const AstrologerEnquiryClient = () => {
     },
     {
       name: 'DOB',
-      selector: (row: Astrologer) => moment(row.dateOfBirth).format('Do MMM YYYY'),
+      selector: (row: Astrologer) => moment(row.dateOfBirth).format('DD/MM/YYYY'),
       width: '120px',
     },
     {
       name: 'Created Date',
-      selector: (row: Astrologer) => moment(row.createdAt).format('Do MMM YYYY'),
+      selector: (row: Astrologer) => moment(row.createdAt).format('DD/MM/YYYY'),
       width: '140px',
     },
     {

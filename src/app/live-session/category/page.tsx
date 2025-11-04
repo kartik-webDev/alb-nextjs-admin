@@ -33,7 +33,8 @@ const Category = () => {
       const data: ApiResponse<LiveSessionCategory[]> = await response.json();
       
       if (data.success) {
-        setLiveSessionCategoryData(data.categories  || []);
+        setLiveSessionCategoryData([...data.categories  || []].reverse());
+        // setLiveSessionTopicData([...(data.topics || [])].reverse());
       } else {
         console.error('Failed to fetch categories:', data.message);
       }
@@ -107,7 +108,7 @@ const Category = () => {
     },
     { 
       name: 'Created Date', 
-      selector: (row: LiveSessionCategory) => moment(row?.createdAt)?.format('DD MMM YYYY @ hh:mm a') 
+      selector: (row: LiveSessionCategory) => moment(row?.createdAt)?.format('DD/MM/YYYY @ hh:mm a') 
     },
     {
       name: 'Action',

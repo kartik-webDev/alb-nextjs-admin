@@ -121,7 +121,7 @@ const PujaBooked: React.FC = () => {
       name: 'Booking Date', 
       selector: (row: PujaBookedItem) => 
         row?.createdAt 
-          ? moment(row.createdAt).format('DD MMM YYYY')
+          ? moment(row.createdAt).format('DD/MM/YYYY')
           : 'N/A' 
     },
     { 

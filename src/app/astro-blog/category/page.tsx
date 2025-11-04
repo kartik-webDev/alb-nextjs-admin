@@ -152,7 +152,7 @@ const CategoryPage: React.FC = () => {
       },
       {
         name: 'Created Date',
-        selector: (row:any) => moment(row?.createdAt).format('DD MMM YYYY @ hh:mm a'),
+        selector: (row:any) => moment(row?.createdAt).format('DD/MM/YYYY @ hh:mm a'),
       },
       {
         name: 'Action',

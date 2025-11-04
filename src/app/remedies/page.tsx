@@ -135,7 +135,8 @@ const Remedies = () => {
             : 'N/A'
           }
         </div>
-      )
+      ),
+      center: true
     },
 
 {

@@ -39,7 +39,7 @@ const Topic = () => {
       const data: ApiResponse<LiveSessionTopic[]> = await response.json();
       
       if (data.success) {
-        setLiveSessionTopicData(data.topics || []);
+       setLiveSessionTopicData([...(data.topics || [])].reverse());
       } else {
         console.error('Failed to fetch topics:', data.message);
       }
@@ -49,6 +49,7 @@ const Topic = () => {
       setLoading(false);
     }
   };
+  
 
   const deleteLiveSessionTopic = async (topicId: string) => {
     const result = await Swal.fire({
@@ -143,7 +144,7 @@ const Topic = () => {
     },
     { 
       name: 'Created Date', 
-      selector: (row: LiveSessionTopic) => moment(row?.createdAt)?.format('DD MMM YYYY @ hh:mm a') 
+      selector: (row: LiveSessionTopic) => moment(row?.createdAt)?.format('DD/MM/YYYY @ hh:mm a') 
     },
     {
   name: 'Action',

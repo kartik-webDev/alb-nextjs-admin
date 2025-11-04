@@ -152,7 +152,7 @@ const PlatformCharges: React.FC = () => {
       {
         name: 'Created At',
         selector: (row: PlatformCharge) =>
-          row?.createdAt ? moment(row.createdAt).format('DD MMM YYYY @ hh:mm a') : '-',
+          row?.createdAt ? moment(row.createdAt).format('DD/MM/YYYY @ hh:mm a') : '-',
         sortable: true,
       },
       {

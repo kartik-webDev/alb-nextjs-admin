@@ -168,7 +168,9 @@ const Announcement = () => {
                             className="cursor-pointer hover:text-blue-600 transition-colors flex-1" 
                         />
                     </div>
-                ) : 'N/A' 
+                ) : 'N/A' ,
+                center: true
+                
         },
         {
             name: 'Action',
