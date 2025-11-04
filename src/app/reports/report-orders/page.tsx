@@ -152,11 +152,8 @@ const ReportOrders: React.FC = () => {
     includeDeleted: false,
     sortBy: "createdAt",
     sortOrder: "desc",
-    limit: 25,
+    limit: 100,
   });
-  const [page, setPage] = useState<number>(1);
-  const [pages, setPages] = useState<number>(1);
-  const [total, setTotal] = useState<number>(0);
 
   // ---------- data / ui ----------
   const [rows, setRows] = useState<Order[]>([]);
@@ -167,6 +164,7 @@ const ReportOrders: React.FC = () => {
   const [editOpen, setEditOpen] = useState<boolean>(false);
   const [activeRow, setActiveRow] = useState<Order | null>(null);
   const [editPayload, setEditPayload] = useState<EditPayload>({});
+const [searchQuery, setSearchQuery] = useState<string>("");
 
   // ---------- API helper ----------
   const getAuthHeaders = (): HeadersInit => {
@@ -176,17 +174,30 @@ const ReportOrders: React.FC = () => {
       Authorization: `Bearer ${token}`,
     };
   };
-
+const filteredRows = useMemo(() => {
+  if (!filters.planName.trim()) {
+    return rows;
+  }
+  
+  const searchLower = filters.planName.toLowerCase().trim();
+  return rows.filter(row => 
+    row.planName?.toLowerCase().includes(searchLower)
+  );
+}, [rows, filters.planName]);
   // ---------- fetch list ----------
-  const fetchList = async (_page: number = page) => {
-    setLoading(true);
-    try {
-      const qs = new URLSearchParams({
-        page: String(_page),
-        limit: String(filters.limit),
-      });
+ const fetchList = async () => {
+  setLoading(true);
+  try {
+    let allItems: Order[] = [];
+    let currentPage = 1;
+    let totalPages = 1;
+
+    // Fetch first page to get total pages
+    while (currentPage <= totalPages) {
+      const qs = new URLSearchParams();
 
       Object.entries(filters).forEach(([k, v]) => {
+         if (k === "planName") return;
         if (v !== "" && v !== null && v !== undefined && k !== "dateRange") {
           if (k === "from" && filters.from && !filters.to) {
             qs.set("from", filters.from);
@@ -196,6 +207,9 @@ const ReportOrders: React.FC = () => {
           }
         }
       });
+
+      qs.set("page", String(currentPage));
+      qs.set("limit", "100"); // Fetch 100 per page
 
       if (filters.astroConsultation === "") qs.delete("astroConsultation");
       if (filters.expressDelivery === "") qs.delete("expressDelivery");
@@ -211,23 +225,24 @@ const ReportOrders: React.FC = () => {
       const result = await response.json();
       const data: ApiResponse = result.data || result;
 
-      setRows(data?.items || []);
-      setTotal(data?.total || 0);
-      setPages(data?.pages || 1);
-      setPage(data?.page || 1);
-    } catch (e) {
-      console.error(e);
-      Swal.fire({
-        icon: "error",
-        title: "Failed to load orders",
-        timer: 2000,
-        showConfirmButton: false,
-      });
-    } finally {
-      setLoading(false);
+      allItems = [...allItems, ...(data?.items || [])];
+      totalPages = data.pages;
+      currentPage++;
     }
-  };
 
+    setRows(allItems);
+  } catch (e) {
+    console.error(e);
+    Swal.fire({
+      icon: "error",
+      title: "Failed to load orders",
+      timer: 2000,
+      showConfirmButton: false,
+    });
+  } finally {
+    setLoading(false);
+  }
+};
   // ---------- fetch stats ----------
   const fetchStats = async () => {
     try {
@@ -254,14 +269,14 @@ const ReportOrders: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchList(1);
     fetchStats();
+    fetchList();
     // eslint-disable-next-line
   }, [
     filters.q,
     filters.includeDeleted,
     filters.language,
-    filters.planName,
+    // filters.planName,
     filters.status,
     filters.astroConsultation,
     filters.expressDelivery,
@@ -278,7 +293,6 @@ const ReportOrders: React.FC = () => {
   ) => {
     const target = e.target as HTMLInputElement;
     const { name, value, type, checked } = target;
-    setPage(1);
     
     // Handle date range selection
     if (name === "dateRange") {
@@ -305,20 +319,6 @@ const ReportOrders: React.FC = () => {
     const v =
       type === "checkbox" ? checked : name === "limit" ? Number(value) : value;
     setFilters((f) => ({ ...f, [name]: v }));
-  };
-
-  const onPageChange = (dirOrNum: number | "prev" | "next") => {
-    if (typeof dirOrNum === "number") {
-      setPage(dirOrNum);
-      fetchList(dirOrNum);
-    } else {
-      const target =
-        dirOrNum === "prev"
-          ? Math.max(1, page - 1)
-          : Math.min(pages, page + 1);
-      setPage(target);
-      fetchList(target);
-    }
   };
 
   // ---------- BREAD actions ----------
@@ -377,7 +377,7 @@ const ReportOrders: React.FC = () => {
         showConfirmButton: false,
       });
       setEditOpen(false);
-      fetchList(page);
+      fetchList();
     } catch (e) {
       console.error(e);
       Swal.fire({
@@ -415,7 +415,7 @@ const ReportOrders: React.FC = () => {
         timer: 1200,
         showConfirmButton: false,
       });
-      fetchList(page);
+      fetchList();
     } catch (e) {
       Swal.fire({
         icon: "error",
@@ -446,7 +446,7 @@ const ReportOrders: React.FC = () => {
         timer: 1200,
         showConfirmButton: false,
       });
-      fetchList(page);
+      fetchList();
     } catch (e) {
       Swal.fire({
         icon: "error",
@@ -488,7 +488,7 @@ const ReportOrders: React.FC = () => {
 
     const csvRows = [
       headers.join(","),
-      ...rows.map((r) =>
+      ...filteredRows.map((r) =>
         [
           r._id,
           r.orderID,
@@ -580,9 +580,8 @@ const ReportOrders: React.FC = () => {
     () => [
       {
         name: "",
-        selector: (_row: Order, idx?: number) =>
-          (page - 1) * filters.limit + (idx || 0) + 1,
-        width: "40px",
+        selector: (_row: Order, idx?: number) => (idx || 0) + 1,
+        width: "70px",
       },
       {
         name: "Order ID",
@@ -672,7 +671,7 @@ const ReportOrders: React.FC = () => {
         width: "100px",
       },
     ],
-    [page, filters.limit]
+    []
   );
 
   return (
@@ -692,6 +691,7 @@ const ReportOrders: React.FC = () => {
             {stats && (
               <>
                 <div>
+                  Life Journey Orders <br/>
                   Total Order: {stats.totalOrders} • Total Revenue: ₹
                   {Number(stats.totalRevenue || 0).toFixed(2)}
                 </div>
@@ -860,7 +860,7 @@ const ReportOrders: React.FC = () => {
             <option value="asc">asc</option>
           </TextField>
 
-          <TextField
+          {/* <TextField
             select
             SelectProps={{ native: true }}
             name="limit"
@@ -874,9 +874,9 @@ const ReportOrders: React.FC = () => {
             <option value={25}>25</option>
             <option value={50}>50</option>
             <option value={100}>100</option>
-          </TextField>
+          </TextField> */}
 
-          <Button variant="contained" size="small" onClick={() => fetchList(1)}>
+          <Button variant="contained" size="small" onClick={() => fetchList()}>
             Apply
           </Button>
           <Button
@@ -904,44 +904,13 @@ const ReportOrders: React.FC = () => {
         {/* Table */}
         <div style={{ overflowX: 'auto' }}>
           <MainDatatable
-            data={rows}
+            data={filteredRows}
             columns={columns}
-            title="Life Journey Orders"
+            // title="Life Journey Orders"
             isLoading={loading}
-          />
-        </div>
+            showSearch={false}
 
-        {/* Pagination */}
-        <div style={{ marginTop: '15px', display: 'flex', gap: '8px', alignItems: 'center', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
-          <Button
-            size="small"
-            onClick={() => onPageChange("prev")}
-            disabled={page <= 1}
-          >
-            Prev
-          </Button>
-          {Array.from({ length: Math.min(pages, 10) }).map((_, i) => {
-            const pageNum = i + 1;
-            return (
-              <Button
-                key={i}
-                size="small"
-                variant={page === pageNum ? "contained" : "outlined"}
-                onClick={() => onPageChange(pageNum)}
-              >
-                {pageNum}
-              </Button>
-            );
-          })}
-          {pages > 10 && <span>...</span>}
-          <Button
-            size="small"
-            onClick={() => onPageChange("next")}
-            disabled={page >= pages}
-          >
-            Next
-          </Button>
-          <div style={{ marginLeft: '8px', opacity: 0.7, fontSize: '14px' }}>Total: {total}</div>
+          />
         </div>
       </div>
 
