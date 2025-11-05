@@ -3,8 +3,6 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Avatar, Box, Grid, Tab, Tabs } from '@mui/material';
-import { ArrowBack } from '@mui/icons-material';
 import moment from 'moment';
 import { base_url, get_astrologer_by_id, get_astrologer_duration_by_id } from '@/lib/api-routes';
 import { IndianRupee } from '@/utils/common-function';
@@ -15,7 +13,6 @@ import VideoCallHistory from '@/components/view-astrologer/VedioCallHistory';
 import LiveHistory from '@/components/view-astrologer/LiveHistory';
 import GiftHistory from '@/components/view-astrologer/GiftHistory';
 import Review from '@/components/view-astrologer/Review';
-
 
 // Types
 interface Astrologer {
@@ -92,7 +89,6 @@ export default function ViewAstrologer() {
 
   const tabHead = ['Profile', 'Chat', 'Call', 'Video Call', 'Live', 'Gift', 'Review'];
   const [activeTabHead, setActiveTabHead] = useState(0);
-  const handleChange = (event: React.SyntheticEvent, newValue: number) => setActiveTabHead(newValue);
 
   // Get astrologer data from sessionStorage or localStorage
   useEffect(() => {
@@ -138,8 +134,7 @@ export default function ViewAstrologer() {
 
         if (astroResponse.ok) {
           const astroData = await astroResponse.json();
-          setAstrologer(astroData.results
- || astroData);
+          setAstrologer(astroData.results || astroData);
         }
 
         // Fetch duration data
@@ -170,11 +165,15 @@ export default function ViewAstrologer() {
   };
 
   if (isLoading) {
-    return <div style={{ padding: '20px', textAlign: 'center' }}>Loading...</div>;
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+      </div>
+    );
   }
 
   if (!astrologer) {
-    return <div style={{ padding: '20px', textAlign: 'center' }}>Astrologer not found</div>;
+    return <div className="p-5 text-center">Astrologer not found</div>;
   }
 
   const {
@@ -192,94 +191,116 @@ export default function ViewAstrologer() {
 
   return (
     <>
-      <div onClick={() => router.back()} style={{ marginBottom: "20px", cursor: 'pointer' }}>
-        <ArrowBack />
+      {/* Back Button */}
+      <button 
+        onClick={() => router.back()} 
+        className="mb-5 flex items-center gap-2 text-gray-700 hover:text-gray-900"
+      >
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+        </svg>
+      </button>
+
+      {/* Astrologer Info Card */}
+      <div className="p-5 bg-white mb-5 shadow-md rounded-lg">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 p-5">
+          {/* Profile Section */}
+          <div className="flex items-center gap-5">
+            <img
+              src={base_url + profileImage}
+              alt={astrologerName}
+              className="w-24 h-24 rounded-full border border-gray-300 object-cover"
+            />
+            <div className="flex flex-col gap-2">
+              <div className="font-bold text-lg">{astrologerName}</div>
+              <div className="text-gray-600">{phoneNumber}</div>
+            </div>
+          </div>
+
+          {/* Contact Details */}
+          <div className="flex flex-col gap-4 border-l border-gray-300 pl-5">
+            <div className="font-bold text-lg">Contact Details</div>
+            <div className="text-gray-700">{email}</div>
+            <div className="text-gray-700">
+              {city}, {state}, {country} - {zipCode}
+            </div>
+            <div className="text-gray-700">Wallet: {IndianRupee(wallet_balance)}</div>
+          </div>
+
+          {/* Additional Details */}
+          <div className="flex flex-col gap-4 border-l border-gray-300 pl-5">
+            <div className="font-bold text-lg">Details</div>
+            <div className="text-gray-700">
+              Birth Date: {moment(dateOfBirth).format('DD MMM YYYY')}
+            </div>
+            <div className="text-gray-700">
+              Active Duration: {durationData ? timeFormat(durationData.totalActiveDuration / 1000) : '00:00:00'}
+            </div>
+            <div className="text-gray-700">
+              Offline Duration: {durationData ? timeFormat(durationData.totalOfflineDuration / 1000) : '00:00:00'}
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div style={{ 
-        padding: "20px", 
-        backgroundColor: "#fff", 
-        marginBottom: "20px", 
-        boxShadow: '0px 0px 5px lightgrey', 
-        borderRadius: "10px" 
-      }}>
-        <Grid container spacing={2} rowGap={5} sx={{ alignItems: 'center', padding: "20px 30px" }}>
-          <Grid item xs={12} md={4}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-              <Avatar 
-                src={base_url + profileImage} 
-                style={{ width: 100, height: 100, borderRadius: "50%", border: '1px solid #ccc' }} 
-                variant="rounded" 
-              />
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                <div style={{ fontWeight: 'bold', fontSize: '18px' }}>{astrologerName}</div>
-                <div>{phoneNumber}</div>
-              </div>
-            </div>
-          </Grid>
-
-          <Grid item xs={12} md={4}>
-            <div style={{ 
-              display: 'flex', 
-              flexDirection: 'column', 
-              gap: '15px', 
-              borderLeft: '1px solid #ccc', 
-              paddingLeft: "20px" 
-            }}>
-              <div style={{ fontWeight: "bold", fontSize: '18px' }}>Contact Details</div>
-              <div>{email}</div>
-              <div>{city}, {state}, {country} - {zipCode}</div>
-              <div>Wallet : {IndianRupee(wallet_balance)}</div>
-            </div>
-          </Grid>
-
-          <Grid item xs={12} md={4}>
-            <div style={{ 
-              display: 'flex', 
-              flexDirection: 'column', 
-              gap: '15px', 
-              borderLeft: '1px solid #ccc', 
-              paddingLeft: "20px" 
-            }}>
-              <div style={{ fontWeight: "bold", fontSize: '18px' }}>Details</div>
-              <div>Birth Date : {moment(dateOfBirth).format('DD MMM YYYY')}</div>
-              <div>Active Duration : {durationData ? timeFormat(durationData.totalActiveDuration / 1000) : '00:00:00'}</div>
-              <div>Offline Duration : {durationData ? timeFormat(durationData.totalOfflineDuration / 1000) : '00:00:00'}</div>
-            </div>
-          </Grid>
-        </Grid>
-      </div>
-
-      <div style={{ display: 'flex', justifyContent: 'center', padding: "20px 0" }}>
-        <Box sx={{ 
-          width: '100%', 
-          flexGrow: 1, 
-          bgcolor: 'background.paper', 
-          maxWidth: { xs: '85vw', md: 'calc(100vw - 300px)' }, 
-          alignSelf: 'center' 
-        }}>
-          <Tabs 
-            value={activeTabHead} 
-            onChange={handleChange} 
-            variant="scrollable" 
-            scrollButtons={true} 
-            sx={{ gap: "50px" }}
-          >
-            {tabHead?.map((value, index) => (
-              <Tab key={index} label={value} />
+      {/* Tabs */}
+      <div className="flex justify-center py-5">
+        <div className="w-full bg-white rounded-lg shadow-md overflow-hidden">
+          <div className="flex overflow-x-auto border-b border-gray-200">
+            {tabHead.map((value, index) => (
+              <button
+                key={index}
+                onClick={() => setActiveTabHead(index)}
+                className={`px-6 py-3 whitespace-nowrap font-medium transition-colors ${
+                  activeTabHead === index
+                    ? 'text-blue-600 border-b-2 border-blue-600'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                {value}
+              </button>
             ))}
-          </Tabs>
-        </Box>
+          </div>
+        </div>
       </div>
 
-      <div style={{ padding: "20px 0" }}>
-        {activeTabHead === 0 && <div><Profile astrologer={astrologer} /></div>}
-        {activeTabHead === 1 && <div><ChatHistory astrologerId={astrologerId} /></div>}
-        {activeTabHead === 2 && <div><CallHistory astrologerId={astrologerId} /></div>}
-        {activeTabHead === 3 && <div><VideoCallHistory astrologerId={astrologerId} /></div>}
-        {activeTabHead === 4 && <div><LiveHistory astrologerId={astrologerId} /></div>}
-        {activeTabHead === 5 && <div><GiftHistory astrologerId={astrologerId} /></div>}
-        {activeTabHead === 6 && <div><Review astrologerId={astrologerId} /></div>}
+      {/* Tab Content */}
+      <div className="py-5">
+        {activeTabHead === 0 && (
+          <div>
+            <Profile astrologer={astrologer} />
+          </div>
+        )}
+        {activeTabHead === 1 && (
+          <div>
+            <ChatHistory astrologerId={astrologerId} />
+          </div>
+        )}
+        {activeTabHead === 2 && (
+          <div>
+            <CallHistory astrologerId={astrologerId} />
+          </div>
+        )}
+        {activeTabHead === 3 && (
+          <div>
+            <VideoCallHistory astrologerId={astrologerId} />
+          </div>
+        )}
+        {activeTabHead === 4 && (
+          <div>
+            <LiveHistory astrologerId={astrologerId} />
+          </div>
+        )}
+        {activeTabHead === 5 && (
+          <div>
+            <GiftHistory astrologerId={astrologerId} />
+          </div>
+        )}
+        {activeTabHead === 6 && (
+          <div>
+            <Review astrologerId={astrologerId} />
+          </div>
+        )}
       </div>
     </>
   );

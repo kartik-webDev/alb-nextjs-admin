@@ -97,7 +97,7 @@ const Spotlights = () => {
             </motion.div>
           </div>
         ) : (
-          /* Static Grid - when all logos fit in one row */
+          /* Static grid - when all logos fit in one row */
           <div className="flex justify-center gap-6 px-6 pb-20">
             {logos.map((logo, index) => (
               <div

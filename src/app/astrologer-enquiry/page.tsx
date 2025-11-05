@@ -4,22 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import moment from 'moment';
 import { CSVLink } from 'react-csv';
-import {
-  Button,
-  Dialog,
-  DialogContent,
-  FormControl,
-  Grid,
-  InputLabel,
-  TextField,
-  Typography,
-  Select,
-  MenuItem,
-} from '@mui/material';
-import DownloadIcon from '@mui/icons-material/Download';
-import MoreVertIcon from '@mui/icons-material/MoreVert';
 import { DeepSearchSpace } from '@/utils/common-function';
-
 import { Color } from '@/assets/colors';
 import MainDatatable from '@/components/common/MainDatatable';
 import { api_url, base_url, get_enquiry_astrologer } from '@/lib/api-routes';
@@ -41,7 +26,7 @@ interface Astrologer {
 }
 
 // ---------------------------------------------------------------------
-// Datatable Heading Component
+// Datatable Heading Component (Tailwind)
 // ---------------------------------------------------------------------
 interface DatatableHeadingProps {
   title: string;
@@ -50,36 +35,21 @@ interface DatatableHeadingProps {
 
 const DatatableHeading: React.FC<DatatableHeadingProps> = ({ title, data = [] }) => {
   return (
-    <div
-      style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        marginBottom: '20px',
-        backgroundColor: '#fff',
-      }}
-    >
-      <div style={{ fontSize: '22px', fontWeight: 500, color: Color.black }}>
-        {title}
-      </div>
+    <div className="flex justify-between mb-5 bg-white">
+      <div className="text-2xl font-medium text-black">{title}</div>
 
-      <div style={{ display: 'flex', gap: '40px', alignItems: 'center' }}>
+      <div className="flex gap-10 items-center">
         {data.length > 0 && (
           <CSVLink
             filename={`${title}.csv`}
             data={data}
-            style={{
-              color: '#000',
-              fontSize: '1rem',
-              textDecoration: 'none',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px',
-              cursor: 'pointer',
-            }}
+            className="text-black text-base no-underline flex items-center gap-2 cursor-pointer"
           >
-            <div style={{ fontSize: '16px', fontWeight: 500, color: '#667284' }}>
-              <DownloadIcon />
-            </div>
+            <span className="text-gray-500">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+            </span>
           </CSVLink>
         )}
       </div>
@@ -186,7 +156,7 @@ const AstrologerEnquiryClient = () => {
   };
 
   const handleInputField = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
     setInputFieldDetail((prev) => ({ ...prev, [name]: value }));
@@ -232,19 +202,17 @@ const AstrologerEnquiryClient = () => {
       
       if (res.ok) {
         closeWallet();
-        // Optionally refresh the data or show success message
-        fetchAstrologers(); // Refresh to show updated wallet balance
+        fetchAstrologers();
       } else {
         throw new Error('Failed to update wallet');
       }
     } catch (error) {
       console.error('Error updating wallet:', error);
-      // You might want to show an error message to the user here
     }
   };
 
   // -----------------------------------------------------------------
-  // Table Columns - Fixed TypeScript issues
+  // Table Columns
   // -----------------------------------------------------------------
   const columns = [
     {
@@ -254,8 +222,8 @@ const AstrologerEnquiryClient = () => {
     },
     { 
       name: 'Name', 
-      selector: (row: Astrologer) => row.astrologerName ,
-       width: '150px' 
+      selector: (row: Astrologer) => row.astrologerName,
+      width: '150px' 
     },
     { 
       name: 'Email', 
@@ -287,13 +255,13 @@ const AstrologerEnquiryClient = () => {
     {
       name: 'Action',
       cell: (row: Astrologer) => (
-        <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
+        <div className="flex gap-4 items-center justify-center">
           <div
-             onClick={(e) => {
-                e.stopPropagation(); // Prevent row click if in a table
-                router.push(`/astrologer/edit-astrologer?id=${row._id}`);
-              }}
-            style={{ cursor: 'pointer' }}
+            onClick={(e) => {
+              e.stopPropagation();
+              router.push(`/astrologer/edit-astrologer?id=${row._id}`);
+            }}
+            className="cursor-pointer"
           >
             <EditSvg />
           </div>
@@ -309,127 +277,93 @@ const AstrologerEnquiryClient = () => {
   // -----------------------------------------------------------------
   return (
     <>
-      
-        <MainDatatable 
-          columns={columns} 
-          data={filteredData} 
-          title="Astrologer Enquiry"
-          url="/astrologer/astrologer-enquiry"
-          isLoading={isLoading} 
-           addButtonActive={false} 
-        />
-    
+      <MainDatatable 
+        columns={columns} 
+        data={filteredData} 
+        title="Astrologer Enquiry"
+        url="/astrologer/astrologer-enquiry"
+        isLoading={isLoading} 
+        addButtonActive={false} 
+      />
 
-      {/* Wallet Modal */}
-      <Dialog
-        open={walletModal}
-        onClose={closeWallet}
-        PaperProps={{
-          sx: { 
-            maxWidth: { xs: '90vw', sm: '50vw' }, 
-            minWidth: { xs: '90vw', sm: '400px' },
-            padding: '20px'
-          },
-        }}
-      >
-        <DialogContent>
-          <Grid container spacing={3} sx={{ alignItems: 'center' }}>
-            <Grid item xs={12}>
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  gap: '10px',
-                }}
-              >
-                <div style={{ fontSize: '22px', fontWeight: 500, color: Color.black }}>
-                  Wallet
-                </div>
-                <div onClick={closeWallet} style={{ cursor: 'pointer' }}>
+      {/* Wallet Modal - Tailwind Dialog */}
+      {walletModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-auto">
+            <div className="p-6">
+              {/* Header */}
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-medium text-black">Wallet</h2>
+                <button onClick={closeWallet} className="text-gray-500 hover:text-gray-700">
                   <CrossSvg />
+                </button>
+              </div>
+
+              {/* Form */}
+              <div className="space-y-5">
+                {/* Amount Field */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Amount <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    name="amount"
+                    value={inputFieldDetail.amount}
+                    onChange={handleInputField}
+                    onFocus={() => handleInputFieldError('amount', null)}
+                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${inputFieldError.amount ? 'border-red-500' : 'border-gray-300'}`}
+                    placeholder="Enter amount"
+                  />
+                  {inputFieldError.amount && (
+                    <p className="text-red-500 text-xs mt-1">{inputFieldError.amount}</p>
+                  )}
+                </div>
+
+                {/* Type Select */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Type <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    name="type"
+                    value={inputFieldDetail.type}
+                    onChange={handleInputField}
+                    onFocus={() => handleInputFieldError('type', null)}
+                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      inputFieldError.type ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                  >
+                    <option value="">---Select Type---</option>
+                    <option value="credit">Add</option>
+                    <option value="deduct">Deduct</option>
+                  </select>
+                  {inputFieldError.type && (
+                    <p className="text-red-500 text-xs mt-1">{inputFieldError.type}</p>
+                  )}
+                </div>
+
+                {/* Buttons */}
+                <div className="flex justify-end gap-3 mt-6">
+                  <button
+                    onClick={closeWallet}
+                    className="px-5 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={submitWallet}
+                    className="px-5 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700"
+                    style={{ backgroundColor: Color.primary }}
+                  >
+                    Submit
+                  </button>
                 </div>
               </div>
-            </Grid>
-
-            <Grid item xs={12}>
-              <TextField
-                label={
-                  <>
-                    Amount <span style={{ color: 'red' }}>*</span>
-                  </>
-                }
-                variant="outlined"
-                fullWidth
-                name="amount"
-                type="number"
-                value={inputFieldDetail.amount}
-                onChange={handleInputField}
-                error={!!inputFieldError.amount}
-                helperText={inputFieldError.amount}
-                onFocus={() => handleInputFieldError('amount', null)}
-              />
-            </Grid>
-
-            <Grid item xs={12}>
-              <FormControl fullWidth error={!!inputFieldError.type}>
-                <InputLabel id="type-label">Type *</InputLabel>
-                <Select
-                  labelId="type-label"
-                  label="Type *"
-                  name="type"
-                  value={inputFieldDetail.type}
-                  onChange={handleInputField as any}
-                  onFocus={() => handleInputFieldError('type', null)}
-                >
-                  <MenuItem value="">---Select Type---</MenuItem>
-                  <MenuItem value="credit">Add</MenuItem>
-                  <MenuItem value="deduct">Deduct</MenuItem>
-                </Select>
-                {inputFieldError.type && (
-                  <Typography color="error" variant="caption">
-                    {inputFieldError.type}
-                  </Typography>
-                )}
-              </FormControl>
-            </Grid>
-
-            <Grid item xs={12}>
-              <Grid container sx={{ justifyContent: 'flex-end', gap: 2 }}>
-                <Button
-                  variant="outlined"
-                  onClick={closeWallet}
-                  sx={{
-                    fontWeight: 500,
-                    padding: '10px 20px',
-                    borderRadius: '5px',
-                    fontSize: '15px',
-                  }}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  variant="contained"
-                  onClick={submitWallet}
-                  sx={{
-                    fontWeight: 500,
-                    backgroundColor: Color.primary,
-                    color: Color.white,
-                    padding: '10px 20px',
-                    borderRadius: '5px',
-                    fontSize: '15px',
-                    '&:hover': {
-                      backgroundColor: Color.primary,
-                    },
-                  }}
-                >
-                  Submit
-                </Button>
-              </Grid>
-            </Grid>
-          </Grid>
-        </DialogContent>
-      </Dialog>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };

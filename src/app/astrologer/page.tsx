@@ -6,20 +6,6 @@ import moment from "moment";
 import { CSVLink } from "react-csv";
 import Swal from "sweetalert2";
 import DataTable, { TableColumn } from "react-data-table-component";
-import {
-  Button,
-  Dialog,
-  DialogContent,
-  FormControl,
-  Grid,
-  InputLabel,
-  TextField,
-  Typography,
-  Select,
-  MenuItem,
-  SelectChangeEvent,
-} from "@mui/material";
-import MoreVertIcon from "@mui/icons-material/MoreVert";
 import { DeepSearchSpace } from "@/utils/common-function";
 
 import { Color } from "@/assets/colors";
@@ -152,7 +138,7 @@ export default function AstrologerPage() {
     setInputFieldDetail((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSelectChange = (e: SelectChangeEvent<"credit" | "deduct">) => {
+  const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const { name, value } = e.target;
     if (name === "type") {
       setInputFieldDetail((prev) => ({
@@ -209,17 +195,18 @@ export default function AstrologerPage() {
     }
   };
 
-
   const toggleVerify = async (astro: Astrologer) => {
     const result = await Swal.fire({
-      title: 'Change Verification Status?',
-      text: `Are you sure you want to ${astro.isVerified ? 'unverify' : 'verify'} ${astro.astrologerName}?`,
-      icon: 'question',
+      title: "Change Verification Status?",
+      text: `Are you sure you want to ${
+        astro.isVerified ? "unverify" : "verify"
+      } ${astro.astrologerName}?`,
+      icon: "question",
       showCancelButton: true,
-      confirmButtonColor: '#3085d6',
-      cancelButtonColor: '#d33',
-      confirmButtonText: 'Yes, change it!',
-      cancelButtonText: 'Cancel'
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Yes, change it!",
+      cancelButtonText: "Cancel",
     });
 
     if (!result.isConfirmed) return;
@@ -227,12 +214,12 @@ export default function AstrologerPage() {
     try {
       // Show loading
       Swal.fire({
-        title: 'Updating...',
-        text: 'Please wait',
+        title: "Updating...",
+        text: "Please wait",
         allowOutsideClick: false,
         didOpen: () => {
           Swal.showLoading();
-        }
+        },
       });
 
       await fetch(
@@ -250,18 +237,20 @@ export default function AstrologerPage() {
       await fetchAstrologers();
 
       Swal.fire({
-        icon: 'success',
-        title: 'Success!',
-        text: `Astrologer ${!astro.isVerified ? 'verified' : 'unverified'} successfully`,
+        icon: "success",
+        title: "Success!",
+        text: `Astrologer ${
+          !astro.isVerified ? "verified" : "unverified"
+        } successfully`,
         timer: 2000,
-        showConfirmButton: false
+        showConfirmButton: false,
       });
     } catch (e) {
       console.error(e);
       Swal.fire({
-        icon: 'error',
-        title: 'Error',
-        text: 'Failed to update verification status'
+        icon: "error",
+        title: "Error",
+        text: "Failed to update verification status",
       });
     }
   };
@@ -278,29 +267,29 @@ export default function AstrologerPage() {
     current: string | undefined
   ) => {
     const newVal = current === "online" ? "offline" : "online";
-    const fieldName = field.replace('_status', '').replace('_', ' ');
+    const fieldName = field.replace("_status", "").replace("_", " ");
 
     const result = await Swal.fire({
       title: `Change ${fieldName} status?`,
       text: `Set ${fieldName} to ${newVal}?`,
-      icon: 'question',
+      icon: "question",
       showCancelButton: true,
-      confirmButtonColor: '#3085d6',
-      cancelButtonColor: '#d33',
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
       confirmButtonText: `Yes, set to ${newVal}`,
-      cancelButtonText: 'Cancel'
+      cancelButtonText: "Cancel",
     });
 
     if (!result.isConfirmed) return;
 
     try {
       Swal.fire({
-        title: 'Updating Status...',
-        text: 'Please wait',
+        title: "Updating Status...",
+        text: "Please wait",
         allowOutsideClick: false,
         didOpen: () => {
           Swal.showLoading();
-        }
+        },
       });
 
       await fetch("/api/astrologers/status", {
@@ -313,27 +302,21 @@ export default function AstrologerPage() {
       closeEdit();
 
       Swal.fire({
-        icon: 'success',
-        title: 'Status Updated!',
+        icon: "success",
+        title: "Status Updated!",
         text: `${fieldName} set to ${newVal}`,
         timer: 2000,
-        showConfirmButton: false
+        showConfirmButton: false,
       });
     } catch (e) {
       console.error(e);
       Swal.fire({
-        icon: 'error',
-        title: 'Error',
-        text: 'Failed to update status'
+        icon: "error",
+        title: "Error",
+        text: "Failed to update status",
       });
     }
   };
-
-  // -----------------------------------------------------------------
-  // Edit Status Modal
-  // -----------------------------------------------------------------
-
-
 
   // -----------------------------------------------------------------
   // Table Columns
@@ -342,12 +325,21 @@ export default function AstrologerPage() {
     () => [
       {
         name: "S. No.",
-        selector: (_row: any, index?: number) => (index !== undefined ? index + 1 : 0),
+        selector: (_row: any, index?: number) =>
+          index !== undefined ? index + 1 : 0,
         width: "40px",
       },
-      { name: "Name", selector: (row: any) => row.astrologerName, width: "180px" },
+      {
+        name: "Name",
+        selector: (row: any) => row.astrologerName,
+        width: "180px",
+      },
       { name: "Email", selector: (row: any) => row.email, width: "250px" },
-      { name: "Mobile", selector: (row: any) => row.phoneNumber || "N/A", width: "150px" },
+      {
+        name: "Mobile",
+        selector: (row: any) => row.phoneNumber || "N/A",
+        width: "150px",
+      },
       {
         name: "Created Date",
         selector: (row: any) => moment(row.createdAt).format("DD/MM/YYYY"),
@@ -381,23 +373,30 @@ export default function AstrologerPage() {
             </div>
             <div
               onClick={(e) => {
-                e.stopPropagation(); // Prevent row click if in a table
+                e.stopPropagation();
                 router.push(`/astrologer/edit-astrologer?id=${row._id}`);
               }}
+              style={{ cursor: "pointer" }}
             >
               <EditSvg />
             </div>
             <div style={{ cursor: "pointer" }} onClick={() => openWallet(row)}>
               <WalletSvg />
             </div>
-            <MoreVertIcon
+            <div
               onClick={() => openEdit(row)}
-              sx={{ cursor: "pointer" }}
-            />
+              style={{ cursor: "pointer" }}
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                <circle cx="12" cy="5" r="2"/>
+                <circle cx="12" cy="12" r="2"/>
+                <circle cx="12" cy="19" r="2"/>
+              </svg>
+            </div>
           </div>
         ),
         width: "150px",
-        center: true
+        center: true,
       },
     ],
     [router]
@@ -408,11 +407,13 @@ export default function AstrologerPage() {
   // -----------------------------------------------------------------
   return (
     <>
-
-
-      <div style={{ width: '100%', overflowX: 'auto' }}>
+      <div style={{ width: "100%", overflowX: "auto" }}>
         <MainDatatable
-          columns={columns.map(col => ({ ...col, minWidth: col.width, width: undefined }))}
+          columns={columns.map((col) => ({
+            ...col,
+            minWidth: col.width,
+            width: undefined,
+          }))}
           data={filteredData}
           isLoading={isLoading}
           title="List of Astrologers"
@@ -420,177 +421,147 @@ export default function AstrologerPage() {
         />
       </div>
 
-
       {/* Wallet Modal */}
-      <Dialog
-        open={walletModal}
-        PaperProps={{
-          sx: { maxWidth: { xs: "90vw", sm: "50vw" }, width: "100%" },
-        }}
-      >
-        <DialogContent>
-          <Grid container spacing={3}>
-            <Grid item xs={12}>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                }}
-              >
-                <Typography
-                  variant="h6"
-                  sx={{ fontWeight: 500, color: Color.black }}
-                >
+      {walletModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+            <div className="p-6">
+              {/* Header */}
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-medium" style={{ color: Color.black }}>
                   Wallet
-                </Typography>
-                <div onClick={closeWallet} style={{ cursor: "pointer" }}>
+                </h2>
+                <div onClick={closeWallet} className="cursor-pointer">
                   <CrossSvg />
                 </div>
               </div>
-            </Grid>
 
-            <Grid item xs={12}>
-              <TextField
-                label={
-                  <>
-                    Amount <span style={{ color: "red" }}>*</span>
-                  </>
-                }
-                variant="outlined"
-                fullWidth
-                name="amount"
-                value={inputFieldDetail.amount}
-                onChange={handleInputField}
-                error={!!inputFieldError.amount}
-                helperText={inputFieldError.amount}
-                onFocus={() => handleInputFieldError("amount", null)}
-              />
-            </Grid>
+              {/* Amount Input */}
+              <div className="mb-6">
+                <label htmlFor="amount" className="block text-sm font-medium mb-1.5 text-gray-700">
+                  Amount <span className="text-red-600">*</span>
+                </label>
+                <input
+                  id="amount"
+                  type="number"
+                  name="amount"
+                  value={inputFieldDetail.amount}
+                  onChange={handleInputField}
+                  onFocus={() => handleInputFieldError("amount", null)}
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    inputFieldError.amount ? "border-red-600" : "border-gray-300"
+                  }`}
+                />
+                {inputFieldError.amount && (
+                  <p className="text-red-600 text-xs mt-1">
+                    {inputFieldError.amount}
+                  </p>
+                )}
+              </div>
 
-            <Grid item xs={12}>
-              <FormControl fullWidth error={!!inputFieldError.type}>
-                <InputLabel id="type-label">Type *</InputLabel>
-                <Select
-                  labelId="type-label"
-                  label="Type *"
+              {/* Type Select */}
+              <div className="mb-6">
+                <label htmlFor="type" className="block text-sm font-medium mb-1.5 text-gray-700">
+                  Type <span className="text-red-600">*</span>
+                </label>
+                <select
+                  id="type"
                   name="type"
                   value={inputFieldDetail.type}
                   onChange={handleSelectChange}
                   onFocus={() => handleInputFieldError("type", null)}
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    inputFieldError.type ? "border-red-600" : "border-gray-300"
+                  }`}
                 >
-                  <MenuItem value="" disabled>
+                  <option value="" disabled>
                     ---Select Type---
-                  </MenuItem>
-                  <MenuItem value="credit">Add</MenuItem>
-                  <MenuItem value="deduct">Deduct</MenuItem>
-                </Select>
+                  </option>
+                  <option value="credit">Add</option>
+                  <option value="deduct">Deduct</option>
+                </select>
                 {inputFieldError.type && (
-                  <Typography
-                    variant="caption"
-                    color="error"
-                    sx={{ ml: 2, mt: 0.5 }}
-                  >
+                  <p className="text-red-600 text-xs mt-1">
                     {inputFieldError.type}
-                  </Typography>
+                  </p>
                 )}
-              </FormControl>
-            </Grid>
+              </div>
 
-            <Grid item xs={12}>
-              <Grid container justifyContent="flex-end">
-                <Button
+              {/* Submit Button */}
+              <div className="flex justify-end">
+                <button
                   onClick={submitWallet}
-                  sx={{
-                    bgcolor: Color.primary,
-                    color: Color.white,
-                    px: 3,
-                    py: 1,
-                    borderRadius: 1,
-                    fontWeight: 500,
-                    textTransform: "none",
-                    "&:hover": { bgcolor: Color.primary },
-                  }}
+                  className="px-6 py-2 text-white rounded font-medium hover:opacity-90"
+                  style={{ backgroundColor: Color.primary }}
                 >
                   Submit
-                </Button>
-              </Grid>
-            </Grid>
-          </Grid>
-        </DialogContent>
-      </Dialog>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Edit Status Modal */}
-      <Dialog open={editState.open} onClose={closeEdit}>
-        <DialogContent sx={{ minWidth: 300, maxWidth: 500 }}>
-          {editState.astro && (
-            <Grid container spacing={2}>
-              <Grid item xs={12}>
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    marginBottom: "16px",
-                  }}
+      {editState.open && editState.astro && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-lg w-full mx-4">
+            <div className="p-6">
+              {/* Header */}
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-semibold">
+                  {editState.astro.astrologerName}
+                </h2>
+                <button
+                  onClick={closeEdit}
+                  className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-500 text-white hover:bg-gray-600"
                 >
-                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                    {editState.astro.astrologerName}
-                  </Typography>
-                  <Button
-                    onClick={closeEdit}
-                    sx={{
-                      minWidth: 32,
-                      bgcolor: "grey.500",
-                      color: "white",
-                      borderRadius: "50%",
-                      p: 0.5,
-                      "&:hover": { bgcolor: "grey.600" },
-                    }}
-                  >
-                    ×
-                  </Button>
-                </div>
-              </Grid>
+                  ×
+                </button>
+              </div>
 
-              {(
-                ["chat_status", "call_status", "video_call_status"] as const
-              ).map((field) => {
-                const status = editState.astro![field];
-                return (
-                  <React.Fragment key={field}>
-                    <Grid item xs={5}>
-                      {field === "chat_status" && "Change Chat Status"}
-                      {field === "call_status" && "Change Call Status"}
-                      {field === "video_call_status" &&
-                        "Change Video Call Status"}
-                    </Grid>
-                    <Grid item xs={7}>
-                      <Button
-                        onClick={() =>
-                          changeStatus(field, editState.astro!._id, status)
-                        }
-                        fullWidth
-                        sx={{
-                          bgcolor:
-                            status === "online" ? "success.main" : "error.main",
-                          color: "white",
-                          textTransform: "none",
-                          fontWeight: 500,
-                        }}
-                      >
-                        {status === "online"
-                          ? `Set ${field.replace("_status", "")} Offline`
-                          : `Set ${field.replace("_status", "")} Online`}
-                      </Button>
-                    </Grid>
-                  </React.Fragment>
-                );
-              })}
-            </Grid>
-          )}
-        </DialogContent>
-      </Dialog>
+              {/* Status Buttons */}
+              <div className="space-y-4">
+                {(
+                  ["chat_status", "call_status", "video_call_status"] as const
+                ).map((field) => {
+                  const status = editState.astro![field];
+                  const label =
+                    field === "chat_status"
+                      ? "Change Chat Status"
+                      : field === "call_status"
+                      ? "Change Call Status"
+                      : "Change Video Call Status";
+
+                  return (
+                    <div key={field} className="grid grid-cols-5 gap-4 items-center">
+                      <div className="col-span-2 text-sm font-medium">
+                        {label}
+                      </div>
+                      <div className="col-span-3">
+                        <button
+                          onClick={() =>
+                            changeStatus(field, editState.astro!._id, status)
+                          }
+                          className={`w-full px-4 py-2 rounded text-white font-medium ${
+                            status === "online"
+                              ? "bg-green-600 hover:bg-green-700"
+                              : "bg-red-600 hover:bg-red-700"
+                          }`}
+                        >
+                          {status === "online"
+                            ? `Set ${field.replace("_status", "")} Offline`
+                            : `Set ${field.replace("_status", "")} Online`}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

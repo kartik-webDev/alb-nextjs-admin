@@ -1,10 +1,13 @@
 'use client';
-import React, { useState, useEffect, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { Grid, TextField, Avatar, FormControl } from "@mui/material";
-import Swal from "sweetalert2";
-import { UploadImageSvg } from "@/components/svgs/page";
 
+import React, { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import Swal from 'sweetalert2';
+import { UploadImageSvg } from '@/components/svgs/page';
+
+// ---------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------
 interface User {
   _id: string;
   customerName?: string;
@@ -28,51 +31,50 @@ interface SelectOption {
   label: string | null;
 }
 
-function AddNotificationContent(){
+// ---------------------------------------------------------------------
+// Main Content Component
+// ---------------------------------------------------------------------
+function AddNotificationContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const type = searchParams.get('type') as 'Customer' | 'Astrologer';
-  
-  const [notificationDetail, setNotificationDetail] = useState<NotificationDetail>({ 
-    title: '', 
-    description: '' 
-  });
+
+  const [notificationDetail, setNotificationDetail] = useState<NotificationDetail>({ title: '', description: '' });
   const [userData, setUserData] = useState<User[]>([]);
   const [multiPage, setMultiPage] = useState<string[]>([]);
-  const [inputFieldError, setInputFieldError] = useState({ 
-    title: '', 
+  const [inputFieldError, setInputFieldError] = useState({
+    title: '',
     multiPage: '',
     image: '',
     description: ''
   });
-  const [image, setImage] = useState<{ file: string; bytes: File | null }>({ 
-    file: '', 
-    bytes: null 
-  });
+  const [image, setImage] = useState<{ file: string; bytes: File | null }>({ file: '', bytes: null });
   const [loading, setLoading] = useState(false);
 
-  // Get multi-page options based on type
-  const multiPageOptions: SelectOption[] = userData ? [
-    { value: 'all', label: 'Select All' }, 
-    ...userData.map(item => ({ 
-      value: item?._id, 
-      label: (type === 'Customer' ? item?.customerName : item?.astrologerName) || null
-    }))
-  ] : [];
+  // Multi-page options
+  const multiPageOptions: SelectOption[] = userData
+    ? [
+        { value: 'all', label: 'Select All' },
+        ...userData.map(item => ({
+          value: item._id,
+          label: (type === 'Customer' ? item.customerName : item.astrologerName) || null
+        }))
+      ]
+    : [];
 
-  // API call functions
+  // Fetch Users
   const getUsers = async () => {
     if (!type) return;
-    
+
     try {
       setLoading(true);
-      const endpoint = type === 'Customer' 
-        ? '/api/admin/get-customers' 
+      const endpoint = type === 'Customer'
+        ? '/api/admin/get-customers'
         : '/api/admin/get-all-astrologers';
-      
+
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}${endpoint}`);
       const data: ApiResponse<User[]> = await response.json();
-      
+
       if (data.success) {
         setUserData(data.astrologers || []);
       } else {
@@ -85,81 +87,93 @@ function AddNotificationContent(){
     }
   };
 
-  //* Handle Input Field : Error
+  useEffect(() => {
+    if (type) {
+      getUsers();
+    }
+  }, [type]);
+
+  // Input Handlers
   const handleInputFieldError = (input: string, value: string) => {
-    setInputFieldError((prev) => ({ ...prev, [input]: value }));
-  }
+    setInputFieldError(prev => ({ ...prev, [input]: value }));
+  };
 
-  //* Handle Input Field : Data
-  const handleInputField = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputField = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setNotificationDetail({ ...notificationDetail, [name]: value });
+    setNotificationDetail(prev => ({ ...prev, [name]: value }));
+    if (inputFieldError[name as keyof typeof inputFieldError]) {
+      handleInputFieldError(name, '');
+    }
   };
 
-  //* Handle multi Page Option 
-  const handleChangeMultiPageOption = (selectedItems: any) => {
-    if (selectedItems?.some((item: any) => item?.value === 'all')) {
-      setMultiPage(userData.map(item => item?._id));
+  // Multi Select with "Select All"
+  const handleChangeMultiPageOption = (selectedItems: string[]) => {
+    if (selectedItems.includes('all')) {
+      setMultiPage(userData.map(item => item._id));
     } else {
-      const selectedIds = selectedItems?.map((item: any) => 
-        item?.value !== 'all' ? item?.value : null
-      )?.filter(Boolean);
-      setMultiPage(selectedIds);
+      setMultiPage(selectedItems.filter(id => id !== 'all'));
     }
   };
 
-  //! Handle Image : Normally
+  // Image Upload (Click & Drag)
   const handleImage = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
+    const file = e.target.files?.[0];
+    if (file) {
       setImage({
-        file: URL.createObjectURL(e.target.files[0]),
-        bytes: e.target.files[0],
+        file: URL.createObjectURL(file),
+        bytes: file
       });
+      handleInputFieldError('image', '');
     }
-    handleInputFieldError("image", "");
   };
 
-  //! Handle Image : Drop Feature
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
-    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith('image/')) {
       setImage({
-        file: URL.createObjectURL(e.dataTransfer.files[0]),
-        bytes: e.dataTransfer.files[0],
+        file: URL.createObjectURL(file),
+        bytes: file
       });
+      handleInputFieldError('image', '');
     }
-    handleInputFieldError("image", "");
   };
 
-  //! Handle Validation
+  // Validation
   const handleValidation = () => {
     let isValid = true;
-    const { title, description } = notificationDetail;
+    const { title } = notificationDetail;
 
     if (!title) {
-      handleInputFieldError("title", "Please Enter Title");
+      handleInputFieldError('title', 'Please Enter Title');
       isValid = false;
-    }
-    if (title.length > 50) {
-      handleInputFieldError("title", "Please Enter Title Less Than 50 Character");
+    } else if (title.length > 50) {
+      handleInputFieldError('title', 'Please Enter Title Less Than 50 Character');
       isValid = false;
+    } else {
+      handleInputFieldError('title', '');
     }
-    if (multiPage.length <= 0) {
-      handleInputFieldError("multiPage", "Please Select At Least One User");
+
+    if (multiPage.length === 0) {
+      handleInputFieldError('multiPage', 'Please Select At Least One User');
       isValid = false;
+    } else {
+      handleInputFieldError('multiPage', '');
     }
+
     if (!image.bytes) {
-      handleInputFieldError("image", "Please Upload an Image");
+      handleInputFieldError('image', 'Please Upload an Image');
       isValid = false;
+    } else {
+      handleInputFieldError('image', '');
     }
 
     return isValid;
   };
 
-  //! Handle Submit - Creating Notification
+  // Submit
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (!handleValidation()) return;
 
     setLoading(true);
@@ -167,14 +181,11 @@ function AddNotificationContent(){
 
     try {
       const formData = new FormData();
-      formData.append("title", title);
-      formData.append("description", description);
-      if (image.bytes) {
-        formData.append("image", image.bytes);
-      }
-      formData.append("redirectTo", "Redirect");
+      formData.append('title', title);
+      formData.append('description', description);
+      if (image.bytes) formData.append('image', image.bytes);
+      formData.append('redirectTo', 'Redirect');
 
-      // Append each item in the multiPage array with a unique key
       multiPage.forEach((id, index) => {
         if (type === 'Customer') {
           formData.append(`customerIds[${index}]`, id);
@@ -183,7 +194,7 @@ function AddNotificationContent(){
         }
       });
 
-      const endpoint = type === 'Customer' 
+      const endpoint = type === 'Customer'
         ? '/api/admin/send-customer-notification'
         : '/api/admin/send-astrologer-notification';
 
@@ -195,41 +206,23 @@ function AddNotificationContent(){
       const data = await response.json();
 
       if (data.success) {
-        Swal.fire(
-          'Success!',
-          `Notification sent successfully to ${type.toLowerCase()}s.`,
-          'success'
-        );
+        Swal.fire('Success!', `Notification sent successfully to ${type.toLowerCase()}s.`, 'success');
         router.push(`/${type.toLowerCase()}-notification`);
       } else {
-        Swal.fire(
-          'Error!',
-          data.message || `Failed to send ${type.toLowerCase()} notification.`,
-          'error'
-        );
+        Swal.fire('Error!', data.message || `Failed to send ${type.toLowerCase()} notification.`, 'error');
       }
     } catch (error) {
-      Swal.fire(
-        'Error!',
-        `Something went wrong while sending ${type.toLowerCase()} notification.`,
-        'error'
-      );
+      Swal.fire('Error!', `Something went wrong while sending ${type.toLowerCase()} notification.`, 'error');
       console.error('Error sending notification:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    if (type) {
-      getUsers();
-    }
-  }, [type]);
-
   if (!type) {
     return (
       <div className="min-h-screen bg-gray-50 p-6 flex items-center justify-center">
-        <div className="text-red-600">Error: Notification type is required</div>
+        <div className="text-red-600 font-medium">Error: Notification type is required</div>
       </div>
     );
   }
@@ -237,153 +230,185 @@ function AddNotificationContent(){
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="bg-white p-6 rounded-lg shadow-sm mb-6">
+        {/* Header */}
         <div className="flex justify-between items-center mb-6">
-          <div className="text-2xl font-semibold text-gray-900">
+          <h1 className="text-2xl font-semibold text-gray-900">
             Send {type} Notification
-          </div>
-          <button 
+          </h1>
+          <button
             onClick={() => router.push(`/${type.toLowerCase()}-notification`)}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors cursor-pointer"
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
           >
             Display
           </button>
         </div>
 
-        <Grid container spacing={3} alignItems="center">
-          <Grid item xs={12}>
-            <div className="border border-gray-300 rounded-md">
-              {image?.file ? (
-                <label 
-                  onDragOver={(e) => e.preventDefault()} 
-                  onDrop={handleDrop} 
-                  htmlFor="upload-image" 
-                  className="flex flex-col items-center p-5 cursor-pointer"
-                >
-                  <Avatar 
-                    src={image.file} 
-                    sx={{ height: 300, width: 300, borderRadius: 0 }} 
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Image Upload */}
+          <div>
+            <div
+              className="border border-gray-300 rounded-md overflow-hidden"
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={handleDrop}
+            >
+              {image.file ? (
+                <label htmlFor="upload-image" className="block cursor-pointer">
+                  <img
+                    src={image.file}
+                    alt="Uploaded"
+                    className="w-full h-80 object-contain"
                   />
                 </label>
               ) : (
-                <label 
-                  onDragOver={(e) => e.preventDefault()} 
-                  onDrop={handleDrop} 
-                  htmlFor="upload-image" 
-                  className="flex flex-col gap-5 items-center py-20 cursor-pointer"
+                <label
+                  htmlFor="upload-image"
+                  className="flex flex-col items-center justify-center py-20 cursor-pointer space-y-4"
                 >
                   <UploadImageSvg h="80" w="80" color="#C4C4C4" />
-                  <div className="font-semibold text-lg">Choose Image to Upload</div>
-                  <div className="font-medium text-gray-500">Or Drop a Image Here</div>
+                  <div className="font-semibold text-lg text-gray-900">Choose Image to Upload</div>
+                  <div className="font-medium text-gray-500">Or Drop an Image Here</div>
                 </label>
               )}
-              <input 
-                id="upload-image" 
-                onChange={handleImage} 
-                hidden 
-                accept="image/*" 
-                type="file" 
+              <input
+                id="upload-image"
+                type="file"
+                accept="image/*"
+                onChange={handleImage}
+                className="hidden"
               />
             </div>
-            {inputFieldError?.image && (
-              <div className="text-red-600 text-xs pt-2 pl-3">
-                {inputFieldError?.image}
-              </div>
+            {inputFieldError.image && (
+              <p className="text-red-600 text-xs mt-2 pl-1">{inputFieldError.image}</p>
             )}
-          </Grid>
+          </div>
 
-          <Grid item xs={12} md={6}>
-            <TextField
-              label={<span>Title <span className="text-red-500">*</span></span>}
-              variant="outlined"
-              fullWidth
-              name="title"
-              value={notificationDetail?.title}
-              onChange={handleInputField}
-              error={!!inputFieldError.title}
-              helperText={inputFieldError.title}
-              onFocus={() => handleInputFieldError("title", "")}
-            />
-          </Grid>
-
-          <Grid item xs={12} md={6}>
-            <TextField
-              label="Description"
-              variant="outlined"
-              fullWidth
-              name="description"
-              value={notificationDetail?.description}
-              onChange={handleInputField}
-              error={!!inputFieldError.description}
-              helperText={inputFieldError.description}
-              onFocus={() => handleInputFieldError("description", "")}
-              multiline
-              rows={3}
-            />
-          </Grid>
-
-          <Grid item xs={12}>
-            <FormControl fullWidth>
-              <div className="border border-gray-300 rounded-md p-2 min-h-[45px] max-h-[150px] overflow-auto">
-                <div className="flex flex-wrap gap-2">
-                  {multiPageOptions.filter(option => multiPage.includes(option.value)).map(option => (
-                    <div key={option.value} className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm">
-                      {option.label}
-                    </div>
-                  ))}
-                </div>
-                <select 
-                  multiple
-                  value={multiPage}
-                  onChange={(e) => {
-                    const selected = Array.from(e.target.selectedOptions, option => option.value);
-                    setMultiPage(selected);
-                  }}
-                  className="w-full border-none outline-none text-sm"
-                  onFocus={() => handleInputFieldError("multiPage", "")}
-                >
-                  {multiPageOptions.map(option => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
+          {/* Title & Description */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Title <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                name="title"
+                value={notificationDetail.title}
+                onChange={handleInputField}
+                onFocus={() => handleInputFieldError('title', '')}
+                maxLength={50}
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${
+                  inputFieldError.title ? 'border-red-500' : 'border-gray-300'
+                }`}
+                placeholder="Enter title"
+              />
+              <div className="flex justify-between text-xs mt-1">
+                {inputFieldError.title ? (
+                  <span className="text-red-600">{inputFieldError.title}</span>
+                ) : (
+                  <span></span>
+                )}
+                <span className="text-gray-500">{notificationDetail.title.length}/50</span>
               </div>
-            </FormControl>
-            {inputFieldError?.multiPage && (
-              <div className="text-red-600 text-xs pt-2 pl-3">
-                {inputFieldError?.multiPage}
-              </div>
-            )}
-          </Grid>
-
-          <Grid item xs={12}>
-            <div className="flex justify-between">
-              <button 
-                onClick={handleSubmit}
-                disabled={loading}
-                className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading ? 'Sending...' : 'Submit'}
-              </button>
             </div>
-          </Grid>
-        </Grid>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Description
+              </label>
+              <textarea
+                name="description"
+                value={notificationDetail.description}
+                onChange={handleInputField}
+                onFocus={() => handleInputFieldError('description', '')}
+                rows={3}
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors resize-none ${
+                  inputFieldError.description ? 'border-red-500' : 'border-gray-300'
+                }`}
+                placeholder="Enter description"
+              />
+              {inputFieldError.description && (
+                <p className="text-red-600 text-xs mt-1">{inputFieldError.description}</p>
+              )}
+            </div>
+          </div>
+
+          {/* Multi Select */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Select {type}s <span className="text-red-500">*</span>
+            </label>
+            <div className="border border-gray-300 rounded-md p-2 min-h-[45px] max-h-[150px] overflow-auto">
+              {/* Selected Tags */}
+              <div className="flex flex-wrap gap-2 mb-2">
+                {multiPageOptions
+                  .filter(opt => multiPage.includes(opt.value))
+                  .map(opt => (
+                    <span
+                      key={opt.value}
+                      className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm font-medium"
+                    >
+                      {opt.label}
+                    </span>
+                  ))}
+              </div>
+
+              {/* Native Select */}
+              <select
+                multiple
+                value={multiPage}
+                onChange={(e) => {
+                  const selected = Array.from(e.target.selectedOptions, opt => opt.value);
+                  handleChangeMultiPageOption(selected);
+                }}
+                onFocus={() => handleInputFieldError('multiPage', '')}
+                className="w-full border-none outline-none text-sm bg-transparent"
+                size={5}
+              >
+                {multiPageOptions.map(opt => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {inputFieldError.multiPage && (
+              <p className="text-red-600 text-xs mt-1 pl-1">{inputFieldError.multiPage}</p>
+            )}
+          </div>
+
+          {/* Submit */}
+          <div className="flex justify-start">
+            <button
+              type="submit"
+              disabled={loading}
+              className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? 'Sending...' : 'Submit'}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );
-};
+}
+
+// ---------------------------------------------------------------------
+// Suspense Wrapper
+// ---------------------------------------------------------------------
 const AddNotification = () => {
-    return (
-        <Suspense fallback={
-            <div className="flex justify-center items-center min-h-screen">
-                <div className="flex items-center gap-2 text-gray-600">
-                    <div className="w-6 h-6 border-2 border-red-500 border-t-transparent rounded-full animate-spin"></div>
-                    Loading...
-                </div>
-            </div>
-        }>
-            <AddNotificationContent />n
-        </Suspense>
-    );
+  return (
+    <Suspense
+      fallback={
+        <div className="flex justify-center items-center min-h-screen">
+          <div className="flex items-center gap-3 text-gray-600">
+            <div className="w-6 h-6 border-2 border-red-500 border-t-transparent rounded-full animate-spin"></div>
+            <span className="font-medium">Loading...</span>
+          </div>
+        </div>
+      }
+    >
+      <AddNotificationContent />
+    </Suspense>
+  );
 };
+
 export default AddNotification;

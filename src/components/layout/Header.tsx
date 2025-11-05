@@ -1,24 +1,37 @@
-//src/components/layout/header.tsx
+// src/components/layout/header.tsx
 "use client";
 
 import React, { useEffect, useState } from "react";
 import { FaBars } from "react-icons/fa";
 import { useRouter } from "next/navigation";
 import Swal from "sweetalert2";
-import Button from "@mui/material/Button";
-import Menu from "@mui/material/Menu";
-import MenuItem from "@mui/material/MenuItem";
-import GroupIcon from "@mui/icons-material/Group";
-import VpnKeyIcon from "@mui/icons-material/VpnKey";
-import {
-  Dialog,
-  DialogContent,
-  Grid,
-  IconButton,
-  InputAdornment,
-  TextField,
-} from "@mui/material";
-import { Visibility, VisibilityOff } from "@mui/icons-material";
+
+// SVG Icons (Tailwind-friendly)
+const GroupIcon = () => (
+  <svg className="w-5 h-5 mr-1" fill="currentColor" viewBox="0 0 20 20">
+    <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.30-.53.57-1.1.81-1.69A5 5 0 0010 9c-1.43 0-2.73.6-3.65 1.56.24.59.51 1.16.81 1.69C7.93 12.75 8.85 13 10 13s2.07-.25 2.93-1z"/>
+  </svg>
+);
+
+const VpnKeyIcon = () => (
+  <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+    <path d="M18 8a6 6 0 01-7.743 5.743L10 14l-1 1-1 1H7v2H5v2H2v-3l4.586-4.586A6 6 0 1118 8zM12 8V6h-2v2H8v2h2v2h2v-2h2V8h-2z"/>
+  </svg>
+);
+
+const VisibilityIcon = () => (
+  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+    <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/>
+    <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.478 0-8.268-2.943-9.542-7zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd"/>
+  </svg>
+);
+
+const VisibilityOffIcon = () => (
+  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+    <path fillRule="evenodd" d="M3.28 2.22a.75.75 0 00-1.06 1.06l14.5 14.5a.75.75 0 101.06-1.06l-1.745-1.745a10.029 10.029 0 003.3-4.38 1.651 1.651 0 000-1.185A10.004 10.004 0 009.999 3a9.956 9.956 0 00-4.744 1.195L3.28 2.22zM7.752 6.69l1.092 1.093a2.5 2.5 0 003.374 3.373l1.091 1.092a4 4 0 01-5.557-5.557z" clipRule="evenodd"/>
+    <path d="M10.748 13.93l2.523 2.523a9.987 9.987 0 01-3.27.547c-4.258 0-7.894-2.661-9.337-6.41a1.651 1.651 0 010-1.186A10.004 10.004 0 016.38 7.28l2.368 2.368a4 4 0 002.001 4.282z"/>
+  </svg>
+);
 
 interface HeaderProps {
   isSidebarOpen: boolean;
@@ -48,6 +61,7 @@ const Header: React.FC<HeaderProps> = ({ isSidebarOpen, onToggleSidebar }) => {
   // Handle change password modal
   const handleModalOpen = () => {
     setModalOpen(true);
+    handleClose();
   };
   
   const handleModalClose = () => {
@@ -75,167 +89,129 @@ const Header: React.FC<HeaderProps> = ({ isSidebarOpen, onToggleSidebar }) => {
         console.error(e);
       }
     }
+    handleClose();
   };
 
-  // Check user data and redirect if not logged in
-// In header.tsx
-useEffect(() => {
-  if (typeof window === 'undefined') return;
-  
-  try {
-    const userData = localStorage.getItem("userDetails");
-    setData(userData);
-    // Don't redirect here - let middleware handle it
-  } catch (e) {
-    console.error(e);
-  }
-}, []);
-  // Handle sidebar toggle on window resize
-  // useEffect(() => {
-  //   const handleResize = () => {
-  //     if (window.innerWidth > 900 && !isSidebarOpen) {
-  //       onToggleSidebar();
-  //     } else if (window.innerWidth < 900 && isSidebarOpen) {
-  //       onToggleSidebar();
-  //     }
-  //   };
-
-  //   window.addEventListener("resize", handleResize);
-  //   handleResize();
-
-  //   return () => {
-  //     window.removeEventListener("resize", handleResize);
-  //   };
-  // }, [isSidebarOpen, onToggleSidebar]);
+  // Check user data
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
+    try {
+      const userData = localStorage.getItem("userDetails");
+      setData(userData);
+    } catch (e) {
+      console.error(e);
+    }
+  }, []);
 
   return (
     <>
-      {/* Header with Tailwind CSS */}
+      {/* Header */}
       <header className="bg-white w-full text-gray-500 py-1 px-4 border-b border-gray-300 shadow-sm">
-        <div className="h-12 flex justify-between items-center relative">
-          <div>
-            <div 
-              onClick={onToggleSidebar}
-              className="flex justify-center items-center bg-[#EF4444] text-white rounded-lg w-8 h-8 cursor-pointer hover:bg-red-800 transition-colors duration-200"
-            >
-              <FaBars className="text-base" />
-            </div>
-          </div>
+        <div className="h-12 flex justify-between items-center">
+          {/* Sidebar Toggle */}
+          <button
+            onClick={onToggleSidebar}
+            className="flex justify-center items-center bg-red-500 text-white rounded-lg w-8 h-8 hover:bg-red-600 transition-colors duration-200"
+          >
+            <FaBars className="text-base" />
+          </button>
 
-          <div>
-            <Button
-              id="basic-button"
-              aria-controls={open ? "basic-menu" : undefined}
-              aria-haspopup="true"
-              aria-expanded={open ? "true" : undefined}
+          {/* Admin Dropdown */}
+          <div className="relative">
+            <button
               onClick={handleClick}
-              className="border border-gray-100 flex items-center shadow-sm hover:shadow-md transition-shadow"
-              style={{ color: "#EF4444", textTransform: "none" }}
+              className="flex items-center gap-1 px-3 py-1.5 border border-gray-200 rounded-md shadow-sm hover:shadow-md transition-shadow text-red-500 font-medium text-sm"
             >
-              <GroupIcon className="mr-1 text-lg" />
+              <GroupIcon />
               Admin
-            </Button>
+            </button>
 
-            <Menu
-              id="basic-menu"
-              anchorEl={anchorEl}
-              open={open}
-              onClose={handleClose}
-              MenuListProps={{ "aria-labelledby": "basic-button" }}
-              className="mt-1"
-              PaperProps={{
-                className: "shadow-lg rounded-lg"
-              }}
-            >
-              <div className="flex flex-col gap-1 p-1">
-                {/* Uncomment if change password functionality is needed */}
-                {/* <MenuItem 
-                  onClick={handleModalOpen} 
-                  className="text-sm hover:bg-gray-100 rounded-md transition-colors"
-                >
-                  Change Password
-                </MenuItem> */}
+            {/* Dropdown Menu */}
+            {open && (
+              <div
+                className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-50"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="p-2 space-y-1">
+                  {/* Uncomment if needed */}
+                  {/* <button
+                    onClick={handleModalOpen}
+                    className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
+                  >
+                    Change Password
+                  </button> */}
 
-                <div 
-                  onClick={handleLogout}
-                  className="flex justify-center items-center bg-red-700 text-white rounded cursor-pointer hover:bg-red-800 transition-colors duration-200"
-                >
-                  <MenuItem className="flex items-center text-white text-sm py-1">
-                    <VpnKeyIcon className="h-4 w-4 mr-2" />
+                  <button
+                    onClick={handleLogout}
+                    className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm text-white bg-red-600 rounded-md hover:bg-red-700 transition-colors"
+                  >
+                    <VpnKeyIcon />
                     Logout
-                  </MenuItem>
+                  </button>
                 </div>
               </div>
-            </Menu>
+            )}
           </div>
         </div>
       </header>
 
-      {/* Change Password Dialog */}
-      <Dialog open={modalOpen} onClose={handleModalClose} maxWidth="sm" fullWidth>
-        <DialogContent className="p-6">
-          <Grid container spacing={3}>
-            <Grid item xs={12} className="flex justify-between items-center">
-              <div className="text-xl font-medium text-gray-800">Change Password</div>
-              <div
-                className="bg-red-700 text-white px-3 py-1 rounded cursor-pointer hover:bg-red-800 transition-colors duration-200 text-sm font-medium"
-                onClick={handleModalClose}
-              >
-                Close
+      {/* Change Password Modal */}
+      {modalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-medium text-gray-800">Change Password</h2>
+                <button
+                  onClick={handleModalClose}
+                  className="bg-red-600 text-white px-3 py-1 rounded text-sm font-medium hover:bg-red-700 transition-colors"
+                >
+                  Close
+                </button>
               </div>
-            </Grid>
 
-            <Grid item xs={12}>
-              <TextField
-                label="Username"
-                variant="outlined"
-                fullWidth
-                type="text"
-                value={userEmail}
-                onChange={(e) => setUserEmail(e.target.value)}
-                className="mb-4"
-              />
-            </Grid>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                  <input
+                    type="text"
+                    value={userEmail}
+                    onChange={(e) => setUserEmail(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                    placeholder="Enter username"
+                  />
+                </div>
 
-            <Grid item xs={12} className="relative">
-              <TextField
-                label="Password"
-                variant="outlined"
-                fullWidth
-                name="password"
-                type={showPassword ? "text" : "password"}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                InputProps={{
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton
-                        onClick={() => setShowPassword(!showPassword)}
-                        edge="end"
-                        className="absolute right-2 top-1/2 transform -translate-y-1/2"
-                      >
-                        {showPassword ? <Visibility /> : <VisibilityOff />}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                }}
-              />
-            </Grid>
+                <div className="relative">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                    placeholder="Enter new password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-2 top-9 text-gray-500 hover:text-gray-700"
+                  >
+                    {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                  </button>
+                </div>
 
-            <Grid item xs={12}>
-              <div
-                className="bg-red-700 text-white py-3 px-4 rounded text-center text-lg font-medium cursor-pointer hover:bg-red-800 transition-colors duration-200 shadow-md hover:shadow-lg"
-                onClick={() => {
-                  // Add password change logic here
-                  handleModalClose();
-                }}
-              >
-                Submit
+                <button
+                  onClick={handleModalClose}
+                  className="w-full bg-red-600 text-white py-3 rounded-md text-lg font-medium hover:bg-red-700 transition-colors shadow-md hover:shadow-lg"
+                >
+                  Submit
+                </button>
               </div>
-            </Grid>
-          </Grid>
-        </DialogContent>
-      </Dialog>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };

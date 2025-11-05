@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
-import { Grid, TextField, CircularProgress, Box } from '@mui/material';
 import { Color } from '@/assets/colors';
 import { base_url } from '@/lib/api-routes';
 import Swal from 'sweetalert2';
@@ -90,152 +89,126 @@ const AddEditCategoryContent: React.FC = () => {
   };
 
   // Handle Submit
- // Handle Submit
-const handleSubmit = async (e: React.MouseEvent<HTMLDivElement>) => {
-  e.preventDefault();
+  const handleSubmit = async (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
 
-  if (!handleValidation()) return;
+    if (!handleValidation()) return;
 
-  const { title } = inputFieldDetail;
+    const { title } = inputFieldDetail;
 
-  try {
-    setLoading(true);
+    try {
+      setLoading(true);
 
-    if (editCategory) {
-      // UPDATE
-      const res = await fetch(`${base_url}api/admin/update_blog_category`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          blogCategoryId: editCategory._id,
-          blogCategoryName: title,
-        }),
-      });
+      if (editCategory) {
+        // UPDATE
+        const res = await fetch(`${base_url}api/admin/update_blog_category`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            blogCategoryId: editCategory._id,
+            blogCategoryName: title,
+          }),
+        });
 
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.message || 'Failed to update category');
+        if (!res.ok) {
+          const error = await res.json();
+          throw new Error(error.message || 'Failed to update category');
+        }
+
+        await Swal.fire({
+          icon: 'success',
+          title: 'Success!',
+          text: 'Category updated successfully!',
+          confirmButtonColor: '#3085d6',
+        });
+      } else {
+        // CREATE
+        const res = await fetch(`${base_url}api/admin/add-blog-category`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ blog_category: title }),
+        });
+
+        if (!res.ok) {
+          const error = await res.json();
+          throw new Error(error.message || 'Failed to create category');
+        }
+
+        await Swal.fire({
+          icon: 'success',
+          title: 'Success!',
+          text: 'Category created successfully!',
+          confirmButtonColor: '#3085d6',
+        });
       }
 
+      router.push('/astro-blog/category');
+    } catch (error: any) {
+      console.error('Error submitting category:', error);
       await Swal.fire({
-        icon: 'success',
-        title: 'Success!',
-        text: 'Category updated successfully!',
-        confirmButtonColor: '#3085d6',
+        icon: 'error',
+        title: 'Error!',
+        text: error.message || 'Something went wrong',
+        confirmButtonColor: '#d33',
       });
-    } else {
-      // CREATE
-      const res = await fetch(`${base_url}api/admin/add-blog-category`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ blog_category: title }),
-      });
-
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.message || 'Failed to create category');
-      }
-
-      await Swal.fire({
-        icon: 'success',
-        title: 'Success!',
-        text: 'Category created successfully!',
-        confirmButtonColor: '#3085d6',
-      });
+    } finally {
+      setLoading(false);
     }
-
-    router.push('/astro-blog/category');
-  } catch (error: any) {
-    console.error('Error submitting category:', error);
-    await Swal.fire({
-      icon: 'error',
-      title: 'Error!',
-      text: error.message || 'Something went wrong',
-      confirmButtonColor: '#d33',
-    });
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   return (
-    <div
-      style={{
-        padding: '20px',
-        backgroundColor: '#fff',
-        marginBottom: '20px',
-        boxShadow: '0px 0px 5px lightgrey',
-        borderRadius: '10px',
-      }}
-    >
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: '30px',
-          backgroundColor: '#fff',
-        }}
-      >
-        <div style={{ fontSize: '22px', fontWeight: '500', color: Color.black }}>
+    <div className="p-5 bg-white mb-5 shadow-md rounded-lg">
+      {/* Header */}
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-2xl font-medium" style={{ color: Color.black }}>
           {editCategory ? 'Edit' : 'Add'} Blog Category
-        </div>
-        <div
+        </h1>
+        <button
           onClick={() => router.push('/astro-blog/category')}
-          style={{
-            fontWeight: '500',
-            backgroundColor: Color.primary,
-            color: Color.white,
-            padding: '5px 10px',
-            borderRadius: '5px',
-            cursor: 'pointer',
-            fontSize: '14px',
-          }}
+          className="font-medium text-white px-4 py-2 rounded hover:opacity-90 text-sm"
+          style={{ backgroundColor: Color.primary }}
         >
           Display
-        </div>
+        </button>
       </div>
 
-      <Grid container sx={{ alignItems: 'center' }} spacing={3}>
-        <Grid item lg={12} md={12} sm={12} xs={12}>
-          <TextField
-            label={
-              <>
-                Title <span style={{ color: 'red' }}>*</span>
-              </>
-            }
-            variant="outlined"
-            fullWidth
+      {/* Form */}
+      <div className="space-y-6">
+        {/* Title Field */}
+        <div>
+          <label htmlFor="title" className="block text-sm font-medium mb-1.5 text-gray-700">
+            Title <span className="text-red-600">*</span>
+          </label>
+          <input
+            id="title"
+            type="text"
             name="title"
             value={inputFieldDetail.title}
             onChange={handleInputField}
-            error={!!inputFieldError.title}
-            helperText={inputFieldError.title}
             onFocus={() => handleInputFieldError('title', null)}
             disabled={loading}
+            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+              inputFieldError.title ? 'border-red-600' : 'border-gray-300'
+            } ${loading ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+            placeholder="Enter category title"
           />
-        </Grid>
+          {inputFieldError.title && (
+            <p className="text-red-600 text-xs mt-1">{inputFieldError.title}</p>
+          )}
+        </div>
 
-        <Grid item lg={12} md={12} sm={12} xs={12}>
-          <Grid container sx={{ justifyContent: 'space-between' }}>
-            <div
-              onClick={handleSubmit}
-              style={{
-                fontWeight: '500',
-                backgroundColor: loading ? '#ccc' : Color.primary,
-                color: Color.white,
-                padding: '10px 20px',
-                borderRadius: '5px',
-                cursor: loading ? 'not-allowed' : 'pointer',
-                fontSize: '15px',
-                opacity: loading ? 0.6 : 1,
-              }}
-            >
-              {loading ? 'Submitting...' : 'Submit'}
-            </div>
-          </Grid>
-        </Grid>
-      </Grid>
+        {/* Submit Button */}
+        <div className="flex justify-between">
+          <button
+            onClick={handleSubmit}
+            disabled={loading}
+            className="font-medium text-white px-5 py-2.5 rounded hover:opacity-90 text-sm disabled:opacity-60 disabled:cursor-not-allowed"
+            style={{ backgroundColor: loading ? '#ccc' : Color.primary }}
+          >
+            {loading ? 'Submitting...' : 'Submit'}
+          </button>
+        </div>
+      </div>
     </div>
   );
 };
@@ -247,16 +220,9 @@ const AddEditCategoryPage: React.FC = () => {
   return (
     <Suspense
       fallback={
-        <Box
-          sx={{
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            height: '50vh',
-          }}
-        >
-          <CircularProgress />
-        </Box>
+        <div className="flex justify-center items-center h-screen">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+        </div>
       }
     >
       <AddEditCategoryContent />

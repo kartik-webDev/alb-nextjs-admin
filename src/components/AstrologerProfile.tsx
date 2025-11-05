@@ -118,7 +118,7 @@ const AstrologerProfile: React.FC<AstrologerProfileProps> = ({ astrologerData })
       </div>
     )}
 
-    {/* Stats Grid - Full Width */}
+    {/* Stats grid - Full Width */}
     <div className="bg-gray-50 rounded-xl hidden border border-gray-200 p-3 mt-4">
       <div className="grid grid-cols-3 gap-3 text-center">
         <div>

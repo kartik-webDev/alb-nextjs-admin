@@ -2,11 +2,9 @@
 import { RechargeReport } from "@/components/charts/bar-chart";
 import { EarningChart, ServicesChart } from "@/components/charts/pie-chart";
 import { IndianRupee } from "@/utils/common-function";
-import { Grid } from "@mui/material";
 import moment from "moment";
 import { useEffect, useState } from "react";
 import { AstrologerSvg, BlogSvg, CustomerSvg, EarningSvg, RechargeSvg, ReviewSvg, TodayAstrologerSvg, TodayCustomerSvg } from "./svgs/page";
-
 
 // Types
 interface DashboardData {
@@ -78,57 +76,58 @@ const Dashboard = () => {
       setLoading(false);
     }
   };
-// Fetch recharge report
-const fetchRechargeReport = async () => {
-  try {
-    const month = rechargeReportDate.getMonth() + 1;
-    const year = rechargeReportDate.getFullYear();
-    
-    const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/api/admin/recharge-per-day-history?month=${month}&year=${year}`,
-      {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
-      }
-    );
-    
-    if (response.ok) {
-      const data = await response.json();
-      if (data.success) {
-        setRechargeReportData(data.rechargeReport || data.data || {});
-      }
-    }
-  } catch (error) {
-    console.error('Error fetching recharge report:', error);
-  }
-};
 
-// Fetch earning report
-const fetchEarningReport = async () => {
-  try {
-    if (!earningChartDate) return;
-    
-    const month = (earningChartDate.getMonth() + 1).toString().padStart(2, '0');
-    const year = earningChartDate.getFullYear();
-    
-    const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/api/admin/get_admin_earning?month=${month}&year=${year}`,
-      {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
+  // Fetch recharge report
+  const fetchRechargeReport = async () => {
+    try {
+      const month = rechargeReportDate.getMonth() + 1;
+      const year = rechargeReportDate.getFullYear();
+      
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/admin/recharge-per-day-history?month=${month}&year=${year}`,
+        {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          setRechargeReportData(data.rechargeReport || data.data || {});
+        }
       }
-    );
-    
-    if (response.ok) {
-      const data = await response.json();
-      if (data.success) {
-        setEarningReportData(data.earningReport || data.data || {});
-      }
+    } catch (error) {
+      console.error('Error fetching recharge report:', error);
     }
-  } catch (error) {
-    console.error('Error fetching earning report:', error);
-  }
-};
+  };
+
+  // Fetch earning report
+  const fetchEarningReport = async () => {
+    try {
+      if (!earningChartDate) return;
+      
+      const month = (earningChartDate.getMonth() + 1).toString().padStart(2, '0');
+      const year = earningChartDate.getFullYear();
+      
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/admin/get_admin_earning?month=${month}&year=${year}`,
+        {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          setEarningReportData(data.earningReport || data.data || {});
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching earning report:', error);
+    }
+  };
 
   // Fetch service used report
   const fetchServiceUsedReport = async () => {
@@ -193,162 +192,156 @@ const fetchEarningReport = async () => {
       </div>
 
       {/* Top Stats */}
-      <Grid container spacing={2}>
-        <Grid item lg={3} sm={12} md={12} xs={12}>
-          <div className="bg-white p-5 rounded-xl shadow-sm">
-            <div className="flex justify-between items-center">
-              <div className="flex flex-col gap-1">
-                <div className="text-sm text-gray-600">Total Astrologer</div>
-                <div className="text-2xl font-bold">{dashboardData?.totalAstrologer || 0}</div>
-              </div>
-              <AstrologerSvg />
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        {/* Total Astrologer */}
+        <div className="bg-white p-5 rounded-xl shadow-sm">
+          <div className="flex justify-between items-center">
+            <div className="flex flex-col gap-1">
+              <div className="text-sm text-gray-600">Total Astrologer</div>
+              <div className="text-2xl font-bold">{dashboardData?.totalAstrologer || 0}</div>
             </div>
+            <AstrologerSvg />
           </div>
-        </Grid>
-        <Grid item lg={3} sm={12} md={12} xs={12}>
-          <div className="bg-white p-5 rounded-xl shadow-sm">
-            <div className="flex justify-between items-center">
-              <div className="flex flex-col gap-1">
-                <div className="text-sm text-gray-600">Today Astrologer</div>
-                <div className="text-2xl font-bold">{dashboardData?.todayAstrologerRegistration || 0}</div>
-              </div>
-              <TodayAstrologerSvg />
+        </div>
+
+        {/* Today Astrologer */}
+        <div className="bg-white p-5 rounded-xl shadow-sm">
+          <div className="flex justify-between items-center">
+            <div className="flex flex-col gap-1">
+              <div className="text-sm text-gray-600">Today Astrologer</div>
+              <div className="text-2xl font-bold">{dashboardData?.todayAstrologerRegistration || 0}</div>
             </div>
+            <TodayAstrologerSvg />
           </div>
-        </Grid>
-        <Grid item lg={3} sm={12} md={12} xs={12}>
-          <div className="bg-white p-5 rounded-xl shadow-sm">
-            <div className="flex justify-between items-center">
-              <div className="flex flex-col gap-1">
-                <div className="text-sm text-gray-600">Total Customer</div>
-                <div className="text-2xl font-bold">{dashboardData?.totalCustomer || 0}</div>
-              </div>
-              <CustomerSvg />
+        </div>
+
+        {/* Total Customer */}
+        <div className="bg-white p-5 rounded-xl shadow-sm">
+          <div className="flex justify-between items-center">
+            <div className="flex flex-col gap-1">
+              <div className="text-sm text-gray-600">Total Customer</div>
+              <div className="text-2xl font-bold">{dashboardData?.totalCustomer || 0}</div>
             </div>
+            <CustomerSvg />
           </div>
-        </Grid>
-        <Grid item lg={3} sm={12} md={12} xs={12}>
-          <div className="bg-white p-5 rounded-xl shadow-sm">
-            <div className="flex justify-between items-center">
-              <div className="flex flex-col gap-1">
-                <div className="text-sm text-gray-600">Today Customer</div>
-                <div className="text-2xl font-bold">{dashboardData?.todayCustomerRegistration || 0}</div>
-              </div>
-              <TodayCustomerSvg/>
+        </div>
+
+        {/* Today Customer */}
+        <div className="bg-white p-5 rounded-xl shadow-sm">
+          <div className="flex justify-between items-center">
+            <div className="flex flex-col gap-1">
+              <div className="text-sm text-gray-600">Today Customer</div>
+              <div className="text-2xl font-bold">{dashboardData?.todayCustomerRegistration || 0}</div>
             </div>
+            <TodayCustomerSvg />
           </div>
-        </Grid>
-      </Grid>
+        </div>
+      </div>
 
       {/* Charts Section */}
-      <Grid container spacing={2}>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         {/* Recharge Report Chart */}
-        <Grid item lg={9} sm={12} md={12} xs={12}>
-        <div className="bg-white p-5 rounded-xl shadow-sm">
-  {/* Header with Month Picker */}
-  <div className="flex justify-between items-center mb-6">
-    <div className="flex-1 text-center text-lg font-semibold">
-      Recharge Report for
-    </div>
-    <input
-      value={moment(rechargeReportDate).format('YYYY-MM')}
-      onChange={(e) =>
-        setReportDate({
-          ...reportDate,
-          rechargeReportDate: new Date(e.target.value),
-        })
-      }
-      type="month"
-      className="py-1.5 px-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500 transition-colors ml-4"
-    />
-  </div>
-
-  {/* Chart */}
-  <div className="flex justify-center overflow-x-auto">
-    <RechargeReport rechargeReportData={rechargeReportData} />
-  </div>
-</div>
-
-        </Grid>
-
-        {/* Side Stats */}
-        <Grid item lg={3} sm={12} md={12} xs={12}>
-          <Grid container spacing={2}>
-            <Grid item xs={12}>
-              <div className="bg-white p-5 rounded-xl shadow-sm">
-                <div className="flex justify-between items-center">
-                  <div className="flex flex-col gap-1">
-                    <div className="text-sm text-gray-600">Total Earning</div>
-                    <div className="text-2xl font-bold">{IndianRupee(dashboardData?.totalAdminEarning || 0)}</div>
-                  </div>
-                  <EarningSvg />
-                </div>
-              </div>
-            </Grid>
-            <Grid item xs={12}>
-              <div className="bg-white p-5 rounded-xl shadow-sm">
-                <div className="flex justify-between items-center">
-                  <div className="flex flex-col gap-1">
-                    <div className="text-sm text-gray-600">Total Recharge</div>
-                    <div className="text-2xl font-bold">{IndianRupee(dashboardData?.totalRecharge || 0)}</div>
-                  </div>
-                  <RechargeSvg />
-                </div>
-              </div>
-            </Grid>
-            <Grid item xs={12}>
-              <div className="bg-white p-5 rounded-xl shadow-sm">
-                <div className="flex justify-between items-center">
-                  <div className="flex flex-col gap-1">
-                    <div className="text-sm text-gray-600">Total Reviews</div>
-                    <div className="text-2xl font-bold">{dashboardData?.totalReviews || 0}</div>
-                  </div>
-                  <ReviewSvg />
-                </div>
-              </div>
-            </Grid>
-            <Grid item xs={12}>
-              <div className="bg-white p-5 rounded-xl shadow-sm">
-                <div className="flex justify-between items-center">
-                  <div className="flex flex-col gap-1">
-                    <div className="text-sm text-gray-600">Total Blogs</div>
-                    <div className="text-2xl font-bold">{dashboardData?.totalBlogs || 0}</div>
-                  </div>
-                  <BlogSvg />
-                </div>
-              </div>
-            </Grid>
-          </Grid>
-        </Grid>
-      </Grid>
-
-      {/* Bottom Charts */}
-      <Grid container spacing={2}>
-        <Grid item lg={6} md={6} sm={12} xs={12}>
+        <div className="lg:col-span-9">
           <div className="bg-white p-5 rounded-xl shadow-sm">
-            <div className="text-lg font-semibold mb-4">Services Used</div>
-            <div className="flex justify-center">
-              <ServicesChart serviceUsedReportData={serviceUsedReportData} />
-            </div>
-          </div>
-        </Grid>
-        <Grid item lg={6} md={6} sm={12} xs={12}>
-          <div className="bg-white p-5 rounded-xl shadow-sm">
-            <div className="flex justify-between items-center mb-4">
-              <div className="text-lg font-semibold">Earning Chart</div>
+            {/* Header with Month Picker */}
+            <div className="flex justify-between items-center mb-6">
+              <div className="flex-1 text-center text-lg font-semibold">
+                Recharge Report for
+              </div>
               <input
-                value={earningChartDate ? moment(earningChartDate).format('YYYY-MM') : ''}
-                onChange={(e) => setReportDate({ ...reportDate, earningChartDate: e.target.value ? new Date(e.target.value) : null })}
+                value={moment(rechargeReportDate).format('YYYY-MM')}
+                onChange={(e) =>
+                  setReportDate({
+                    ...reportDate,
+                    rechargeReportDate: new Date(e.target.value),
+                  })
+                }
                 type="month"
                 className="py-1.5 px-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500 transition-colors"
               />
             </div>
-            <div className="flex justify-center">
-              <EarningChart earningReportData={earningReportData} />
+
+            {/* Chart */}
+            <div className="flex justify-center overflow-x-auto">
+              <RechargeReport rechargeReportData={rechargeReportData} />
             </div>
           </div>
-        </Grid>
-      </Grid>
+        </div>
+
+        {/* Side Stats */}
+        <div className="lg:col-span-3 space-y-4">
+          {/* Total Earning */}
+          <div className="bg-white p-5 rounded-xl shadow-sm">
+            <div className="flex justify-between items-center">
+              <div className="flex flex-col gap-1">
+                <div className="text-sm text-gray-600">Total Earning</div>
+                <div className="text-2xl font-bold">{IndianRupee(dashboardData?.totalAdminEarning || 0)}</div>
+              </div>
+              <EarningSvg />
+            </div>
+          </div>
+
+          {/* Total Recharge */}
+          <div className="bg-white p-5 rounded-xl shadow-sm">
+            <div className="flex justify-between items-center">
+              <div className="flex flex-col gap-1">
+                <div className="text-sm text-gray-600">Total Recharge</div>
+                <div className="text-2xl font-bold">{IndianRupee(dashboardData?.totalRecharge || 0)}</div>
+              </div>
+              <RechargeSvg />
+            </div>
+          </div>
+
+          {/* Total Reviews */}
+          <div className="bg-white p-5 rounded-xl shadow-sm">
+            <div className="flex justify-between items-center">
+              <div className="flex flex-col gap-1">
+                <div className="text-sm text-gray-600">Total Reviews</div>
+                <div className="text-2xl font-bold">{dashboardData?.totalReviews || 0}</div>
+              </div>
+              <ReviewSvg />
+            </div>
+          </div>
+
+          {/* Total Blogs */}
+          <div className="bg-white p-5 rounded-xl shadow-sm">
+            <div className="flex justify-between items-center">
+              <div className="flex flex-col gap-1">
+                <div className="text-sm text-gray-600">Total Blogs</div>
+                <div className="text-2xl font-bold">{dashboardData?.totalBlogs || 0}</div>
+              </div>
+              <BlogSvg />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Bottom Charts */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Services Used */}
+        <div className="bg-white p-5 rounded-xl shadow-sm">
+          <div className="text-lg font-semibold mb-4">Services Used</div>
+          <div className="flex justify-center">
+            <ServicesChart serviceUsedReportData={serviceUsedReportData} />
+          </div>
+        </div>
+
+        {/* Earning Chart */}
+        <div className="bg-white p-5 rounded-xl shadow-sm">
+          <div className="flex justify-between items-center mb-4">
+            <div className="text-lg font-semibold">Earning Chart</div>
+            <input
+              value={earningChartDate ? moment(earningChartDate).format('YYYY-MM') : ''}
+              onChange={(e) => setReportDate({ ...reportDate, earningChartDate: e.target.value ? new Date(e.target.value) : null })}
+              type="month"
+              className="py-1.5 px-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500 transition-colors"
+            />
+          </div>
+          <div className="flex justify-center">
+            <EarningChart earningReportData={earningReportData} />
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

@@ -14,7 +14,7 @@ const LoadingSkeleton: React.FC = () => {
           <Skeleton height={20} width={200} />
         </div>
 
-        {/* Main Content Grid */}
+        {/* Main Content grid */}
         <div className="grid grid-cols-1 lg:grid-cols-9 gap-8">
           
           {/* Left Column - Profile Info */}

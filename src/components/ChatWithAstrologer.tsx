@@ -215,7 +215,7 @@ useEffect(() => {
   return (
     <section className='px-4 pb-6 min-h-screen'>
       <article className='max-w-7xl mx-auto space-y-6'>
-        {/* Consultants Grid - 2 columns on mobile, 3 on tablet, 4 on desktop */}
+        {/* Consultants grid - 2 columns on mobile, 3 on tablet, 4 on desktop */}
         <div className='grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-1 md:gap-4 pt-2'>
   {astrologerData?.map((astrologer, value) => {
   return (

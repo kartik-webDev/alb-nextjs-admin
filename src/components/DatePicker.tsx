@@ -246,7 +246,7 @@ const DatePicker: React.FC<DatePickerProps> = ({
             </div>
           )}
 
-          {/* Calendar Grid */}
+          {/* Calendar grid */}
           {!loadingDates && (
             <>
               {/* Week day headers */}

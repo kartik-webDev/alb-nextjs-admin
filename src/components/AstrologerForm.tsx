@@ -1,27 +1,6 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import moment from 'moment';
-import {
-  Grid,
-  TextField,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  Checkbox,
-  FormGroup,
-  FormControlLabel,
-  FormLabel,
-  Button,
-  Avatar,
-  IconButton,
-  InputAdornment,
-  Box,
-  Typography,
-  SelectChangeEvent,
-  CircularProgress,
-} from '@mui/material';
-import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { Country, State, City } from 'country-state-city';
 import { Color } from '@/assets/colors';
 import { calculateAge, get_date_value } from '@/utils/common-function';
@@ -50,7 +29,6 @@ interface ConsultationPrice {
   price: number;
 }
 
-/* ────────────────────── FORM STATE (API‑exact) ────────────────────── */
 interface AstrologerFormData {
   astrologerName: string;
   displayName: string;
@@ -106,18 +84,15 @@ interface AstrologerFormData {
   long_bio: string;
 }
 
-/* ────────────────────── PROPS ────────────────────── */
 interface Props {
   mode: 'Add' | 'Edit';
   initialData?: any;
   onSnack: (snack: { open: boolean; message: string }) => void;
 }
 
-/* ────────────────────── MAIN COMPONENT ────────────────────── */
 export default function AstrologerForm({ mode, initialData, onSnack }: Props) {
   const isEdit = mode === 'Edit';
 
-  /* ────── INITIAL FORM STATE ────── */
   const [form, setForm] = useState<AstrologerFormData>({
     astrologerName: initialData?.astrologerName || '',
     displayName: initialData?.displayName || '',
@@ -192,7 +167,6 @@ export default function AstrologerForm({ mode, initialData, onSnack }: Props) {
   const [selectedMainExpertise, setSelectedMainExpertise] = useState<string[]>(
     initialData?.mainExpertise?.map((e: any) => e._id) || []
   );
-
   const [selectedLanguages, setSelectedLanguages] = useState<string[]>(
     initialData?.language?.map((l: any) => l.languageName) || []
   );
@@ -221,7 +195,6 @@ export default function AstrologerForm({ mode, initialData, onSnack }: Props) {
   const [selectedCountry, setSelectedCountry] = useState<any>({ name: 'India', isoCode: 'IN' });
   const [selectedState, setSelectedState] = useState<any>({});
 
-  /* ────── FETCH LOOKUPS ────── */
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
@@ -268,8 +241,6 @@ export default function AstrologerForm({ mode, initialData, onSnack }: Props) {
           if (cpRes.ok) {
             const cpData = await cpRes.json();
             setConsultationPrices(cpData?.data || []);
-          } else {
-            console.error('Failed to fetch consultation prices');
           }
         }
       } catch (err) {
@@ -281,23 +252,31 @@ export default function AstrologerForm({ mode, initialData, onSnack }: Props) {
     fetchData();
   }, [isEdit, initialData?._id, onSnack]);
 
-  /* ────── HANDLERS ────── */
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setForm(prev => ({ ...prev, [name]: value }));
     setErrors(prev => ({ ...prev, [name]: '' }));
   };
 
-  const handleSelectChange = (e: SelectChangeEvent<string>) => {
+  const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const { name, value } = e.target;
     setForm(prev => ({ ...prev, [name]: value }));
     setErrors(prev => ({ ...prev, [name]: '' }));
+
+    if (name === 'country') {
+      const country = Country.getAllCountries().find((c: any) => c.name === value);
+      setSelectedCountry(country || { name: 'India', isoCode: 'IN' });
+    }
+    if (name === 'state') {
+      const state = State.getStatesOfCountry(selectedCountry.isoCode).find((s: any) => s.name === value);
+      setSelectedState(state || {});
+    }
   };
 
-  const handleMultiSelectChange = (e: SelectChangeEvent<string[]>) => {
+  const handleMultiSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const { name, value } = e.target;
-    if (name === 'language') setSelectedLanguages(value as string[]);
-    setForm(prev => ({ ...prev, [name]: value }));
+    const selected = Array.from(e.target.selectedOptions, option => option.value);
+    if (name === 'language') setSelectedLanguages(selected);
   };
 
   const handleImage = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -334,7 +313,6 @@ export default function AstrologerForm({ mode, initialData, onSnack }: Props) {
     setter(prev => (prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]));
   };
 
-  /* ────── VALIDATION ────── */
   const validate = () => {
     const newErrors: Record<string, string> = {};
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -342,7 +320,7 @@ export default function AstrologerForm({ mode, initialData, onSnack }: Props) {
 
     if (!form.astrologerName) newErrors.astrologerName = 'Name required';
     if (!emailRegex.test(form.email)) newErrors.email = 'Invalid email';
-    if (!mobileRegex.test(form.phoneNumber)) newErrors.phoneNumber = '10‑digit mobile required';
+    if (!mobileRegex.test(form.phoneNumber)) newErrors.phoneNumber = '10-digit mobile required';
     if (!isEdit && !form.password) newErrors.password = 'Password required';
     if (form.password !== form.confirm_password) newErrors.confirm_password = 'Passwords must match';
     if (!form.dateOfBirth) newErrors.dateOfBirth = 'DOB required';
@@ -358,12 +336,10 @@ export default function AstrologerForm({ mode, initialData, onSnack }: Props) {
     return Object.keys(newErrors).length === 0;
   };
 
-  /* ────── SUBMIT ────── */
   const handleSubmit = async () => {
     if (!validate()) return;
 
     const formData = new FormData();
-
     Object.entries(form).forEach(([key, value]) => {
       if (Array.isArray(value)) value.forEach(v => formData.append(`${key}[]`, v));
       else formData.append(key, value);
@@ -406,428 +382,647 @@ export default function AstrologerForm({ mode, initialData, onSnack }: Props) {
     }
   };
 
-  if (loading) return <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}><CircularProgress /></Box>;
+  if (loading) {
+    return (
+      <div className="flex justify-center p-8">
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
 
-  /* ────── RENDER ────── */
   return (
-    <Grid container spacing={3}>
-      {/* ── PROFILE IMAGE ── */}
-      <Grid item xs={12} md={4}>
-        <Box sx={{ border: '1px solid #C4C4C4', borderRadius: 1, p: 2 }}>
-          <Grid container spacing={2} alignItems="center">
-            <Grid item xs={3}>
-              <Avatar src={image.file || '/placeholder-avatar.jpg'} sx={{ width: 54, height: 54, borderRadius: 0, objectFit: 'contain' }} />
-            </Grid>
-            <Grid item xs={9}>
-              <label htmlFor="upload-image" style={{ cursor: 'pointer' }}>
-                <Typography variant="caption" color="error">*</Typography> Choose Astrologer Image
-                <Typography variant="caption" sx={{ color: 'green', fontSize: '10px' }}>
-                  {/* png / jpg / jpeg (< 500KB) */}
-                </Typography>
+    <div className="space-y-6">
+      {/* Profile Image */}
+      <div className="md:col-span-4">
+        <div className="border border-gray-300 rounded-md p-4">
+          <div className="flex items-center space-x-4">
+            <div className="w-14 h-14">
+              <img
+                src={image.file || '/placeholder-avatar.jpg'}
+                alt="Profile"
+                className="w-full h-full object-contain rounded"
+              />
+            </div>
+            <div>
+              <label htmlFor="upload-image" className="cursor-pointer block">
+                <span className="text-red-500">*</span> Choose Astrologer Image
+                <span className="text-green-600 text-xs block">png / jpg / jpeg (&lt; 500KB)</span>
                 <input id="upload-image" type="file" accept="image/*" hidden onChange={handleImage} />
               </label>
-            </Grid>
-          </Grid>
-        </Box>
-        {errors.image && <Typography color="error" variant="caption">{errors.image}</Typography>}
-      </Grid>
+            </div>
+          </div>
+        </div>
+        {errors.image && <p className="text-red-600 text-sm mt-1">{errors.image}</p>}
+      </div>
 
-      {/* ── BASIC INFO ── */}
-      <Grid item xs={12} md={4}>
-        <TextField fullWidth label={<>Full Name <span style={{ color: 'red' }}>*</span></>} name="astrologerName" value={form.astrologerName} onChange={handleChange} error={!!errors.astrologerName} helperText={errors.astrologerName} />
-      </Grid>
-      <Grid item xs={12} md={4}>
-        <TextField fullWidth label="Display Name" name="displayName" value={form.displayName} onChange={handleChange} />
-      </Grid>
+      {/* Basic Info */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            Full Name <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            name="astrologerName"
+            value={form.astrologerName}
+            onChange={handleChange}
+            className={`mt-1 block w-full rounded-md border ${errors.astrologerName ? 'border-red-500' : 'border-gray-300'} px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500`}
+          />
+          {errors.astrologerName && <p className="text-red-600 text-sm mt-1">{errors.astrologerName}</p>}
+        </div>
 
-      <Grid item xs={12} md={4}>
-        <TextField fullWidth label={<>Email <span style={{ color: 'red' }}>*</span></>} name="email" value={form.email} onChange={handleChange} error={!!errors.email} helperText={errors.email} />
-      </Grid>
-      <Grid item xs={12} md={4}>
-        <TextField fullWidth label={<>Mobile Number <span style={{ color: 'red' }}>*</span></>} name="phoneNumber" value={form.phoneNumber} onChange={handleChange} error={!!errors.phoneNumber} helperText={errors.phoneNumber} />
-      </Grid>
-      <Grid item xs={12} md={4}>
-        <TextField fullWidth label="Alternate Mobile" name="alternateNumber" value={form.alternateNumber} onChange={handleChange} />
-      </Grid>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Display Name</label>
+          <input
+            type="text"
+            name="displayName"
+            value={form.displayName}
+            onChange={handleChange}
+            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
 
-      <Grid item xs={12} md={4}>
-        <FormControl fullWidth>
-          <InputLabel>Currency *</InputLabel>
-          <Select name="currency" value={form.consultation_price ? 'INR' : ''} onChange={handleSelectChange}>
-            <MenuItem value="INR">INR</MenuItem>
-          </Select>
-        </FormControl>
-      </Grid>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            Email <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="email"
+            name="email"
+            value={form.email}
+            onChange={handleChange}
+            className={`mt-1 block w-full rounded-md border ${errors.email ? 'border-red-500' : 'border-gray-300'} px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500`}
+          />
+          {errors.email && <p className="text-red-600 text-sm mt-1">{errors.email}</p>}
+        </div>
 
-      <Grid item xs={12} md={4}>
-        <FormControl fullWidth>
-          <InputLabel>Gender *</InputLabel>
-          <Select name="gender" value={form.gender} onChange={handleSelectChange}>
-            <MenuItem value="Male">Male</MenuItem>
-            <MenuItem value="Female">Female</MenuItem>
-            <MenuItem value="Other">Other</MenuItem>
-          </Select>
-        </FormControl>
-      </Grid>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            Mobile Number <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            name="phoneNumber"
+            value={form.phoneNumber}
+            onChange={handleChange}
+            className={`mt-1 block w-full rounded-md border ${errors.phoneNumber ? 'border-red-500' : 'border-gray-300'} px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500`}
+          />
+          {errors.phoneNumber && <p className="text-red-600 text-sm mt-1">{errors.phoneNumber}</p>}
+        </div>
 
-      {/* ── PASSWORD (ADD ONLY) ── */}
-      {!isEdit && (
-        <>
-          <Grid item xs={12} md={4}>
-            <TextField
-              fullWidth
-              label={<>Password <span style={{ color: 'red' }}>*</span></>}
-              type={showPassword ? 'text' : 'password'}
-              name="password"
-              value={form.password}
-              onChange={handleChange}
-              error={!!errors.password}
-              helperText={errors.password}
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton onClick={() => setShowPassword(!showPassword)}>
-                      {showPassword ? <VisibilityOff /> : <Visibility />}
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              }}
-            />
-          </Grid>
-          <Grid item xs={12} md={4}>
-            <TextField
-              fullWidth
-              label={<>Confirm Password <span style={{ color: 'red' }}>*</span></>}
-              type={showConfirmPassword ? 'text' : 'password'}
-              name="confirm_password"
-              value={form.confirm_password}
-              onChange={handleChange}
-              error={!!errors.confirm_password}
-              helperText={errors.confirm_password}
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
-                      {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              }}
-            />
-          </Grid>
-        </>
-      )}
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Alternate Mobile</label>
+          <input
+            type="text"
+            name="alternateNumber"
+            value={form.alternateNumber}
+            onChange={handleChange}
+            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
 
-      {/* ── DOB & EXPERIENCE ── */}
-      <Grid item xs={12} md={4}>
-        <TextField
-          fullWidth
-          label={<>Date of Birth <span style={{ color: 'red' }}>*</span></>}
-          type="date"
-          name="dateOfBirth"
-          value={form.dateOfBirth}
-          onChange={handleChange}
-          error={!!errors.dateOfBirth}
-          helperText={errors.dateOfBirth}
-          InputLabelProps={{ shrink: true }}
-          inputProps={{ max: get_date_value(18) }}
-        />
-      </Grid>
-      <Grid item xs={12} md={4}>
-        <TextField
-          fullWidth
-          label={<>Experience (years) <span style={{ color: 'red' }}>*</span></>}
-          type="number"
-          name="experience"
-          value={form.experience}
-          onChange={handleChange}
-          error={!!errors.experience}
-          helperText={errors.experience}
-          inputProps={{ min: 0 }}
-        />
-      </Grid>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Currency *</label>
+          <select
+            name="currency"
+            value={form.consultation_price ? 'INR' : ''}
+            onChange={handleSelectChange}
+            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="INR">INR</option>
+          </select>
+        </div>
 
-      {/* ── LANGUAGES ── */}
-      <Grid item xs={12} md={4}>
-        <FormControl fullWidth error={!!errors.language}>
-          <InputLabel>Select Language *</InputLabel>
-          <Select name="language" multiple value={selectedLanguages} onChange={handleMultiSelectChange}>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Gender *</label>
+          <select
+            name="gender"
+            value={form.gender}
+            onChange={handleSelectChange}
+            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="">Select</option>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+
+        {!isEdit && (
+          <>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Password <span className="text-red-500">*</span>
+              </label>
+              <div className="mt-1 relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  name="password"
+                  value={form.password}
+                  onChange={handleChange}
+                  className={`block w-full rounded-md border ${errors.password ? 'border-red-500' : 'border-gray-300'} px-3 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                >
+                  {showPassword ? (
+                    <svg className="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                  ) : (
+                    <svg className="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                    </svg>
+                  )}
+                </button>
+              </div>
+              {errors.password && <p className="text-red-600 text-sm mt-1">{errors.password}</p>}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Confirm Password <span className="text-red-500">*</span>
+              </label>
+              <div className="mt-1 relative">
+                <input
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  name="confirm_password"
+                  value={form.confirm_password}
+                  onChange={handleChange}
+                  className={`block w-full rounded-md border ${errors.confirm_password ? 'border-red-500' : 'border-gray-300'} px-3 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                >
+                  {showConfirmPassword ? (
+                    <svg className="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                  ) : (
+                    <svg className="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                    </svg>
+                  )}
+                </button>
+              </div>
+              {errors.confirm_password && <p className="text-red-600 text-sm mt-1">{errors.confirm_password}</p>}
+            </div>
+          </>
+        )}
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            Date of Birth <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="date"
+            name="dateOfBirth"
+            value={form.dateOfBirth}
+            onChange={handleChange}
+            max={get_date_value(18)}
+            className={`mt-1 block w-full rounded-md border ${errors.dateOfBirth ? 'border-red-500' : 'border-gray-300'} px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500`}
+          />
+          {errors.dateOfBirth && <p className="text-red-600 text-sm mt-1">{errors.dateOfBirth}</p>}
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            Experience (years) <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="number"
+            name="experience"
+            value={form.experience}
+            onChange={handleChange}
+            min="0"
+            className={`mt-1 block w-full rounded-md border ${errors.experience ? 'border-red-500' : 'border-gray-300'} px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500`}
+          />
+          {errors.experience && <p className="text-red-600 text-sm mt-1">{errors.experience}</p>}
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            Select Language <span className="text-red-500">*</span>
+          </label>
+          <select
+            name="language"
+            multiple
+            value={selectedLanguages}
+            onChange={handleMultiSelectChange}
+            className={`mt-1 block w-full rounded-md border ${errors.language ? 'border-red-500' : 'border-gray-300'} px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 h-32`}
+          >
             {languages.map(l => (
-              <MenuItem key={l._id} value={l.languageName}>{l.languageName}</MenuItem>
+              <option key={l._id} value={l.languageName}>{l.languageName}</option>
             ))}
-          </Select>
-          {errors.language && <Typography color="error" variant="caption">{errors.language}</Typography>}
-        </FormControl>
-      </Grid>
+          </select>
+          {errors.language && <p className="text-red-600 text-sm mt-1">{errors.language}</p>}
+        </div>
+      </div>
 
-      {/* ── ADDRESS ── */}
-      <Grid item xs={12} md={8}>
-        <TextField fullWidth label="Address" name="address" value={form.address} onChange={handleChange} />
-      </Grid>
+      {/* Address */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="md:col-span-2">
+          <label className="block text-sm font-medium text-gray-700">Address</label>
+          <input
+            type="text"
+            name="address"
+            value={form.address}
+            onChange={handleChange}
+            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
 
-      <Grid item xs={12} md={4}>
-        <FormControl fullWidth>
-          <InputLabel>Country *</InputLabel>
-          <Select
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Country *</label>
+          <select
             name="country"
             value={form.country}
-            onChange={(e: SelectChangeEvent<string>) => {
-              handleSelectChange(e);
-              const country = Country.getAllCountries().find((c: any) => c.name === e.target.value);
-              setSelectedCountry(country || { name: 'India', isoCode: 'IN' });
-            }}
+            onChange={handleSelectChange}
+            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             {Country.getAllCountries().map((c: any) => (
-              <MenuItem key={c.isoCode} value={c.name}>{c.name}</MenuItem>
+              <option key={c.isoCode} value={c.name}>{c.name}</option>
             ))}
-          </Select>
-        </FormControl>
-      </Grid>
+          </select>
+        </div>
 
-      <Grid item xs={12} md={4}>
-        <FormControl fullWidth>
-          <InputLabel>State *</InputLabel>
-          <Select
+        <div>
+          <label className="block text-sm font-medium text-gray-700">State *</label>
+          <select
             name="state"
             value={form.state}
-            onChange={(e: SelectChangeEvent<string>) => {
-              handleSelectChange(e);
-              const state = State.getStatesOfCountry(selectedCountry.isoCode).find((s: any) => s.name === e.target.value);
-              setSelectedState(state || {});
-            }}
+            onChange={handleSelectChange}
+            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
+            <option value="">Select State</option>
             {State.getStatesOfCountry(selectedCountry.isoCode).map((s: any) => (
-              <MenuItem key={s.isoCode} value={s.name}>{s.name}</MenuItem>
+              <option key={s.isoCode} value={s.name}>{s.name}</option>
             ))}
-          </Select>
-        </FormControl>
-      </Grid>
+          </select>
+        </div>
 
-      <Grid item xs={12} md={4}>
-        <FormControl fullWidth>
-          <InputLabel>City *</InputLabel>
-          <Select name="city" value={form.city} onChange={handleSelectChange}>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">City *</label>
+          <select
+            name="city"
+            value={form.city}
+            onChange={handleSelectChange}
+            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="">Select City</option>
             {City.getCitiesOfState(selectedState.countryCode || 'IN', selectedState.isoCode || '')?.map((c: any) => (
-              <MenuItem key={c.name} value={c.name}>{c.name}</MenuItem>
+              <option key={c.name} value={c.name}>{c.name}</option>
             ))}
-          </Select>
-        </FormControl>
-      </Grid>
+          </select>
+        </div>
 
-      <Grid item xs={12} md={4}>
-        <TextField fullWidth label="Pin Code" name="zipCode" value={form.zipCode} onChange={handleChange} />
-      </Grid>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Pin Code</label>
+          <input
+            type="text"
+            name="zipCode"
+            value={form.zipCode}
+            onChange={handleChange}
+            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+      </div>
 
-      {/* ── BANK DETAILS ── */}
-      <Grid item xs={12} md={4}>
-        <TextField fullWidth label="Bank Name" name="bank_name" value={form.bank_name} onChange={handleChange} />
-      </Grid>
-      <Grid item xs={12} md={4}>
-        <TextField fullWidth label={<>Account Number <span style={{ color: 'red' }}>*</span></>} name="account_number" value={form.account_number} onChange={handleChange} />
-      </Grid>
-      <Grid item xs={12} md={4}>
-        <FormControl fullWidth>
-          <InputLabel>Account Type</InputLabel>
-          <Select name="account_type" value={form.account_type} onChange={handleSelectChange}>
-            <MenuItem value="saving">Saving</MenuItem>
-            <MenuItem value="current">Current</MenuItem>
-          </Select>
-        </FormControl>
-      </Grid>
+      {/* Bank Details */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Bank Name</label>
+          <input
+            type="text"
+            name="bank_name"
+            value={form.bank_name}
+            onChange={handleChange}
+            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
 
-      <Grid item xs={12} md={4}>
-        <TextField fullWidth label="Account Holder Name" name="account_holder_name" value={form.account_holder_name} onChange={handleChange} />
-      </Grid>
-      <Grid item xs={12} md={4}>
-        <TextField fullWidth label="IFSC Code" name="IFSC_code" value={form.IFSC_code} onChange={handleChange} />
-      </Grid>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            Account Number <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            name="account_number"
+            value={form.account_number}
+            onChange={handleChange}
+            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
 
-      <Grid item xs={12} md={4}>
-        <TextField fullWidth label={<>Aadhar Number <span style={{ color: 'red' }}>*</span></>} name="aadharNumber" value={form.aadharNumber} onChange={handleChange} />
-      </Grid>
-      <Grid item xs={12} md={4}>
-        <TextField fullWidth label={<>PAN Number <span style={{ color: 'red' }}>*</span></>} name="panCard" value={form.panCard} onChange={handleChange} />
-      </Grid>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Account Type</label>
+          <select
+            name="account_type"
+            value={form.account_type}
+            onChange={handleSelectChange}
+            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="">Select</option>
+            <option value="saving">Saving</option>
+            <option value="current">Current</option>
+          </select>
+        </div>
 
-      {/* ── PROOFS ── */}
-      <Grid item xs={12} md={6}>
-        <Box sx={{ border: '1px solid #C4C4C4', borderRadius: 1, p: 2 }}>
-          <Grid container spacing={2}>
-            <Grid item xs={3}>
-              <Avatar src={bankProof.file || '/placeholder-doc.jpg'} sx={{ width: 56, height: 56 }} />
-            </Grid>
-            <Grid item xs={9}>
-              <label htmlFor="upload-bank-proof" style={{ cursor: 'pointer' }}>
-                Upload Bank Proof
-                <Typography variant="caption" sx={{ color: 'green', fontSize: '10px' }}>
-                  png / jpg / jpeg
-                </Typography>
-                <input id="upload-bank-proof" type="file" accept="image/*" hidden onChange={e => {
-                  const f = e.target.files?.[0];
-                  if (f) setBankProof({ file: URL.createObjectURL(f), bytes: f });
-                }} />
-              </label>
-            </Grid>
-          </Grid>
-        </Box>
-      </Grid>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Account Holder Name</label>
+          <input
+            type="text"
+            name="account_holder_name"
+            value={form.account_holder_name}
+            onChange={handleChange}
+            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
 
-      <Grid item xs={12} md={6}>
-        <Box sx={{ border: '1px solid #C4C4C4', borderRadius: 1, p: 2 }}>
-          <Grid container spacing={2}>
-            <Grid item xs={3}>
-              <Avatar src={idProof.file || '/placeholder-doc.jpg'} sx={{ width: 56, height: 56 }} />
-            </Grid>
-            <Grid item xs={9}>
-              <label htmlFor="upload-id-proof" style={{ cursor: 'pointer' }}>
-                Upload ID Proof
-                <Typography variant="caption" sx={{ color: 'green', fontSize: '10px' }}>
-                  png / jpg / jpeg
-                </Typography>
-                <input id="upload-id-proof" type="file" accept="image/*" hidden onChange={e => {
-                  const f = e.target.files?.[0];
-                  if (f) setIdProof({ file: URL.createObjectURL(f), bytes: f });
-                }} />
-              </label>
-            </Grid>
-          </Grid>
-        </Box>
-      </Grid>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">IFSC Code</label>
+          <input
+            type="text"
+            name="IFSC_code"
+            value={form.IFSC_code}
+            onChange={handleChange}
+            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
 
-      {/* ── BULK IMAGES / VIDEOS ── */}
-      <Grid item xs={12}>
-        <Box sx={{ border: bulkImages.length ? `1px solid ${Color.primary}` : '1px solid #C4C4C4', borderRadius: 1, p: 2, mb: 2 }}>
-          <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mb: 2 }}>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            Aadhar Number <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            name="aadharNumber"
+            value={form.aadharNumber}
+            onChange={handleChange}
+            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            PAN Number <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            name="panCard"
+            value={form.panCard}
+            onChange={handleChange}
+            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+      </div>
+
+      {/* Proofs */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <div className="border border-gray-300 rounded-md p-4">
+            <div className="flex items-center space-x-4">
+              <div className="w-14 h-14">
+                <img
+                  src={bankProof.file || '/placeholder-doc.jpg'}
+                  alt="Bank Proof"
+                  className="w-full h-full object-cover rounded"
+                />
+              </div>
+              <div>
+                <label htmlFor="upload-bank-proof" className="cursor-pointer block">
+                  Upload Bank Proof
+                  <span className="text-green-600 text-xs block">png / jpg / jpeg</span>
+                  <input id="upload-bank-proof" type="file" accept="image/*" hidden onChange={e => {
+                    const f = e.target.files?.[0];
+                    if (f) setBankProof({ file: URL.createObjectURL(f), bytes: f });
+                  }} />
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div className="border border-gray-300 rounded-md p-4">
+            <div className="flex items-center space-x-4">
+              <div className="w-14 h-14">
+                <img
+                  src={idProof.file || '/placeholder-doc.jpg'}
+                  alt="ID Proof"
+                  className="w-full h-full object-cover rounded"
+                />
+              </div>
+              <div>
+                <label htmlFor="upload-id-proof" className="cursor-pointer block">
+                  Upload ID Proof
+                  <span className="text-green-600 text-xs block">png / jpg / jpeg</span>
+                  <input id="upload-id-proof" type="file" accept="image/*" hidden onChange={e => {
+                    const f = e.target.files?.[0];
+                    if (f) setIdProof({ file: URL.createObjectURL(f), bytes: f });
+                  }} />
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Bulk Images */}
+      <div>
+        <div className={`border ${bulkImages.length ? 'border-blue-600' : 'border-gray-300'} rounded-md p-4 mb-4`}>
+          <div className="flex flex-wrap gap-4 mb-4">
             {bulkImages.map((img, i) => (
-              <Box key={i} sx={{ position: 'relative' }}>
-                <Avatar src={img.file} sx={{ width: 150, height: 150, borderRadius: 0 }} />
-                <IconButton size="small" sx={{ position: 'absolute', top: -10, right: -10, bgcolor: 'white' }} onClick={() => removeBulk(i, 'image')}>
+              <div key={i} className="relative">
+                <img src={img.file} alt="" className="w-36 h-36 object-cover rounded" />
+                <button
+                  onClick={() => removeBulk(i, 'image')}
+                  className="absolute -top-2 -right-2 bg-white rounded-full p-1 shadow-md"
+                >
                   <CrossSvg />
-                </IconButton>
-              </Box>
+                </button>
+              </div>
             ))}
-          </Box>
-          <label htmlFor="upload-bulk-image" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', cursor: 'pointer', backgroundColor: '#F1F1F7', padding: '8px', borderRadius: '4px' }}>
+          </div>
+          <label
+            htmlFor="upload-bulk-image"
+            className="flex items-center justify-center gap-2 cursor-pointer bg-gray-100 p-3 rounded-md"
+          >
             <UploadImageSvg h="25" w="25" color="#000" />
-            <Typography fontWeight={600}>Upload Image</Typography>
+            <span className="font-semibold">Upload Image</span>
           </label>
           <input id="upload-bulk-image" type="file" accept="image/*" hidden onChange={e => handleBulk(e, 'image')} />
-        </Box>
-      </Grid>
+        </div>
+      </div>
 
-      <Grid item xs={12}>
-        <Box sx={{ border: bulkVideos.length ? `1px solid ${Color.primary}` : '1px solid #C4C4C4', borderRadius: 1, p: 2 }}>
-          <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mb: 2 }}>
+      {/* Bulk Videos */}
+      <div>
+        <div className={`border ${bulkVideos.length ? 'border-blue-600' : 'border-gray-300'} rounded-md p-4`}>
+          <div className="flex flex-wrap gap-4 mb-4">
             {bulkVideos.map((vid, i) => (
-              <Box key={i} sx={{ position: 'relative' }}>
-                <video controls style={{ width: 150, height: 150 }}>
+              <div key={i} className="relative">
+                <video controls className="w-36 h-36 rounded">
                   <source src={vid.file} />
                 </video>
-                <IconButton size="small" sx={{ position: 'absolute', top: -10, right: -10, bgcolor: 'white' }} onClick={() => removeBulk(i, 'video')}>
+                <button
+                  onClick={() => removeBulk(i, 'video')}
+                  className="absolute -top-2 -right-2 bg-white rounded-full p-1 shadow-md"
+                >
                   <CrossSvg />
-                </IconButton>
-              </Box>
+                </button>
+              </div>
             ))}
-          </Box>
-          <label htmlFor="upload-bulk-video" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', cursor: 'pointer', backgroundColor: '#F1F1F7', padding: '8px', borderRadius: '4px' }}>
+          </div>
+          <label
+            htmlFor="upload-bulk-video"
+            className="flex items-center justify-center gap-2 cursor-pointer bg-gray-100 p-3 rounded-md"
+          >
             <UploadImageSvg h="25" w="25" color="#000" />
-            <Typography fontWeight={600}>Upload Video</Typography>
+            <span className="font-semibold">Upload Video</span>
           </label>
           <input id="upload-bulk-video" type="file" accept="video/*" hidden onChange={e => handleBulk(e, 'video')} />
-        </Box>
-      </Grid>
+        </div>
+      </div>
 
-      {/* ── CONSULTATION COMMISSION ── */}
-      <Grid item xs={12}>
-        <TextField
-          fullWidth
-          label={<>Consultation Commission (%) <span style={{ color: 'red' }}>*</span></>}
+      {/* Commission & Bios */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700">
+          Consultation Commission (%) <span className="text-red-500">*</span>
+        </label>
+        <input
+          type="text"
           name="consultation_commission"
           value={form.consultation_commission}
           onChange={handleChange}
+          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
-      </Grid>
+      </div>
 
-      {/* ── TAGLINE / BIOS ── */}
-      <Grid item xs={12}>
-        <TextField fullWidth label="Tag Line" name="tagLine" value={form.tagLine} onChange={handleChange} multiline rows={2} />
-      </Grid>
-      <Grid item xs={12}>
-        <TextField fullWidth label="Short Bio" name="short_bio" value={form.short_bio} onChange={handleChange} multiline rows={2} />
-      </Grid>
-      <Grid item xs={12}>
-        <TextField fullWidth label="About" name="about" value={form.about} onChange={handleChange} multiline rows={3} />
-      </Grid>
-      <Grid item xs={12}>
-        <TextField
-          fullWidth
-          label="Long Bio"
+      <div>
+        <label className="block text-sm font-medium text-gray-700">Tag Line</label>
+        <textarea
+          name="tagLine"
+          value={form.tagLine}
+          onChange={handleChange}
+          rows={2}
+          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700">Short Bio</label>
+        <textarea
+          name="short_bio"
+          value={form.short_bio}
+          onChange={handleChange}
+          rows={2}
+          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700">About</label>
+        <textarea
+          name="about"
+          value={form.about}
+          onChange={handleChange}
+          rows={3}
+          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700">Long Bio</label>
+        <textarea
           name="long_bio"
           value={form.long_bio}
           onChange={handleChange}
-          multiline
           rows={6}
           placeholder="Detailed biography..."
+          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
-      </Grid>
+      </div>
 
-      {/* ── SKILLS / REMEDIES / EXPERTISE ── */}
-      <Grid item xs={12}>
-        <FormLabel component="legend">
-          Skills <span style={{ color: 'red' }}>*</span>
-          {errors.skills && <Typography color="error" variant="caption" sx={{ ml: 1 }}>{errors.skills}</Typography>}
-        </FormLabel>
-        <FormGroup row>
-          {skills.sort((a, b) => a.skill.localeCompare(b.skill)).map(s => (
-            <FormControlLabel
-              key={s._id}
-              control={<Checkbox checked={selectedSkills.includes(s._id)} onChange={() => handleCheckbox(s._id, selectedSkills, setSelectedSkills)} />}
-              label={s.skill}
-            />
-          ))}
-        </FormGroup>
-      </Grid>
+      {/* Skills, Remedies, Expertise */}
+      <div>
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700">
+            Skills <span className="text-red-500">*</span>
+          </label>
+          {errors.skills && <p className="text-red-600 text-sm">{errors.skills}</p>}
+          <div className="flex flex-wrap gap-4 mt-2">
+            {skills.sort((a, b) => a.skill.localeCompare(b.skill)).map(s => (
+              <label key={s._id} className="flex items-center space-x-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={selectedSkills.includes(s._id)}
+                  onChange={() => handleCheckbox(s._id, selectedSkills, setSelectedSkills)}
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span>{s.skill}</span>
+              </label>
+            ))}
+          </div>
+        </div>
 
-      <Grid item xs={12}>
-        <FormLabel component="legend">
-          Remedies <span style={{ color: 'red' }}>*</span>
-          {errors.remedies && <Typography color="error" variant="caption" sx={{ ml: 1 }}>{errors.remedies}</Typography>}
-        </FormLabel>
-        <FormGroup row>
-          {remedies.sort((a, b) => a.title.localeCompare(b.title)).map(r => (
-            <FormControlLabel
-              key={r._id}
-              control={<Checkbox checked={selectedRemedies.includes(r._id)} onChange={() => handleCheckbox(r._id, selectedRemedies, setSelectedRemedies)} />}
-              label={r.title}
-            />
-          ))}
-        </FormGroup>
-      </Grid>
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700">
+            Remedies <span className="text-red-500">*</span>
+          </label>
+          {errors.remedies && <p className="text-red-600 text-sm">{errors.remedies}</p>}
+          <div className="flex flex-wrap gap-4 mt-2">
+            {remedies.sort((a, b) => a.title.localeCompare(b.title)).map(r => (
+              <label key={r._id} className="flex items-center space-x-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={selectedRemedies.includes(r._id)}
+                  onChange={() => handleCheckbox(r._id, selectedRemedies, setSelectedRemedies)}
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span>{r.title}</span>
+              </label>
+            ))}
+          </div>
+        </div>
 
-      <Grid item xs={12}>
-        <FormLabel component="legend">
-          Main Expertise <span style={{ color: 'red' }}>*</span>
-          {errors.mainExpertise && <Typography color="error" variant="caption" sx={{ ml: 1 }}>{errors.mainExpertise}</Typography>}
-        </FormLabel>
-        <FormGroup row>
-          {mainExpertise.sort((a, b) => a.mainExpertise.localeCompare(b.mainExpertise)).map(e => (
-            <FormControlLabel
-              key={e._id}
-              control={<Checkbox checked={selectedMainExpertise.includes(e._id)} onChange={() => handleCheckbox(e._id, selectedMainExpertise, setSelectedMainExpertise)} />}
-              label={e.mainExpertise}
-            />
-          ))}
-        </FormGroup>
-      </Grid>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            Main Expertise <span className="text-red-500">*</span>
+          </label>
+          {errors.mainExpertise && <p className="text-red-600 text-sm">{errors.mainExpertise}</p>}
+          <div className="flex flex-wrap gap-4 mt-2">
+            {mainExpertise.sort((a, b) => a.mainExpertise.localeCompare(b.mainExpertise)).map(e => (
+              <label key={e._id} className="flex items-center space-x-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={selectedMainExpertise.includes(e._id)}
+                  onChange={() => handleCheckbox(e._id, selectedMainExpertise, setSelectedMainExpertise)}
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span>{e.mainExpertise}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+      </div>
 
-      {/* ── SUBMIT ── */}
-      <Grid item xs={12}>
-        <Button variant="contained" sx={{ bgcolor: Color.primary, color: '#fff' }} onClick={handleSubmit}>
+      {/* Submit */}
+      <div>
+        <button
+          onClick={handleSubmit}
+          className="px-6 py-2.5 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 transition-colors"
+        >
           {isEdit ? 'Update' : 'Submit'}
-        </Button>
-      </Grid>
+        </button>
+      </div>
 
-      {/* ── CONSULTATION PRICES (EDIT ONLY) ── */}
+      {/* Consultation Prices (Edit Only) */}
       {isEdit && (
         <ConsultationPriceSection
           astrologerId={initialData._id}
@@ -837,11 +1032,11 @@ export default function AstrologerForm({ mode, initialData, onSnack }: Props) {
           onSnack={onSnack}
         />
       )}
-    </Grid>
+    </div>
   );
 }
 
-/* ────────────────────── CONSULTATION PRICE SECTION ────────────────────── */
+/* Consultation Price Section */
 interface ConsultationPriceSectionProps {
   astrologerId: string;
   slotDurations: SlotDuration[];
@@ -868,7 +1063,6 @@ const ConsultationPriceSection: React.FC<ConsultationPriceSectionProps> = ({
       return;
     }
 
-    // prevent duplicate duration
     if (consultationPrices.some(p => p.duration._id === duration)) {
       onSnack({ open: true, message: 'This duration already exists' });
       return;
@@ -879,11 +1073,7 @@ const ConsultationPriceSection: React.FC<ConsultationPriceSectionProps> = ({
       const res = await fetch(`${base_url}api/admin/consultation-price`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          astrologerId,
-          durationId: duration,
-          price: Number(price),
-        }),
+        body: JSON.stringify({ astrologerId, durationId: duration, price: Number(price) }),
       });
 
       const data = await res.json();
@@ -931,76 +1121,82 @@ const ConsultationPriceSection: React.FC<ConsultationPriceSectionProps> = ({
   };
 
   return (
-    <Box mt={4} p={3} bgcolor="#fff" borderRadius={2} boxShadow={1}>
-      <Typography variant="h6">Consultation Price</Typography>
+    <div className="mt-8 p-6 bg-white rounded-lg shadow">
+      <h3 className="text-lg font-semibold mb-4">Consultation Price</h3>
 
-      <Grid container spacing={2} mt={2} alignItems="flex-end">
-        <Grid item xs={5}>
-          <FormControl fullWidth>
-            <InputLabel>Duration</InputLabel>
-            <Select value={duration} onChange={e => setDuration(e.target.value)} disabled={adding}>
-              {slotDurations
-                .filter(s => s.active && !consultationPrices.some(p => p.duration._id === s._id))
-                .map(s => (
-                  <MenuItem key={s._id} value={s._id}>
-                    {s.slotDuration}
-                  </MenuItem>
-                ))}
-            </Select>
-          </FormControl>
-        </Grid>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Duration</label>
+          <select
+            value={duration}
+            onChange={e => setDuration(e.target.value)}
+            disabled={adding}
+            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="">Select</option>
+            {slotDurations
+              .filter(s => s.active && !consultationPrices.some(p => p.duration._id === s._id))
+              .map(s => (
+                <option key={s._id} value={s._id}>{s.slotDuration}</option>
+              ))}
+          </select>
+        </div>
 
-        <Grid item xs={4}>
-          <TextField
-            fullWidth
-            label="Price (INR)"
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Price (INR)</label>
+          <input
             type="number"
             value={price}
             onChange={e => setPrice(e.target.value)}
             disabled={adding}
-            inputProps={{ min: 0, step: 1 }}
+            min="0"
+            step="1"
+            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
-        </Grid>
+        </div>
 
-        <Grid item xs={3}>
-          <Button
-            variant="contained"
+        <div>
+          <button
             onClick={handleAdd}
             disabled={adding || !duration || !price}
-            startIcon={adding ? <CircularProgress size={16} /> : null}
+            className={`w-full px-4 py-2 rounded-md text-white font-medium transition-colors ${
+              adding || !duration || !price
+                ? 'bg-gray-400 cursor-not-allowed'
+                : 'bg-blue-600 hover:bg-blue-700'
+            }`}
           >
-            {adding ? 'Adding…' : 'Add'}
-          </Button>
-        </Grid>
-      </Grid>
+            {adding ? 'Adding...' : 'Add'}
+          </button>
+        </div>
+      </div>
 
-      <Box mt={3}>
+      <div className="mt-6">
         {consultationPrices.length === 0 ? (
-          <Typography color="textSecondary">No consultation prices set yet.</Typography>
+          <p className="text-gray-500">No consultation prices set yet.</p>
         ) : (
-          consultationPrices.map((p, i) => (
-            <Box
-              key={p.duration._id}
-              display="flex"
-              justifyContent="space-between"
-              alignItems="center"
-              p={1}
-              borderBottom="1px solid #eee"
-            >
-              <Typography>
-                {i + 1}. {p.duration.slotDuration} – ₹{p.price}
-              </Typography>
-              <IconButton
-                onClick={() => handleDelete(p.duration._id)}
-                disabled={deleting === p.duration._id}
-                size="small"
+          <div className="space-y-2">
+            {consultationPrices.map((p, i) => (
+              <div
+                key={p.duration._id}
+                className="flex justify-between items-center p-3 border-b border-gray-200"
               >
-                {deleting === p.duration._id ? <CircularProgress size={20} /> : <DeleteSvg />}
-              </IconButton>
-            </Box>
-          ))
+                <span>{i + 1}. {p.duration.slotDuration} – ₹{p.price}</span>
+                <button
+                  onClick={() => handleDelete(p.duration._id)}
+                  disabled={deleting === p.duration._id}
+                  className="text-red-600 hover:text-red-800"
+                >
+                  {deleting === p.duration._id ? (
+                    <div className="animate-spin inline-block w-4 h-4 border-2 border-current border-t-transparent rounded-full"></div>
+                  ) : (
+                    <DeleteSvg />
+                  )}
+                </button>
+              </div>
+            ))}
+          </div>
         )}
-      </Box>
-    </Box>
+      </div>
+    </div>
   );
 };

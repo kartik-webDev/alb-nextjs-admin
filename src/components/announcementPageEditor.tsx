@@ -1,28 +1,12 @@
-'use client'
-import React, { useState, useEffect, useRef } from 'react';
-import { Grid, FormControl, InputLabel, MenuItem, Select, SelectChangeEvent, IconButton, Divider, Box } from '@mui/material';
-import { Color } from '@/assets/colors';
-import {
-  FormatBold,
-  FormatItalic,
-  StrikethroughS,
-  Code,
-  FormatUnderlined,
-  FormatAlignLeft,
-  FormatAlignCenter,
-  FormatAlignRight,
-  FormatAlignJustify,
-  FormatListBulleted,
-  FormatListNumbered,
-  FormatQuote,
-  Link as LinkIcon,
-  LinkOff,
-  Image as ImageIcon,
-  Undo,
-  Redo,
-} from '@mui/icons-material';
+/*eslint-disable @typescript-eslint/no-unused-expressions */
+'use client';
 
-// Types specific to Announcements
+import React, { useState, useEffect, useRef } from 'react';
+import { Color } from '@/assets/colors';
+
+// ---------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------
 interface AnnouncementPageEditorProps {
   initialContent: string;
   createEndpoint: string;
@@ -62,6 +46,115 @@ interface ActiveFormats {
   strikethrough: boolean;
 }
 
+// ---------------------------------------------------------------------
+// Icons (SVG Inline - Replace with your SVG components or icons)
+// ---------------------------------------------------------------------
+const BoldIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 4h8a4 4 0 014 4 4 4 0 01-4 4H6z" />
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 12h9a4 4 0 014 4 4 4 0 01-4 4H6z" />
+  </svg>
+);
+
+const ItalicIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 6h14l-3 12H7z" />
+  </svg>
+);
+
+const StrikethroughIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12h18M3 12s3-5 9-5 9 5 9 5-3 5-9 5-9-5-9-5" />
+  </svg>
+);
+
+const CodeIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+  </svg>
+);
+
+const UnderlineIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+  </svg>
+);
+
+const AlignLeftIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h12M4 18h16" />
+  </svg>
+);
+
+const AlignCenterIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h8m-8 6h16" />
+  </svg>
+);
+
+const AlignRightIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M8 12h12M4 18h16" />
+  </svg>
+);
+
+const AlignJustifyIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+  </svg>
+);
+
+const ListBulletIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+  </svg>
+);
+
+const ListNumberIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m2 0h.01M4 6h1v1h1v1h-1v1H4V8H3V7h1V6zm0 6h1v1h1v1h-1v1H4v-1H3v-1h1v-1zm0 6h1v1h1v1h-1v1H4v-1H3v-1h1v-1z" />
+  </svg>
+);
+
+const QuoteIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h2l-1 6h2l-1-6h2m7 0h2l-1 6h2l-1-6h2" />
+  </svg>
+);
+
+const LinkIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.414-1.414m5.657-5.656l-1.414 1.414a4 4 0 105.656 5.656l4-4a4 4 0 00-5.656-5.656z" />
+  </svg>
+);
+
+const UnlinkIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.414-1.414m5.657-5.656l-1.414 1.414a4 4 0 105.656 5.656l4-4a4 4 0 00-5.656-5.656z M3 3l18 18" />
+  </svg>
+);
+
+const ImageIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+  </svg>
+);
+
+const UndoIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+  </svg>
+);
+
+const RedoIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6-6m-6 6l6 6" />
+  </svg>
+);
+
+// ---------------------------------------------------------------------
+// Main Editor Component
+// ---------------------------------------------------------------------
 const AnnouncementPageEditor: React.FC<AnnouncementPageEditorProps> = ({
   initialContent,
   createEndpoint,
@@ -83,20 +176,16 @@ const AnnouncementPageEditor: React.FC<AnnouncementPageEditorProps> = ({
   });
   const editorRef = useRef<HTMLDivElement>(null);
 
-  // Handle Input Field Error
- // Handle Input Field Error
-const handleInputFieldError = (input: keyof InputFieldError, value: string | undefined) => {
-  setInputFieldError((prev) => ({ ...prev, [input]: value }));
-};
+  const handleInputFieldError = (input: keyof InputFieldError, value: string | undefined) => {
+    setInputFieldError((prev) => ({ ...prev, [input]: value }));
+  };
 
-  // Execute command
   const executeCommand = (command: string, value: string | undefined = undefined) => {
     document.execCommand(command, false, value);
     editorRef.current?.focus();
     updateActiveFormats();
   };
 
-  // Update active formats based on cursor position
   const updateActiveFormats = () => {
     setActiveFormats({
       bold: document.queryCommandState('bold'),
@@ -106,154 +195,111 @@ const handleInputFieldError = (input: keyof InputFieldError, value: string | und
     });
   };
 
-  // Handle toolbar actions
   const handleBold = () => executeCommand('bold');
   const handleItalic = () => executeCommand('italic');
   const handleUnderline = () => executeCommand('underline');
   const handleStrikethrough = () => executeCommand('strikethrough');
-  
   const handleAlignLeft = () => executeCommand('justifyLeft');
   const handleAlignCenter = () => executeCommand('justifyCenter');
   const handleAlignRight = () => executeCommand('justifyRight');
   const handleAlignJustify = () => executeCommand('justifyFull');
-  
   const handleBulletList = () => executeCommand('insertUnorderedList');
   const handleNumberList = () => executeCommand('insertOrderedList');
-  
+
   const handleQuote = () => {
     const selection = window.getSelection();
     if (!selection || selection.rangeCount === 0) return;
-    
     const range = selection.getRangeAt(0);
     const selectedText = range.toString();
-    
-    if (selectedText) {
-      const blockquote = document.createElement('blockquote');
-      blockquote.style.borderLeft = '4px solid #ccc';
-      blockquote.style.marginLeft = '0';
-      blockquote.style.paddingLeft = '16px';
-      blockquote.style.color = '#666';
-      blockquote.style.fontStyle = 'italic';
-      blockquote.textContent = selectedText;
-      
-      range.deleteContents();
-      range.insertNode(blockquote);
-      
-      editorRef.current?.focus();
-      handleContentChange();
-    }
+    if (!selectedText) return;
+
+    const blockquote = document.createElement('blockquote');
+    blockquote.style.borderLeft = '4px solid #ccc';
+    blockquote.style.marginLeft = '0';
+    blockquote.style.paddingLeft = '16px';
+    blockquote.style.color = '#666';
+    blockquote.style.fontStyle = 'italic';
+    blockquote.textContent = selectedText;
+
+    range.deleteContents();
+    range.insertNode(blockquote);
+    editorRef.current?.focus();
+    handleContentChange();
   };
-  
+
   const handleCode = () => {
     const selection = window.getSelection();
     if (!selection || selection.rangeCount === 0) return;
-    
     const range = selection.getRangeAt(0);
     const selectedText = range.toString();
-    
-    if (selectedText) {
-      const codeBlock = document.createElement('pre');
-      const code = document.createElement('code');
-      codeBlock.style.backgroundColor = '#f5f5f5';
-      codeBlock.style.padding = '12px';
-      codeBlock.style.borderRadius = '4px';
-      codeBlock.style.border = '1px solid #ddd';
-      codeBlock.style.overflow = 'auto';
-      codeBlock.style.fontFamily = 'monospace';
-      code.textContent = selectedText;
-      codeBlock.appendChild(code);
-      
-      range.deleteContents();
-      range.insertNode(codeBlock);
-      
-      editorRef.current?.focus();
-      handleContentChange();
-    }
+    if (!selectedText) return;
+
+    const codeBlock = document.createElement('pre');
+    const code = document.createElement('code');
+    codeBlock.style.backgroundColor = '#f5f5f5';
+    codeBlock.style.padding = '12px';
+    codeBlock.style.borderRadius = '4px';
+    codeBlock.style.border = '1px solid #ddd';
+    codeBlock.style.overflow = 'auto';
+    codeBlock.style.fontFamily = 'monospace';
+    code.textContent = selectedText;
+    codeBlock.appendChild(code);
+
+    range.deleteContents();
+    range.insertNode(codeBlock);
+    editorRef.current?.focus();
+    handleContentChange();
   };
-  
+
   const handleUndo = () => executeCommand('undo');
   const handleRedo = () => executeCommand('redo');
-  
   const handleLink = () => {
     const url = prompt('Enter URL:');
     if (url) executeCommand('createLink', url);
   };
-
   const handleUnlink = () => executeCommand('unlink');
-
   const handleImage = () => {
     const url = prompt('Enter image URL:');
     if (url) executeCommand('insertImage', url);
   };
 
-  // Handle format dropdown change
-  const handleFormatChange = (event: SelectChangeEvent<string>) => {
-    const format = event.target.value;
+  const handleFormatChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const format = e.target.value;
     setCurrentFormat(format);
-    
-    switch(format) {
-      case 'Heading 1':
-        executeCommand('formatBlock', '<h1>');
-        break;
-      case 'Heading 2':
-        executeCommand('formatBlock', '<h2>');
-        break;
-      case 'Heading 3':
-        executeCommand('formatBlock', '<h3>');
-        break;
-      case 'Heading 4':
-        executeCommand('formatBlock', '<h4>');
-        break;
-      case 'Heading 5':
-        executeCommand('formatBlock', '<h5>');
-        break;
-      case 'Heading 6':
-        executeCommand('formatBlock', '<h6>');
-        break;
-      case 'Normal':
-        executeCommand('formatBlock', '<p>');
-        break;
-      default:
-        executeCommand('formatBlock', '<p>');
-    }
+    const blockMap: { [key: string]: string } = {
+      'Heading 1': 'h1',
+      'Heading 2': 'h2',
+      'Heading 3': 'h3',
+      'Heading 4': 'h4',
+      'Heading 5': 'h5',
+      'Heading 6': 'h6',
+      'Normal': 'p',
+    };
+    executeCommand('formatBlock', `<${blockMap[format] || 'p'}>`);
   };
 
-  // Handle Validation
   const handleValidation = (): boolean => {
     let isValid = true;
-
-    const strippedDescription = description.replace(/<[^>]*>/g, '').trim();
-    if (!strippedDescription || description === '<p><br></p>' || description === '') {
-handleInputFieldError('description', 'Please Enter Announcement Description');
+    const stripped = description.replace(/<[^>]*>/g, '').trim();
+    if (!stripped || description === '<p><br></p>' || description === '') {
+      handleInputFieldError('description', 'Please Enter Announcement Description');
       isValid = false;
     }
-
     return isValid;
   };
 
-  // Handle Submit
   const handleSubmit = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
-
     if (!handleValidation()) return;
 
     try {
       setSubmitting(true);
-      
-      const payload: ApiPayload = {
-        description: description,
-      };
-
-      // Include ID for edit mode
-      if (editMode && announcementId) {
-        payload.announcementId = announcementId;
-      }
+      const payload: ApiPayload = { description };
+      if (editMode && announcementId) payload.announcementId = announcementId;
 
       const response = await fetch(createEndpoint, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
 
@@ -263,278 +309,197 @@ handleInputFieldError('description', 'Please Enter Announcement Description');
       }
 
       const result: ApiResponse = await response.json();
-      
       if (result.success) {
-        // Call success callback if provided
-        if (onSuccess) {
-          onSuccess();
-        } else {
-          // Default success behavior
-          alert(result.message || (editMode ? 'Announcement updated successfully!' : 'Announcement created successfully!'));
-        }
+        onSuccess?.() || alert(result.message || (editMode ? 'Updated!' : 'Created!'));
       } else {
         throw new Error(result.message || 'Operation failed');
       }
     } catch (error) {
-      console.error('Error saving announcement:', error);
-      alert(error instanceof Error ? error.message : 'Failed to save announcement. Please try again.');
+      console.error('Error:', error);
+      alert(error instanceof Error ? error.message : 'Failed to save. Try again.');
     } finally {
       setSubmitting(false);
     }
   };
 
-  // Handle content change
   const handleContentChange = () => {
     if (editorRef.current) {
       const content = editorRef.current.innerHTML;
       setDescription(content);
-      if (inputFieldError.description) {
-handleInputFieldError('description', undefined);
-      }
+      if (inputFieldError.description) handleInputFieldError('description', undefined);
     }
   };
 
-  // Update editor when initialContent changes
   useEffect(() => {
     if (initialContent && initialContent !== description) {
       setDescription(initialContent);
-      if (editorRef.current) {
-        editorRef.current.innerHTML = initialContent;
-      }
+      if (editorRef.current) editorRef.current.innerHTML = initialContent;
     }
   }, [initialContent]);
 
-  // Track selection changes to update active formats
   useEffect(() => {
-    const handleSelectionChange = () => {
+    const handleSelection = () => {
       if (editorRef.current?.contains(document.activeElement)) {
         updateActiveFormats();
       }
     };
-
-    document.addEventListener('selectionchange', handleSelectionChange);
-    return () => document.removeEventListener('selectionchange', handleSelectionChange);
+    document.addEventListener('selectionchange', handleSelection);
+    return () => document.removeEventListener('selectionchange', handleSelection);
   }, []);
 
-  const getToolbarButtonStyle = (isActive: boolean = false) => ({
-    padding: '6px',
-    minWidth: '36px',
-    height: '36px',
-    border: '1px solid #d1d5db',
-    borderRadius: '4px',
-    backgroundColor: isActive ? '#e5e7eb' : '#fff',
-    color: isActive ? '#1f2937' : '#4b5563',
-    '&:hover': {
-      backgroundColor: isActive ? '#d1d5db' : '#f3f4f6',
-    }
-  });
+  const getButtonClass = (isActive: boolean = false) =>
+    `p-1.5 min-w-9 h-9 border rounded-md flex items-center justify-center transition-colors ${
+      isActive
+        ? 'bg-gray-300 text-gray-900 border-gray-400'
+        : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-100'
+    }`;
+
+  if (externalLoading) {
+    return (
+      <div className="p-10 text-center text-gray-600">
+        Loading announcement editor...
+      </div>
+    );
+  }
 
   return (
-   <>
+    <div className="space-y-4">
+      {/* Toolbar */}
+      <div className="flex flex-wrap items-center gap-1 p-2 bg-gray-50 border border-gray-200 rounded-t-md">
+        {/* Text Formatting */}
+        <button onClick={handleBold} title="Bold" className={getButtonClass(activeFormats.bold)}>
+          <BoldIcon />
+        </button>
+        <button onClick={handleItalic} title="Italic" className={getButtonClass(activeFormats.italic)}>
+          <ItalicIcon />
+        </button>
+        <button onClick={handleStrikethrough} title="Strikethrough" className={getButtonClass(activeFormats.strikethrough)}>
+          <StrikethroughIcon />
+        </button>
+        <button onClick={handleCode} title="Code Block" className={getButtonClass()}>
+          <CodeIcon />
+        </button>
+        <button onClick={handleUnderline} title="Underline" className={getButtonClass(activeFormats.underline)}>
+          <UnderlineIcon />
+        </button>
 
-      {externalLoading ? (
-        <div style={{ padding: '40px', textAlign: 'center', color: '#666' }}>
-          Loading announcement editor...
-        </div>
-      ) : (
-        <Grid container spacing={3}>
-          <Grid item lg={12} md={12} sm={12} xs={12}>
-            {/* Toolbar */}
-            <Box
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-                padding: '8px',
-                backgroundColor: '#f9fafb',
-                border: '1px solid #e5e7eb',
-                borderRadius: '4px 4px 0 0',
-                flexWrap: 'wrap',
-              }}
-            >
-              {/* Text Formatting */}
-              <IconButton size="small" onClick={handleBold} title="Bold" sx={getToolbarButtonStyle(activeFormats.bold)}>
-                <FormatBold fontSize="small" />
-              </IconButton>
-              <IconButton size="small" onClick={handleItalic} title="Italic" sx={getToolbarButtonStyle(activeFormats.italic)}>
-                <FormatItalic fontSize="small" />
-              </IconButton>
-              <IconButton size="small" onClick={handleStrikethrough} title="Strikethrough" sx={getToolbarButtonStyle(activeFormats.strikethrough)}>
-                <StrikethroughS fontSize="small" />
-              </IconButton>
-              <IconButton size="small" onClick={handleCode} title="Code Block" sx={getToolbarButtonStyle()}>
-                <Code fontSize="small" />
-              </IconButton>
-              <IconButton size="small" onClick={handleUnderline} title="Underline" sx={getToolbarButtonStyle(activeFormats.underline)}>
-                <FormatUnderlined fontSize="small" />
-              </IconButton>
+        <div className="w-px h-6 bg-gray-300 mx-1" />
 
-              <Divider orientation="vertical" flexItem sx={{ mx: 0.5, backgroundColor: '#d1d5db' }} />
+        {/* Alignment */}
+        <button onClick={handleAlignLeft} title="Align Left" className={getButtonClass()}>
+          <AlignLeftIcon />
+        </button>
+        <button onClick={handleAlignCenter} title="Align Center" className={getButtonClass()}>
+          <AlignCenterIcon />
+        </button>
+        <button onClick={handleAlignRight} title="Align Right" className={getButtonClass()}>
+          <AlignRightIcon />
+        </button>
+        <button onClick={handleAlignJustify} title="Justify" className={getButtonClass()}>
+          <AlignJustifyIcon />
+        </button>
 
-              {/* Alignment */}
-              <IconButton size="small" onClick={handleAlignLeft} title="Align Left" sx={getToolbarButtonStyle()}>
-                <FormatAlignLeft fontSize="small" />
-              </IconButton>
-              <IconButton size="small" onClick={handleAlignCenter} title="Align Center" sx={getToolbarButtonStyle()}>
-                <FormatAlignCenter fontSize="small" />
-              </IconButton>
-              <IconButton size="small" onClick={handleAlignRight} title="Align Right" sx={getToolbarButtonStyle()}>
-                <FormatAlignRight fontSize="small" />
-              </IconButton>
-              <IconButton size="small" onClick={handleAlignJustify} title="Justify" sx={getToolbarButtonStyle()}>
-                <FormatAlignJustify fontSize="small" />
-              </IconButton>
+        <div className="w-px h-6 bg-gray-300 mx-1" />
 
-              <Divider orientation="vertical" flexItem sx={{ mx: 0.5, backgroundColor: '#d1d5db' }} />
+        {/* Lists */}
+        <button onClick={handleBulletList} title="Bullet List" className={getButtonClass()}>
+          <ListBulletIcon />
+        </button>
+        <button onClick={handleNumberList} title="Numbered List" className={getButtonClass()}>
+          <ListNumberIcon />
+        </button>
 
-              {/* Lists */}
-              <IconButton size="small" onClick={handleBulletList} title="Bullet List" sx={getToolbarButtonStyle()}>
-                <FormatListBulleted fontSize="small" />
-              </IconButton>
-              <IconButton size="small" onClick={handleNumberList} title="Numbered List" sx={getToolbarButtonStyle()}>
-                <FormatListNumbered fontSize="small" />
-              </IconButton>
+        <div className="w-px h-6 bg-gray-300 mx-1" />
 
-              <Divider orientation="vertical" flexItem sx={{ mx: 0.5, backgroundColor: '#d1d5db' }} />
+        {/* Quote */}
+        <button onClick={handleQuote} title="Quote" className={getButtonClass()}>
+          <QuoteIcon />
+        </button>
 
-              {/* Quote */}
-              <IconButton size="small" onClick={handleQuote} title="Quote" sx={getToolbarButtonStyle()}>
-                <FormatQuote fontSize="small" />
-              </IconButton>
+        <div className="w-px h-6 bg-gray-300 mx-1" />
 
-              <Divider orientation="vertical" flexItem sx={{ mx: 0.5, backgroundColor: '#d1d5db' }} />
+        {/* Link */}
+        <button onClick={handleLink} title="Insert Link" className={getButtonClass()}>
+          <LinkIcon />
+        </button>
+        <button onClick={handleUnlink} title="Remove Link" className={getButtonClass()}>
+          <UnlinkIcon />
+        </button>
 
-              {/* Link */}
-              <IconButton size="small" onClick={handleLink} title="Insert Link" sx={getToolbarButtonStyle()}>
-                <LinkIcon fontSize="small" />
-              </IconButton>
-              <IconButton size="small" onClick={handleUnlink} title="Remove Link" sx={getToolbarButtonStyle()}>
-                <LinkOff fontSize="small" />
-              </IconButton>
+        <div className="w-px h-6 bg-gray-300 mx-1" />
 
-              <Divider orientation="vertical" flexItem sx={{ mx: 0.5, backgroundColor: '#d1d5db' }} />
+        {/* Image */}
+        <button onClick={handleImage} title="Insert Image" className={getButtonClass()}>
+          <ImageIcon />
+        </button>
 
-              {/* Image */}
-              <IconButton size="small" onClick={handleImage} title="Insert Image" sx={getToolbarButtonStyle()}>
-                <ImageIcon fontSize="small" />
-              </IconButton>
+        <div className="w-px h-6 bg-gray-300 mx-1" />
 
-              <Divider orientation="vertical" flexItem sx={{ mx: 0.5, backgroundColor: '#d1d5db' }} />
+        {/* Format Dropdown */}
+        <select
+          value={currentFormat}
+          onChange={handleFormatChange}
+          className="min-w-[120px] h-9 px-2 text-sm border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="Normal">Normal</option>
+          <option value="Heading 1">Heading 1</option>
+          <option value="Heading 2">Heading 2</option>
+          <option value="Heading 3">Heading 3</option>
+          <option value="Heading 4">Heading 4</option>
+          <option value="Heading 5">Heading 5</option>
+          <option value="Heading 6">Heading 6</option>
+        </select>
 
-              {/* Format Dropdown */}
-              <Select
-                value={currentFormat}
-                onChange={handleFormatChange}
-                size="small"
-                variant="outlined"
-                sx={{
-                  minWidth: '120px',
-                  height: '36px',
-                  backgroundColor: '#fff',
-                  '& .MuiOutlinedInput-notchedOutline': {
-                    borderColor: '#d1d5db',
-                  }
-                }}
-              >
-                <MenuItem value="Normal">Normal</MenuItem>
-                <MenuItem value="Heading 1">Heading 1</MenuItem>
-                <MenuItem value="Heading 2">Heading 2</MenuItem>
-                <MenuItem value="Heading 3">Heading 3</MenuItem>
-                <MenuItem value="Heading 4">Heading 4</MenuItem>
-                <MenuItem value="Heading 5">Heading 5</MenuItem>
-                <MenuItem value="Heading 6">Heading 6</MenuItem>
-              </Select>
+        <div className="w-px h-6 bg-gray-300 mx-1" />
 
-              <Divider orientation="vertical" flexItem sx={{ mx: 0.5, backgroundColor: '#d1d5db' }} />
+        {/* Undo/Redo */}
+        <button onClick={handleUndo} title="Undo" className={getButtonClass()}>
+          <UndoIcon />
+        </button>
+        <button onClick={handleRedo} title="Redo" className={getButtonClass()}>
+          <RedoIcon />
+        </button>
+      </div>
 
-              {/* Undo/Redo */}
-              <IconButton size="small" onClick={handleUndo} title="Undo" sx={getToolbarButtonStyle()}>
-                <Undo fontSize="small" />
-              </IconButton>
-              <IconButton size="small" onClick={handleRedo} title="Redo" sx={getToolbarButtonStyle()}>
-                <Redo fontSize="small" />
-              </IconButton>
-            </Box>
-
-            {/* Editor */}
-            <div
-              ref={editorRef}
-              contentEditable
-              onInput={handleContentChange}
-              onMouseUp={updateActiveFormats}
-              onKeyUp={updateActiveFormats}
-              onFocus={() => handleInputFieldError('description', undefined)}
-              style={{
-                minHeight: '400px',
-                padding: '15px',
-                border: inputFieldError?.description ? '1px solid #D32F2F' : '1px solid #e5e7eb',
-                borderTop: 'none',
-                borderRadius: '0 0 4px 4px',
-                backgroundColor: '#fff',
-                outline: 'none',
-                lineHeight: '1.6',
-                fontSize: '14px',
-                fontFamily: 'Arial, sans-serif',
-              }}
-            />
-            {inputFieldError?.description && (
-              <div
-                style={{
-                  color: '#D32F2F',
-                  fontSize: '13px',
-                  padding: '5px 15px 0 12px',
-                  fontWeight: '400',
-                }}
-              >
-                {inputFieldError?.description}
-              </div>
-            )}
-          </Grid>
-
-          <Grid item lg={12} md={12} sm={12} xs={12}>
-            <Grid container spacing={2} sx={{ justifyContent: 'flex-end' }}>
-              <Grid item>
-                <button
-                  onClick={onCancel}
-                  style={{
-                    fontWeight: '500',
-                    backgroundColor: '#6b7280',
-                    color: Color.white,
-                    padding: '10px 20px',
-                    borderRadius: '5px',
-                    cursor: 'pointer',
-                    fontSize: '15px',
-                    border: 'none',
-                    minWidth: '100px',
-                  }}
-                >
-                  Cancel
-                </button>
-              </Grid>
-              <Grid item>
-                <button
-                  onClick={handleSubmit}
-                  disabled={submitting}
-                  style={{
-                    fontWeight: '500',
-                    backgroundColor: submitting ? '#ccc' : Color.primary,
-                    color: Color.white,
-                    padding: '10px 20px',
-                    borderRadius: '5px',
-                    cursor: submitting ? 'not-allowed' : 'pointer',
-                    fontSize: '15px',
-                    border: 'none',
-                    minWidth: '100px',
-                  }}
-                >
-                  {submitting ? 'Saving...' : (editMode ? 'Update' : 'Create')}
-                </button>
-              </Grid>
-            </Grid>
-          </Grid>
-        </Grid>
+      {/* Editor */}
+      <div
+        ref={editorRef}
+        contentEditable
+        onInput={handleContentChange}
+        onMouseUp={updateActiveFormats}
+        onKeyUp={updateActiveFormats}
+        onFocus={() => handleInputFieldError('description', undefined)}
+        className={`
+          min-h-[400px] p-4 border ${inputFieldError.description ? 'border-red-500' : 'border-gray-200'}
+          rounded-b-md bg-white outline-none text-sm leading-relaxed font-sans
+          ${!inputFieldError.description && 'border-t-0'}
+        `}
+        dangerouslySetInnerHTML={{ __html: description }}
+      />
+      {inputFieldError.description && (
+        <p className="text-red-600 text-sm pl-3 pt-1">{inputFieldError.description}</p>
       )}
-    </>
+
+      {/* Action Buttons */}
+      <div className="flex justify-end gap-3">
+        <button
+          onClick={onCancel}
+          className="px-5 py-2.5 text-sm font-medium text-white bg-gray-500 rounded-md hover:bg-gray-600 transition-colors"
+        >
+          Cancel
+        </button>
+        <button
+          onClick={handleSubmit}
+          disabled={submitting}
+          className={`
+            px-5 py-2.5 text-sm font-medium text-white rounded-md transition-colors
+            ${submitting ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}
+          `}
+        >
+          {submitting ? 'Saving...' : editMode ? 'Update' : 'Create'}
+        </button>
+      </div>
+    </div>
   );
 };
 

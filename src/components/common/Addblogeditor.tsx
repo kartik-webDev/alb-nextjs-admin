@@ -1,37 +1,34 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
-import {
-  Grid,
-  FormControl,
-  InputLabel,
-  MenuItem,
-  Select,
-  SelectChangeEvent,
-  IconButton,
-  Divider,
-  Box,
-} from '@mui/material';
 import { Color } from '@/assets/colors';
 import {
+  Code,
+  FormatAlignCenter,
+  FormatAlignJustify,
+  FormatAlignLeft,
+  FormatAlignRight,
   FormatBold,
   FormatItalic,
-  StrikethroughS,
-  Code,
-  FormatUnderlined,
-  FormatAlignLeft,
-  FormatAlignCenter,
-  FormatAlignRight,
-  FormatAlignJustify,
   FormatListBulleted,
   FormatListNumbered,
   FormatQuote,
+  FormatUnderlined,
+  Image as ImageIcon,
   Link as LinkIcon,
   LinkOff,
-  Image as ImageIcon,
-  Undo,
   Redo,
+  StrikethroughS,
+  Undo,
 } from '@mui/icons-material';
+import {
+  Box,
+  Divider,
+  IconButton,
+  MenuItem,
+  Select,
+  SelectChangeEvent
+} from '@mui/material';
+import React, { useEffect, useRef, useState } from 'react';
 
 // Types
 interface StaticPageEditorProps {

@@ -1,26 +1,6 @@
 'use client'
 import React, { useState, useEffect, useRef } from 'react';
-import { Grid, FormControl, InputLabel, MenuItem, Select, SelectChangeEvent, IconButton, Divider, Box } from '@mui/material';
 import { Color } from '@/assets/colors';
-import {
-  FormatBold,
-  FormatItalic,
-  StrikethroughS,
-  Code,
-  FormatUnderlined,
-  FormatAlignLeft,
-  FormatAlignCenter,
-  FormatAlignRight,
-  FormatAlignJustify,
-  FormatListBulleted,
-  FormatListNumbered,
-  FormatQuote,
-  Link as LinkIcon,
-  LinkOff,
-  Image as ImageIcon,
-  Undo,
-  Redo,
-} from '@mui/icons-material';
 import Swal from 'sweetalert2';
 
 // Types
@@ -114,7 +94,6 @@ const StaticPageEditor: React.FC<StaticPageEditorProps> = ({
   };
   
   const handleCode = () => {
-    // Get selection
     const selection = window.getSelection();
     if (!selection || selection.rangeCount === 0) return;
     
@@ -122,10 +101,8 @@ const StaticPageEditor: React.FC<StaticPageEditorProps> = ({
     const selectedText = range.toString();
     
     if (selectedText) {
-      // Use insertHTML to maintain undo stack
       const codeHTML = `<pre class="code-block"><code>${selectedText}</code></pre><p><br></p>`;
       document.execCommand('insertHTML', false, codeHTML);
-      
       editorRef.current?.focus();
       handleContentChange();
     }
@@ -137,7 +114,6 @@ const StaticPageEditor: React.FC<StaticPageEditorProps> = ({
   const handleLink = () => {
     const url = prompt('Enter URL:');
     if (url) {
-      // Add https:// if no protocol is specified
       let formattedUrl = url.trim();
       if (!formattedUrl.match(/^https?:\/\//i)) {
         formattedUrl = 'https://' + formattedUrl;
@@ -155,11 +131,10 @@ const StaticPageEditor: React.FC<StaticPageEditorProps> = ({
   };
 
   // Handle format dropdown change
-  const handleFormatChange = (event: SelectChangeEvent<string>) => {
-    const format = event.target.value;
+  const handleFormatChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const format = e.target.value;
     setCurrentFormat(format);
     
-    // Map format names to HTML tag names (without angle brackets)
     const formatMap: { [key: string]: string } = {
       'Heading 1': 'h1',
       'Heading 2': 'h2',
@@ -194,58 +169,53 @@ const StaticPageEditor: React.FC<StaticPageEditorProps> = ({
   };
 
   // Handle Submit
-// Handle Submit
-const handleSubmit = async (e: React.MouseEvent<HTMLDivElement>) => {
-  e.preventDefault();
+  const handleSubmit = async (e: React.MouseEvent<HTMLDivElement>) => {
+    e.preventDefault();
 
-  if (!handleValidation()) return;
+    if (!handleValidation()) return;
 
-  try {
-    setSubmitting(true);
-    const payload: ApiPayload = {
-      description: description,
-    };
+    try {
+      setSubmitting(true);
+      const payload: ApiPayload = { description };
 
-    if (hasTypeSelector && selectedType) {
-      payload.type = selectedType;
+      if (hasTypeSelector && selectedType) {
+        payload.type = selectedType;
+      }
+
+      const response = await fetch(createEndpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) throw new Error('Failed to update data');
+
+      const result = await response.json();
+      console.log('Success:', result);
+      
+      await Swal.fire({
+        icon: 'success',
+        title: 'Success!',
+        text: 'Updated successfully!',
+        confirmButtonColor: '#3085d6',
+      });
+    } catch (error) {
+      console.error('Error updating data:', error);
+      await Swal.fire({
+        icon: 'error',
+        title: 'Error!',
+        text: 'Failed to update. Please try again.',
+        confirmButtonColor: '#d33',
+      });
+    } finally {
+      setSubmitting(false);
     }
-
-    const response = await fetch(createEndpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-    });
-
-    if (!response.ok) throw new Error('Failed to update data');
-
-    const result = await response.json();
-    console.log('Success:', result);
-    
-    await Swal.fire({
-      icon: 'success',
-      title: 'Success!',
-      text: 'Updated successfully!',
-      confirmButtonColor: '#3085d6',
-    });
-  } catch (error) {
-    console.error('Error updating data:', error);
-    await Swal.fire({
-      icon: 'error',
-      title: 'Error!',
-      text: 'Failed to update. Please try again.',
-      confirmButtonColor: '#d33',
-    });
-  } finally {
-    setSubmitting(false);
-  }
-};
+  };
 
   // Handle Type Change
-  const handleTypeChange = (event: SelectChangeEvent<string>) => {
+  const handleTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     if (onTypeChange) {
-      onTypeChange(event.target.value);
+      onTypeChange(e.target.value);
     }
   };
 
@@ -282,199 +252,168 @@ const handleSubmit = async (e: React.MouseEvent<HTMLDivElement>) => {
     return () => document.removeEventListener('selectionchange', handleSelectionChange);
   }, []);
 
-  const getToolbarButtonStyle = (isActive: boolean = false) => ({
-    padding: '6px',
-    minWidth: '36px',
-    height: '36px',
-    border: '1px solid #d1d5db',
-    borderRadius: '4px',
-    backgroundColor: isActive ? '#e5e7eb' : '#fff',
-    color: isActive ? '#1f2937' : '#4b5563',
-    '&:hover': {
-      backgroundColor: isActive ? '#d1d5db' : '#f3f4f6',
-    }
-  });
-
   return (
-    <div
-      style={{
-        padding: '20px',
-        backgroundColor: '#fff',
-        marginBottom: '20px',
-        boxShadow: '0px 0px 5px lightgrey',
-        borderRadius: '10px',
-      }}
-    >
-      <div
-        style={{
-          padding: '10px 0 30px 0',
-          fontSize: '22px',
-          fontWeight: '500',
-          color: Color.black,
-        }}
-      >
+    <div className="p-5 bg-white mb-5 shadow-sm rounded-xl">
+      <div className="pb-7 text-2xl font-medium text-black">
         {title}
       </div>
 
       {externalLoading ? (
-        <div style={{ padding: '40px', textAlign: 'center', color: '#666' }}>
+        <div className="py-10 text-center text-gray-500">
           Loading content...
         </div>
       ) : (
-        <Grid container spacing={3}>
+        <div className="space-y-6">
           {hasTypeSelector && (
-            <Grid item lg={12} md={12} sm={12} xs={12}>
-              <FormControl fullWidth>
-                <InputLabel id="select-label">
-                  Select Type <span style={{ color: 'red' }}>*</span>
-                </InputLabel>
-                <Select
-                  label="Select Type *"
-                  variant="outlined"
-                  fullWidth
-                  name="type"
-                  value={selectedType}
-                  onChange={handleTypeChange}
-                  error={!!inputFieldError?.type}
-                  onFocus={() => handleInputFieldError('type', null)}
-                >
-                  <MenuItem disabled>---Select Type---</MenuItem>
-                  <MenuItem value="Customer">Customer</MenuItem>
-                  <MenuItem value="Astrologer">Astrologer</MenuItem>
-                </Select>
-              </FormControl>
-              {inputFieldError?.type && (
-                <div
-                  style={{
-                    color: '#D32F2F',
-                    fontSize: '13px',
-                    padding: '5px 15px 0 12px',
-                    fontWeight: '500',
-                  }}
-                >
-                  {inputFieldError?.type}
-                </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Select Type <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={selectedType}
+                onChange={handleTypeChange}
+                onFocus={() => handleInputFieldError('type', null)}
+                className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${
+                  inputFieldError.type ? 'border-red-500' : 'border-gray-300'
+                }`}
+              >
+                <option disabled>---Select Type---</option>
+                <option value="Customer">Customer</option>
+                <option value="Astrologer">Astrologer</option>
+              </select>
+              {inputFieldError.type && (
+                <p className="mt-1 text-xs text-red-600 font-medium pl-3">
+                  {inputFieldError.type}
+                </p>
               )}
-            </Grid>
+            </div>
           )}
 
-          <Grid item lg={12} md={12} sm={12} xs={12}>
+          <div>
             {/* Toolbar */}
-            <Box
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-                padding: '8px',
-                backgroundColor: '#f9fafb',
-                border: '1px solid #e5e7eb',
-                borderRadius: '4px 4px 0 0',
-                flexWrap: 'wrap',
-              }}
-            >
+            <div className="flex flex-wrap items-center gap-1 p-2 bg-gray-50 border border-gray-300 rounded-t-lg">
               {/* Text Formatting */}
-              <IconButton size="small" onClick={handleBold} title="Bold" sx={getToolbarButtonStyle(activeFormats.bold)}>
-                <FormatBold fontSize="small" />
-              </IconButton>
-              <IconButton size="small" onClick={handleItalic} title="Italic" sx={getToolbarButtonStyle(activeFormats.italic)}>
-                <FormatItalic fontSize="small" />
-              </IconButton>
-              <IconButton size="small" onClick={handleStrikethrough} title="Strikethrough" sx={getToolbarButtonStyle(activeFormats.strikethrough)}>
-                <StrikethroughS fontSize="small" />
-              </IconButton>
-              <IconButton size="small" onClick={handleCode} title="Code Block" sx={getToolbarButtonStyle()}>
-                <Code fontSize="small" />
-              </IconButton>
-              <IconButton size="small" onClick={handleUnderline} title="Underline" sx={getToolbarButtonStyle(activeFormats.underline)}>
-                <FormatUnderlined fontSize="small" />
-              </IconButton>
+              <button
+                onClick={handleBold}
+                title="Bold"
+                className={`p-1.5 min-w-9 h-9 border rounded text-gray-600 hover:bg-gray-200 transition-colors ${
+                  activeFormats.bold ? 'bg-gray-300 text-gray-900' : 'bg-white'
+                }`}
+              >
+                <BoldIcon />
+              </button>
+              <button
+                onClick={handleItalic}
+                title="Italic"
+                className={`p-1.5 min-w-9 h-9 border rounded text-gray-600 hover:bg-gray-200 transition-colors ${
+                  activeFormats.italic ? 'bg-gray-300 text-gray-900' : 'bg-white'
+                }`}
+              >
+                <ItalicIcon />
+              </button>
+              <button
+                onClick={handleStrikethrough}
+                title="Strikethrough"
+                className={`p-1.5 min-w-9 h-9 border rounded text-gray-600 hover:bg-gray-200 transition-colors ${
+                  activeFormats.strikethrough ? 'bg-gray-300 text-gray-900' : 'bg-white'
+                }`}
+              >
+                <StrikethroughIcon />
+              </button>
+              <button
+                onClick={handleCode}
+                title="Code Block"
+                className="p-1.5 min-w-9 h-9 border rounded bg-white text-gray-600 hover:bg-gray-200 transition-colors"
+              >
+                <CodeIcon />
+              </button>
+              <button
+                onClick={handleUnderline}
+                title="Underline"
+                className={`p-1.5 min-w-9 h-9 border rounded text-gray-600 hover:bg-gray-200 transition-colors ${
+                  activeFormats.underline ? 'bg-gray-300 text-gray-900' : 'bg-white'
+                }`}
+              >
+                <UnderlineIcon />
+              </button>
 
-              <Divider orientation="vertical" flexItem sx={{ mx: 0.5, backgroundColor: '#d1d5db' }} />
+              <div className="w-px h-8 bg-gray-400 mx-1" />
 
               {/* Alignment */}
-              <IconButton size="small" onClick={handleAlignLeft} title="Align Left" sx={getToolbarButtonStyle()}>
-                <FormatAlignLeft fontSize="small" />
-              </IconButton>
-              <IconButton size="small" onClick={handleAlignCenter} title="Align Center" sx={getToolbarButtonStyle()}>
-                <FormatAlignCenter fontSize="small" />
-              </IconButton>
-              <IconButton size="small" onClick={handleAlignRight} title="Align Right" sx={getToolbarButtonStyle()}>
-                <FormatAlignRight fontSize="small" />
-              </IconButton>
-              <IconButton size="small" onClick={handleAlignJustify} title="Justify" sx={getToolbarButtonStyle()}>
-                <FormatAlignJustify fontSize="small" />
-              </IconButton>
+              <button onClick={handleAlignLeft} title="Align Left" className="p-1.5 min-w-9 h-9 border rounded bg-white text-gray-600 hover:bg-gray-200 transition-colors">
+                <AlignLeftIcon />
+              </button>
+              <button onClick={handleAlignCenter} title="Align Center" className="p-1.5 min-w-9 h-9 border rounded bg-white text-gray-600 hover:bg-gray-200 transition-colors">
+                <AlignCenterIcon />
+              </button>
+              <button onClick={handleAlignRight} title="Align Right" className="p-1.5 min-w-9 h-9 border rounded bg-white text-gray-600 hover:bg-gray-200 transition-colors">
+                <AlignRightIcon />
+              </button>
+              <button onClick={handleAlignJustify} title="Justify" className="p-1.5 min-w-9 h-9 border rounded bg-white text-gray-600 hover:bg-gray-200 transition-colors">
+                <AlignJustifyIcon />
+              </button>
 
-              <Divider orientation="vertical" flexItem sx={{ mx: 0.5, backgroundColor: '#d1d5db' }} />
+              <div className="w-px h-8 bg-gray-400 mx-1" />
 
               {/* Lists */}
-              <IconButton size="small" onClick={handleBulletList} title="Bullet List" sx={getToolbarButtonStyle()}>
-                <FormatListBulleted fontSize="small" />
-              </IconButton>
-              <IconButton size="small" onClick={handleNumberList} title="Numbered List" sx={getToolbarButtonStyle()}>
-                <FormatListNumbered fontSize="small" />
-              </IconButton>
+              <button onClick={handleBulletList} title="Bullet List" className="p-1.5 min-w-9 h-9 border rounded bg-white text-gray-600 hover:bg-gray-200 transition-colors">
+                <BulletListIcon />
+              </button>
+              <button onClick={handleNumberList} title="Numbered List" className="p-1.5 min-w-9 h-9 border rounded bg-white text-gray-600 hover:bg-gray-200 transition-colors">
+                <NumberListIcon />
+              </button>
 
-              <Divider orientation="vertical" flexItem sx={{ mx: 0.5, backgroundColor: '#d1d5db' }} />
+              <div className="w-px h-8 bg-gray-400 mx-1" />
 
               {/* Quote */}
-              <IconButton size="small" onClick={handleQuote} title="Quote" sx={getToolbarButtonStyle()}>
-                <FormatQuote fontSize="small" />
-              </IconButton>
+              <button onClick={handleQuote} title="Quote" className="p-1.5 min-w-9 h-9 border rounded bg-white text-gray-600 hover:bg-gray-200 transition-colors">
+                <QuoteIcon />
+              </button>
 
-              <Divider orientation="vertical" flexItem sx={{ mx: 0.5, backgroundColor: '#d1d5db' }} />
+              <div className="w-px h-8 bg-gray-400 mx-1" />
 
               {/* Link */}
-              <IconButton size="small" onClick={handleLink} title="Insert Link" sx={getToolbarButtonStyle()}>
-                <LinkIcon fontSize="small" />
-              </IconButton>
-              <IconButton size="small" onClick={handleUnlink} title="Remove Link" sx={getToolbarButtonStyle()}>
-                <LinkOff fontSize="small" />
-              </IconButton>
+              <button onClick={handleLink} title="Insert Link" className="p-1.5 min-w-9 h-9 border rounded bg-white text-gray-600 hover:bg-gray-200 transition-colors">
+                <LinkIcon />
+              </button>
+              <button onClick={handleUnlink} title="Remove Link" className="p-1.5 min-w-9 h-9 border rounded bg-white text-gray-600 hover:bg-gray-200 transition-colors">
+                <UnlinkIcon />
+              </button>
 
-              <Divider orientation="vertical" flexItem sx={{ mx: 0.5, backgroundColor: '#d1d5db' }} />
+              <div className="w-px h-8 bg-gray-400 mx-1" />
 
               {/* Image */}
-              <IconButton size="small" onClick={handleImage} title="Insert Image" sx={getToolbarButtonStyle()}>
-                <ImageIcon fontSize="small" />
-              </IconButton>
+              <button onClick={handleImage} title="Insert Image" className="p-1.5 min-w-9 h-9 border rounded bg-white text-gray-600 hover:bg-gray-200 transition-colors">
+                <ImageIcon />
+              </button>
 
-              <Divider orientation="vertical" flexItem sx={{ mx: 0.5, backgroundColor: '#d1d5db' }} />
+              <div className="w-px h-8 bg-gray-400 mx-1" />
 
               {/* Format Dropdown */}
-              <Select
+              <select
                 value={currentFormat}
                 onChange={handleFormatChange}
-                size="small"
-                variant="outlined"
-                sx={{
-                  minWidth: '140px',
-                  height: '36px',
-                  backgroundColor: '#fff',
-                  '& .MuiOutlinedInput-notchedOutline': {
-                    borderColor: '#d1d5db',
-                  }
-                }}
+                className="h-9 px-3 text-sm bg-white border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <MenuItem value="Normal" style={{ fontSize: '14px' }}>Normal</MenuItem>
-                <MenuItem value="Heading 1" style={{ fontSize: '28px', fontWeight: 'bold' }}>Heading 1</MenuItem>
-                <MenuItem value="Heading 2" style={{ fontSize: '24px', fontWeight: 'bold' }}>Heading 2</MenuItem>
-                <MenuItem value="Heading 3" style={{ fontSize: '20px', fontWeight: 'bold' }}>Heading 3</MenuItem>
-                <MenuItem value="Heading 4" style={{ fontSize: '16px', fontWeight: 'bold' }}>Heading 4</MenuItem>
-                <MenuItem value="Heading 5" style={{ fontSize: '14px', fontWeight: 'bold' }}>Heading 5</MenuItem>
-                <MenuItem value="Heading 6" style={{ fontSize: '12px', fontWeight: 'bold' }}>Heading 6</MenuItem>
-              </Select>
+                <option value="Normal">Normal</option>
+                <option value="Heading 1" className="text-3xl font-bold">Heading 1</option>
+                <option value="Heading 2" className="text-2xl font-bold">Heading 2</option>
+                <option value="Heading 3" className="text-xl font-bold">Heading 3</option>
+                <option value="Heading 4" className="text-lg font-bold">Heading 4</option>
+                <option value="Heading 5" className="text-base font-bold">Heading 5</option>
+                <option value="Heading 6" className="text-sm font-bold">Heading 6</option>
+              </select>
 
-              <Divider orientation="vertical" flexItem sx={{ mx: 0.5, backgroundColor: '#d1d5db' }} />
+              <div className="w-px h-8 bg-gray-400 mx-1" />
 
               {/* Undo/Redo */}
-              <IconButton size="small" onClick={handleUndo} title="Undo" sx={getToolbarButtonStyle()}>
-                <Undo fontSize="small" />
-              </IconButton>
-              <IconButton size="small" onClick={handleRedo} title="Redo" sx={getToolbarButtonStyle()}>
-                <Redo fontSize="small" />
-              </IconButton>
-            </Box>
+              <button onClick={handleUndo} title="Undo" className="p-1.5 min-w-9 h-9 border rounded bg-white text-gray-600 hover:bg-gray-200 transition-colors">
+                <UndoIcon />
+              </button>
+              <button onClick={handleRedo} title="Redo" className="p-1.5 min-w-9 h-9 border rounded bg-white text-gray-600 hover:bg-gray-200 transition-colors">
+                <RedoIcon />
+              </button>
+            </div>
 
             {/* Editor */}
             <div
@@ -486,7 +425,6 @@ const handleSubmit = async (e: React.MouseEvent<HTMLDivElement>) => {
               onClick={(e) => {
                 const target = e.target as HTMLElement;
                 
-                // Prevent editing inside code blocks by selecting the entire block
                 if (target.closest('pre.code-block')) {
                   e.preventDefault();
                   const pre = target.closest('pre.code-block') as HTMLElement;
@@ -498,103 +436,68 @@ const handleSubmit = async (e: React.MouseEvent<HTMLDivElement>) => {
                   return;
                 }
                 
-                // Make links clickable with Ctrl/Cmd + Click
                 if (target.tagName === 'A' && (e.ctrlKey || e.metaKey)) {
                   e.preventDefault();
                   window.open((target as HTMLAnchorElement).href, '_blank');
                 }
               }}
               onFocus={() => handleInputFieldError('description', null)}
-              style={{
-                minHeight: '400px',
-                padding: '15px',
-                border: inputFieldError?.description ? '1px solid #D32F2F' : '1px solid #e5e7eb',
-                borderTop: 'none',
-                borderRadius: '0 0 4px 4px',
-                backgroundColor: '#fff',
-                outline: 'none',
-                lineHeight: '1.6',
-                fontSize: '14px',
-                fontFamily: 'Arial, sans-serif',
-              }}
-              className="rich-text-editor"
+              className={`min-h-96 p-4 border-t-0 rounded-b-lg bg-white outline-none text-sm leading-relaxed font-sans ${
+                inputFieldError.description ? 'border-red-500' : 'border-gray-300'
+              } border rich-text-editor`}
+              dangerouslySetInnerHTML={{ __html: description }}
             />
-            {inputFieldError?.description && (
-              <div
-                style={{
-                  color: '#D32F2F',
-                  fontSize: '13px',
-                  padding: '5px 15px 0 12px',
-                  fontWeight: '400',
-                }}
-              >
-                {inputFieldError?.description}
-              </div>
+            
+            {inputFieldError.description && (
+              <p className="mt-1 text-xs text-red-600 pl-3">
+                {inputFieldError.description}
+              </p>
             )}
-            <div
-              style={{
-                color: '#6b7280',
-                fontSize: '12px',
-                padding: '5px 15px 0 12px',
-                fontStyle: 'italic',
-              }}
-            >
+            
+            <p className="mt-1 text-xs text-gray-500 italic pl-3">
               Tip: Hold Ctrl (or Cmd on Mac) and click on links to open them. Click on code blocks to select and delete them.
-            </div>
-          </Grid>
+            </p>
+          </div>
 
-          <Grid item lg={12} md={12} sm={12} xs={12}>
-            <Grid container sx={{ justifyContent: 'space-between' }}>
-              <div
-                onClick={handleSubmit}
-                style={{
-                  fontWeight: '500',
-                  backgroundColor: submitting ? '#ccc' : Color.primary,
-                  color: Color.white,
-                  padding: '10px 20px',
-                  borderRadius: '5px',
-                  cursor: submitting ? 'not-allowed' : 'pointer',
-                  fontSize: '15px',
-                  pointerEvents: submitting ? 'none' : 'auto',
-                }}
-              >
-                {submitting ? 'Submitting...' : 'Submit'}
-              </div>
-            </Grid>
-          </Grid>
-        </Grid>
+          <div className="flex justify-end">
+            <div
+              onClick={handleSubmit}
+              className={`px-5 py-2.5 rounded text-white font-medium text-sm cursor-pointer transition-colors ${
+                submitting
+                  ? 'bg-gray-400 cursor-not-allowed'
+                  : 'bg-blue-600 hover:bg-blue-700'
+              }`}
+              style={{ pointerEvents: submitting ? 'none' : 'auto' }}
+            >
+              {submitting ? 'Submitting...' : 'Submit'}
+            </div>
+          </div>
+        </div>
       )}
-      
-      {/* Add CSS for proper list and link styling */}
-      <style>{`
+
+      {/* Custom Styles */}
+      <style jsx>{`
         .rich-text-editor ul {
           list-style-type: disc;
           padding-left: 40px;
           margin: 1em 0;
         }
-        
         .rich-text-editor ol {
           list-style-type: decimal;
           padding-left: 40px;
           margin: 1em 0;
         }
-        
         .rich-text-editor li {
           margin: 0.5em 0;
         }
-        
         .rich-text-editor a {
           color: #2563eb;
           text-decoration: underline;
           cursor: pointer;
-          pointer-events: auto;
         }
-        
         .rich-text-editor a:hover {
           color: #1d4ed8;
-          text-decoration: underline;
         }
-        
         .rich-text-editor blockquote {
           border-left: 4px solid #ccc;
           margin-left: 0;
@@ -603,7 +506,6 @@ const handleSubmit = async (e: React.MouseEvent<HTMLDivElement>) => {
           font-style: italic;
           margin: 1em 0;
         }
-        
         .rich-text-editor pre {
           background-color: #f5f5f5;
           padding: 12px;
@@ -613,66 +515,76 @@ const handleSubmit = async (e: React.MouseEvent<HTMLDivElement>) => {
           font-family: monospace;
           margin: 1em 0;
           cursor: default;
-          position: relative;
         }
-        
         .rich-text-editor pre.code-block {
           user-select: all;
         }
-        
-        .rich-text-editor pre.code-block::before {
-          content: '';
-          position: absolute;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          pointer-events: none;
-        }
-        
         .rich-text-editor code {
           font-family: 'Courier New', monospace;
           font-size: 13px;
         }
-        
-        .rich-text-editor h1 {
-          font-size: 2em;
-          font-weight: bold;
-          margin: 0.67em 0;
-        }
-        
-        .rich-text-editor h2 {
-          font-size: 1.5em;
-          font-weight: bold;
-          margin: 0.75em 0;
-        }
-        
-        .rich-text-editor h3 {
-          font-size: 1.17em;
-          font-weight: bold;
-          margin: 0.83em 0;
-        }
-        
-        .rich-text-editor h4 {
-          font-size: 1em;
-          font-weight: bold;
-          margin: 1em 0;
-        }
-        
-        .rich-text-editor h5 {
-          font-size: 0.83em;
-          font-weight: bold;
-          margin: 1.5em 0;
-        }
-        
-        .rich-text-editor h6 {
-          font-size: 0.67em;
-          font-weight: bold;
-          margin: 2em 0;
-        }
+        .rich-text-editor h1 { font-size: 2em; font-weight: bold; margin: 0.67em 0; }
+        .rich-text-editor h2 { font-size: 1.5em; font-weight: bold; margin: 0.75em 0; }
+        .rich-text-editor h3 { font-size: 1.17em; font-weight: bold; margin: 0.83em 0; }
+        .rich-text-editor h4 { font-size: 1em; font-weight: bold; margin: 1em 0; }
+        .rich-text-editor h5 { font-size: 0.83em; font-weight: bold; margin: 1.5em 0; }
+        .rich-text-editor h6 { font-size: 0.67em; font-weight: bold; margin: 2em 0; }
       `}</style>
     </div>
   );
 };
+
+// SVG Icons (Replace with your actual SVG components or use Heroicons)
+const BoldIcon = () => (
+  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M15.5 9A5.5 5.5 0 1010 3.5v13a5.5 5.5 0 005.5-5.5z"/></svg>
+);
+const ItalicIcon = () => (
+  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M15.5 4h-5l-2 12h5l2-12z"/></svg>
+);
+const StrikethroughIcon = () => (
+  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M10 5v3h3v2H7V8h3V5zM7 12h6v2H7z"/></svg>
+);
+const CodeIcon = () => (
+  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M7 8l-3 3 3 3M13 8l3 3-3 3M3 10h14"/></svg>
+);
+const UnderlineIcon = () => (
+  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M6 4v6a4 4 0 008 0V4M4 16h12"/></svg>
+);
+const AlignLeftIcon = () => (
+  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M3 4h14M3 8h10M3 12h14M3 16h10"/></svg>
+);
+const AlignCenterIcon = () => (
+  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M3 4h14M5 8h10M3 12h14M5 16h10"/></svg>
+);
+const AlignRightIcon = () => (
+  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M3 4h14M7 8h10M3 12h14M7 16h10"/></svg>
+);
+const AlignJustifyIcon = () => (
+  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M3 4h14M3 8h14M3 12h14M3 16h14"/></svg>
+);
+const BulletListIcon = () => (
+  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M5 4h12M5 10h12M5 16h12M2 4h1M2 10h1M2 16h1"/></svg>
+);
+const NumberListIcon = () => (
+  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M3 4h12M3 10h12M3 16h12M1 4h1v1H1V4zM1 9h1v2H1V9zM1 15h1v1H1v-1z"/></svg>
+);
+const QuoteIcon = () => (
+  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M9 4h6l-2 8H7l2-8zM5 4h6l-2 8H3l2-8z"/></svg>
+);
+const LinkIcon = () => (
+  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M11 3a4 4 0 00-4 4v1H5a4 4 0 00-4 4v1a4 4 0 004 4h1a4 4 0 004-4v-1h2a4 4 0 004-4v-1a4 4 0 00-4-4h-1z"/></svg>
+);
+const UnlinkIcon = () => (
+  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M13 7h2a4 4 0 014 4v1a4 4 0 01-4 4h-2M7 13H5a4 4 0 01-4-4v-1a4 4 0 014-4h2M7 7l6 6"/></svg>
+);
+const ImageIcon = () => (
+  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v12a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm12 2H5v8l3-3 2 2 4-4v-3z"/></svg>
+);
+const UndoIcon = () => (
+  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M8 7H5v2l-3-3 3-3v2h4a4 4 0 014 4v6h-2V8a2 2 0 00-2-2H8z"/></svg>
+);
+const RedoIcon = () => (
+  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M12 7h3v2l3-3-3-3v2h-4a4 4 0 00-4 4v6h2V8a2 2 0 012-2h2z"/></svg>
+);
 
 export default StaticPageEditor;
