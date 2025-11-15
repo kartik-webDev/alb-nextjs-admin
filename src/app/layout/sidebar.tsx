@@ -57,7 +57,7 @@ const Sidebar = ({ isSidebarOpen }: SidebarProps) => {
           </div>
         )}
         
-        <section className="pt-[15px] pl-2.5 pr-0 pb-0 flex flex-col gap-[5px]">
+        {/* <section className="pt-[15px] pl-2.5 pr-0 pb-0 flex flex-col gap-[5px]">
           {RouteName.map((route, index) => {
             if (route.subRoutes) {
               return (
@@ -86,7 +86,6 @@ const Sidebar = ({ isSidebarOpen }: SidebarProps) => {
                     }
                   `}
                 >
-                  {/* Icon hamesha dikhega - ye line add karna bhool gaye the! */}
                   <div className="flex-shrink-0 w-5 h-5 flex items-center justify-center">
                     {route.icon}
                   </div>
@@ -108,7 +107,7 @@ const Sidebar = ({ isSidebarOpen }: SidebarProps) => {
               </div>
             );
           })}
-        </section>
+        </section> */}
       </div>
     </>
   );
