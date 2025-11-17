@@ -14,6 +14,17 @@ export const RouteName = [
     name: "Dashboard",
     icon: <OtherRouteSvg />,
   },
+  {
+    name: "Reports",
+    icon: <NotificationRouteSvg />,
+    subRoutes: [
+      {
+        path: "/time-block-report",
+        name: "Time Block",
+        icon: <OtherRouteSvg />,
+      },
+    ],
+  },
   // {
   //   path: "/customer",
   //   name: "Customer",

@@ -59,16 +59,16 @@ const Sidebar = ({ isSidebarOpen }: SidebarProps) => {
         
         <section className="pt-[15px] pl-2.5 pr-0 pb-0 flex flex-col gap-[5px]">
           {RouteName.map((route, index) => {
-            // if (route.subRoutes) {
-            //   return (
-            //     <SidebarMenu
-            //       route={route}
-            //       key={index}
-            //       showAnimation={showAnimation}
-            //       isSidebarOpen={isSidebarOpen}
-            //     />
-            //   );
-            // }
+            if (route.subRoutes) {
+              return (
+                <SidebarMenu
+                  route={route}
+                  key={index}
+                  showAnimation={showAnimation}
+                  isSidebarOpen={isSidebarOpen}
+                />
+              );
+            }
             
             return (
               <div key={index}>
