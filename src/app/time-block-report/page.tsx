@@ -31,7 +31,7 @@ export default function BlockedSlotsManagement() {
     const dates = [];
     for (let i = 0; i < 10; i++) {
       const date = new Date();
-      date.setDate(date.getDate() + i + 2); // Start from 2 days after today
+      date.setDate(date.getDate() + i + 2);
       dates.push({
         date: date.toISOString().split('T')[0],
         label: date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }),
@@ -43,7 +43,6 @@ export default function BlockedSlotsManagement() {
 
   const next10Days = getNext10Days();
 
-  // Fetch slots
   const fetchSlots = async () => {
     if (!selectedDate || !selectedPrefix) return;
     setLoading(true);
@@ -108,7 +107,6 @@ export default function BlockedSlotsManagement() {
     // eslint-disable-next-line
   }, [selectedDate, selectedPrefix]);
 
-  // Block Slot
   const handleBlock = async (timeRange: string) => {
     setProcessingSlots(prev => new Set(prev).add(timeRange));
     setSlots(prevSlots =>
@@ -136,7 +134,19 @@ export default function BlockedSlotsManagement() {
 
       if (data.success) {
         toast.success("Slot blocked successfully!");
-        await fetchSlots();
+        setSlots(prevSlots =>
+          prevSlots.map(slot =>
+            slot.time === timeRange
+              ? { 
+                  ...slot, 
+                  isBlocked: true, 
+                  blockedSlotId: data.blockedSlot?._id || data.slot?._id,
+                  reason: data.blockedSlot?.reason || data.slot?.reason,
+                  blockedBy: data.blockedSlot?.blockedBy || data.slot?.blockedBy
+                }
+              : slot
+          )
+        );
       } else {
         toast.error(data.message || "Failed to block slot");
         setSlots(prevSlots =>
@@ -166,7 +176,6 @@ export default function BlockedSlotsManagement() {
     }
   };
 
-  // Unblock Slot
   const handleUnblock = async (blockedSlotId: string, timeRange: string) => {
     if (!blockedSlotId || blockedSlotId === 'temp-id') {
       toast.error("Invalid slot ID");
@@ -232,7 +241,6 @@ export default function BlockedSlotsManagement() {
   return (
     <div className="min-h-screen py-8 px-4">
       <div className="container mx-auto max-w-7xl">
-        {/* Header */}
         <Card className="mb-6 p-6 bg-[#EF4444] text-white border-none shadow-lg">
           <div className="flex items-center justify-between">
             <div>
@@ -243,14 +251,11 @@ export default function BlockedSlotsManagement() {
                 Manage consultation time slots availability
               </p>
             </div>
-            {/* <Ban className="w-12 h-12 md:w-16 md:h-16 opacity-90" /> */}
           </div>
         </Card>
 
-        {/* Filters */}
         <Card className="mb-6 p-6 border-[#661726]/30 bg-white shadow-md">
           <div className="space-y-4">
-            {/* Report Type and Date Selection */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-medium text-[#EF4444] mb-2 block">
@@ -284,7 +289,6 @@ export default function BlockedSlotsManagement() {
               </div>
             </div>
 
-            {/* Quick Date Selection - Next 10 Days */}
             <div>
               <label className="text-sm font-medium text-[#EF4444] mb-3 block">
                 Quick Select Next 10 Days
@@ -314,7 +318,6 @@ export default function BlockedSlotsManagement() {
           </div>
         </Card>
 
-        {/* Slots Grid */}
         {loading ? (
           <Card className="p-12 text-center border-[#661726]/30 bg-white">
             <Loader2 className="w-12 h-12 animate-spin text-[#661726] mx-auto mb-4" />
@@ -344,7 +347,6 @@ export default function BlockedSlotsManagement() {
                   }`}
                 >
                 <div className="space-y-3">
-                {/* Time and Button inline */}
                 <div className="flex items-center justify-between">
                   <p className="font-bold text-[#2F211D] text-lg mb-0">
                     {slot.time}
@@ -389,8 +391,6 @@ export default function BlockedSlotsManagement() {
                   </div>
                 </div>
 
-
-                {/* Reason if blocked */}
                 {slot.isBlocked && slot.reason && (
                   <div className="pt-2 border-t border-red-200">
                     <p className="text-xs text-[#7A665D]">
