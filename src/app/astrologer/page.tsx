@@ -10,8 +10,6 @@ import { DeepSearchSpace } from "@/utils/common-function";
 
 import { Color } from "@/assets/colors";
 import MainDatatable from "@/components/common/MainDatatable";
-import { api_url, base_url, get_astrologer } from "@/lib/api-routes";
-import DatatableHeading from "@/components/datatable/DatatableHeading";
 import {
   SwitchOnSvg,
   SwitchOffSvg,
@@ -76,7 +74,7 @@ export default function AstrologerPage() {
   const fetchAstrologers = async () => {
     try {
       setIsLoading(true);
-      const res = await fetch(`${base_url}${get_astrologer}`);
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/get-all-astrologers`);
       if (!res.ok) throw new Error("Failed to fetch");
 
       const data = await res.json();
