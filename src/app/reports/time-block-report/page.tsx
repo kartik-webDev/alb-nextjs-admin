@@ -5,7 +5,7 @@ import { toast } from 'react-toastify';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, Calendar, Ban } from 'lucide-react';
+import { Loader2, Calendar, CheckSquare, Square } from 'lucide-react';
 
 const reportPrefixes = [
   { value: '#LJR-', label: 'Life Journey Report' },
@@ -26,6 +26,9 @@ export default function BlockedSlotsManagement() {
   const [slots, setSlots] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [processingSlots, setProcessingSlots] = useState<Set<string>>(new Set());
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedSlots, setSelectedSlots] = useState<Set<string>>(new Set());
+  const [bulkProcessing, setBulkProcessing] = useState(false);
 
   const getNext10Days = () => {
     const dates = [];
@@ -104,7 +107,8 @@ export default function BlockedSlotsManagement() {
 
   useEffect(() => {
     fetchSlots();
-    // eslint-disable-next-line
+    setSelectionMode(false);
+    setSelectedSlots(new Set());
   }, [selectedDate, selectedPrefix]);
 
   const handleBlock = async (timeRange: string) => {
@@ -133,7 +137,6 @@ export default function BlockedSlotsManagement() {
       const data = await response.json();
 
       if (data.success) {
-        toast.success("Slot blocked successfully!");
         setSlots(prevSlots =>
           prevSlots.map(slot =>
             slot.time === timeRange
@@ -147,6 +150,7 @@ export default function BlockedSlotsManagement() {
               : slot
           )
         );
+        return true;
       } else {
         toast.error(data.message || "Failed to block slot");
         setSlots(prevSlots =>
@@ -156,6 +160,7 @@ export default function BlockedSlotsManagement() {
               : slot
           )
         );
+        return false;
       }
     } catch (error) {
       console.error('Error blocking slot:', error);
@@ -167,6 +172,7 @@ export default function BlockedSlotsManagement() {
             : slot
         )
       );
+      return false;
     } finally {
       setProcessingSlots(prev => {
         const newSet = new Set(prev);
@@ -179,7 +185,7 @@ export default function BlockedSlotsManagement() {
   const handleUnblock = async (blockedSlotId: string, timeRange: string) => {
     if (!blockedSlotId || blockedSlotId === 'temp-id') {
       toast.error("Invalid slot ID");
-      return;
+      return false;
     }
     setProcessingSlots(prev => new Set(prev).add(timeRange));
     setSlots(prevSlots =>
@@ -198,7 +204,7 @@ export default function BlockedSlotsManagement() {
       const data = await response.json();
 
       if (data.success) {
-        toast.success("Slot unblocked successfully!");
+        return true;
       } else {
         toast.error(data.message || "Failed to unblock slot");
         setSlots(prevSlots =>
@@ -208,6 +214,7 @@ export default function BlockedSlotsManagement() {
               : slot
           )
         );
+        return false;
       }
     } catch (error) {
       console.error('Error unblocking slot:', error);
@@ -219,6 +226,7 @@ export default function BlockedSlotsManagement() {
             : slot
         )
       );
+      return false;
     } finally {
       setProcessingSlots(prev => {
         const newSet = new Set(prev);
@@ -226,6 +234,71 @@ export default function BlockedSlotsManagement() {
         return newSet;
       });
     }
+  };
+
+  const toggleSelectionMode = () => {
+    if (!selectionMode) {
+      // Select all slots when entering selection mode
+      const allSlotTimes = slots.map(slot => slot.time);
+      setSelectedSlots(new Set(allSlotTimes));
+      setSelectionMode(true);
+    } else {
+      // Clear selection when exiting
+      setSelectionMode(false);
+      setSelectedSlots(new Set());
+    }
+  };
+
+  const toggleSlotSelection = (timeRange: string) => {
+    setSelectedSlots(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(timeRange)) {
+        newSet.delete(timeRange);
+      } else {
+        newSet.add(timeRange);
+      }
+      return newSet;
+    });
+  };
+
+  const handleBulkAction = async (action: 'block' | 'unblock') => {
+    if (selectedSlots.size === 0) {
+      toast.error("Please select at least one slot");
+      return;
+    }
+
+    setBulkProcessing(true);
+    let successCount = 0;
+    let failCount = 0;
+
+    const selectedSlotsArray = Array.from(selectedSlots);
+    
+    for (const timeRange of selectedSlotsArray) {
+      const slot = slots.find(s => s.time === timeRange);
+      if (!slot) continue;
+
+      if (action === 'block' && !slot.isBlocked) {
+        const success = await handleBlock(timeRange);
+        if (success) successCount++;
+        else failCount++;
+      } else if (action === 'unblock' && slot.isBlocked) {
+        const success = await handleUnblock(slot.blockedSlotId, timeRange);
+        if (success) successCount++;
+        else failCount++;
+      }
+    }
+
+    setBulkProcessing(false);
+    
+    if (successCount > 0) {
+      toast.success(`${successCount} slot(s) ${action === 'block' ? 'blocked' : 'unblocked'} successfully!`);
+    }
+    if (failCount > 0) {
+      toast.error(`${failCount} slot(s) failed to ${action}`);
+    }
+
+    setSelectedSlots(new Set());
+    setSelectionMode(false);
   };
 
   const formatDate = (dateString: string) => {
@@ -237,6 +310,13 @@ export default function BlockedSlotsManagement() {
       day: 'numeric'
     });
   };
+
+  const selectedBlockedCount = Array.from(selectedSlots).filter(timeRange => {
+    const slot = slots.find(s => s.time === timeRange);
+    return slot?.isBlocked;
+  }).length;
+
+  const selectedUnblockedCount = selectedSlots.size - selectedBlockedCount;
 
   return (
     <div className="min-h-screen py-8 px-4">
@@ -318,6 +398,62 @@ export default function BlockedSlotsManagement() {
           </div>
         </Card>
 
+        {!loading && slots.length > 0 && (
+          <Card className="mb-4 p-4 border-[#661726]/30 bg-white shadow-md">
+            <div className="flex flex-wrap items-center gap-3">
+              <Button
+                onClick={toggleSelectionMode}
+                variant="outline"
+                className="border-[#EF4444] text-[#EF4444] hover:bg-[#EF4444] hover:text-white"
+              >
+                {selectionMode ? 'Cancel Selection' : 'Select All'}
+              </Button>
+
+              {selectionMode && (
+                <>
+                  <div className="text-sm text-[#7A665D]">
+                    Selected: <span className="font-semibold text-[#EF4444]">{selectedSlots.size}</span> slot(s)
+                  </div>
+                  
+                  {selectedUnblockedCount > 0 && (
+                    <Button
+                      onClick={() => handleBulkAction('block')}
+                      disabled={bulkProcessing}
+                      className="bg-red-500 hover:bg-red-600 text-white"
+                    >
+                      {bulkProcessing ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                          Processing...
+                        </>
+                      ) : (
+                        `Block Selected (${selectedUnblockedCount})`
+                      )}
+                    </Button>
+                  )}
+
+                  {selectedBlockedCount > 0 && (
+                    <Button
+                      onClick={() => handleBulkAction('unblock')}
+                      disabled={bulkProcessing}
+                      className="bg-green-500 hover:bg-green-600 text-white"
+                    >
+                      {bulkProcessing ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                          Processing...
+                        </>
+                      ) : (
+                        `Unblock Selected (${selectedBlockedCount})`
+                      )}
+                    </Button>
+                  )}
+                </>
+              )}
+            </div>
+          </Card>
+        )}
+
         {loading ? (
           <Card className="p-12 text-center border-[#661726]/30 bg-white">
             <Loader2 className="w-12 h-12 animate-spin text-[#661726] mx-auto mb-4" />
@@ -337,68 +473,91 @@ export default function BlockedSlotsManagement() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {slots.map((slot) => {
               const isProcessing = processingSlots.has(slot.time);
+              const isSelected = selectedSlots.has(slot.time);
+              
               return (
                 <Card
                   key={slot.time}
-                  className={`p-4 border transition-all ${
+                  className={`p-4 border transition-all cursor-pointer ${
+                    isSelected ? 'ring-2 ring-[#EF4444]' : ''
+                  } ${
                     slot.isBlocked
                       ? 'bg-red-50 border-red-300'
                       : 'bg-green-50 border-green-300'
                   }`}
+                  onClick={() => selectionMode && toggleSlotSelection(slot.time)}
                 >
-                <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <p className="font-bold text-[#2F211D] text-lg mb-0">
-                    {slot.time}
-                  </p>
-                  <div className="ml-auto">
-                    {slot.isBlocked ? (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleUnblock(slot.blockedSlotId, slot.time)}
-                        disabled={isProcessing || !slot.isBlocked}
-                        className={`${
-                          !slot.isBlocked
-                            ? 'bg-gray-400 cursor-not-allowed text-white'
-                            : 'bg-green-500 hover:bg-green-600 text-white border-none'
-                        }`}
-                      >
-                        {isProcessing ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                          'Unblock'
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        {selectionMode && (
+                          <div onClick={(e) => e.stopPropagation()}>
+                            {isSelected ? (
+                              <CheckSquare 
+                                className="w-5 h-5 text-[#EF4444] cursor-pointer" 
+                                onClick={() => toggleSlotSelection(slot.time)}
+                              />
+                            ) : (
+                              <Square 
+                                className="w-5 h-5 text-[#7A665D] cursor-pointer" 
+                                onClick={() => toggleSlotSelection(slot.time)}
+                              />
+                            )}
+                          </div>
                         )}
-                      </Button>
-                    ) : (
-                      <Button
-                        size="sm"
-                        onClick={() => handleBlock(slot.time)}
-                        disabled={isProcessing || slot.isBlocked}
-                        className={`${
-                          slot.isBlocked
-                            ? 'bg-gray-400 cursor-not-allowed'
-                            : 'bg-red-500 hover:bg-red-600 text-white'
-                        }`}
-                      >
-                        {isProcessing ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                          'Block'
-                        )}
-                      </Button>
+                        <p className="font-bold text-[#2F211D] text-lg mb-0">
+                          {slot.time}
+                        </p>
+                      </div>
+                      
+                      {!selectionMode && (
+                        <div className="ml-auto">
+                          {slot.isBlocked ? (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleUnblock(slot.blockedSlotId, slot.time);
+                              }}
+                              disabled={isProcessing}
+                              className="bg-green-500 hover:bg-green-600 text-white border-none"
+                            >
+                              {isProcessing ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                'Unblock'
+                              )}
+                            </Button>
+                          ) : (
+                            <Button
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleBlock(slot.time);
+                              }}
+                              disabled={isProcessing}
+                              className="bg-red-500 hover:bg-red-600 text-white"
+                            >
+                              {isProcessing ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                'Block'
+                              )}
+                            </Button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {slot.isBlocked && slot.reason && (
+                      <div className="pt-2 border-t border-red-200">
+                        <p className="text-xs text-[#7A665D]">
+                          <span className="font-medium">Reason:</span> {slot.reason}
+                        </p>
+                      </div>
                     )}
                   </div>
-                </div>
-
-                {slot.isBlocked && slot.reason && (
-                  <div className="pt-2 border-t border-red-200">
-                    <p className="text-xs text-[#7A665D]">
-                      <span className="font-medium">Reason:</span> {slot.reason}
-                    </p>
-                  </div>
-                )}
-              </div>
                 </Card>
               );
             })}
