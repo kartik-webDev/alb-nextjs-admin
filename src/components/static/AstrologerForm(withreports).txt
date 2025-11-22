@@ -1,0 +1,1557 @@
+'use client';
+import React, { useState, useEffect } from 'react';
+import moment from 'moment';
+import { Country, State, City } from 'country-state-city';
+import { Color } from '@/assets/colors';
+import { calculateAge, get_date_value } from '@/utils/common-function';
+import {
+  api_url,
+  img_url,
+  get_skill,
+  get_main_expertise,
+  get_remedies,
+  get_language,
+  get_slot_duration,
+  create_astrologer,
+  update_astrologer_by_id,
+} from '@/lib/api-routes';
+import Swal from 'sweetalert2';
+import { CrossSvg, UploadImageSvg, DeleteSvg } from '@/components/svgs/page';
+
+interface Skill { _id: string; skill: string }
+interface Expertise { _id: string; mainExpertise: string }
+interface Remedy { _id: string; title: string }
+interface Language { _id: string; languageName: string }
+interface SlotDuration { _id: string; slotDuration: string; active: boolean }
+interface ConsultationPrice {
+  _id?: string;
+  duration: SlotDuration;
+  price: number;
+}
+
+interface AstrologerFormData {
+  astrologerName: string;
+  displayName: string;
+  title: string;
+  phoneNumber: string;
+  alternateNumber: string;
+  country_phone_code: string;
+  email: string;
+  password: string;
+  confirm_password: string;
+  gender: string;
+  dateOfBirth: string;
+  experience: string;
+  consultation: string;
+  address: string;
+  country: string;
+  state: string;
+  city: string;
+  zipCode: string;
+  youtubeLink: string;
+  free_min: string;
+  bank_name: string;
+  account_number: string;
+  account_type: string;
+  IFSC_code: string;
+  account_holder_name: string;
+  panCard: string;
+  aadharNumber: string;
+  consultation_price: string;
+  call_price: string;
+  commission_call_price: string;
+  totalCallDuration: number;
+  chat_price: string;
+  commission_chat_price: string;
+  totalChatDuration: number;
+  normal_video_call_price: number;
+  commission_normal_video_call_price: number;
+  totalVideoCallDuration: number;
+  video_call_price: number;
+  commission_video_call_price: number;
+  gift_commission: number;
+  consultation_commission_call: string;
+  consultation_call_price: string;
+  consultation_commission_chat: string;
+  consultation_chat_price: string;
+  consultation_commission_videocall: string;
+  consultation_videocall_price: string;
+  consultation_commission: string;
+  short_bio: string;
+  about: string;
+  tagLine: string;
+  commission_remark: string;
+  workingOnOtherApps: string;
+  long_bio: string;
+    isDealInReport: boolean;
+
+}
+
+interface Props {
+  mode: 'Add' | 'Edit';
+  initialData?: any;
+  onSnack: (snack: { open: boolean; message: string }) => void;
+}
+
+export default function AstrologerForm({ mode, initialData, onSnack }: Props) {
+  const isEdit = mode === 'Edit';
+
+  const [form, setForm] = useState<AstrologerFormData>({
+    astrologerName: initialData?.astrologerName || '',
+    displayName: initialData?.displayName || '',
+      isDealInReport: initialData?.isDealInReport || false,
+    title: initialData?.title || '',
+    phoneNumber: initialData?.phoneNumber || '',
+    alternateNumber: initialData?.alternateNumber || '',
+    country_phone_code: initialData?.country_phone_code || '91',
+    email: initialData?.email || '',
+    password: initialData?.password || '',
+    confirm_password: initialData?.password || '',
+    gender: initialData?.gender || '',
+    dateOfBirth: initialData?.dateOfBirth ? moment(initialData.dateOfBirth).format('YYYY-MM-DD') : '',
+    experience: initialData?.experience || '',
+    consultation:initialData?.consultation || '',
+    address: initialData?.address || '',
+    country: initialData?.country || 'India',
+    state: initialData?.state || '',
+    city: initialData?.city || '',
+    zipCode: initialData?.zipCode || '',
+    youtubeLink: initialData?.youtubeLink || 'https://www.youtube.com/',
+    free_min: initialData?.free_min?.toString() || '5',
+    bank_name: initialData?.account_name || '',
+    account_number: initialData?.account_number || '',
+    account_type: initialData?.account_type || '',
+    IFSC_code: initialData?.IFSC_code || '',
+    account_holder_name: initialData?.account_holder_name || '',
+    panCard: initialData?.panCard || '',
+    aadharNumber: initialData?.aadharNumber || '',
+    consultation_price: initialData?.consultation_price || '4',
+    call_price: initialData?.call_price || '',
+    commission_call_price: initialData?.commission_call_price || '',
+    totalCallDuration: initialData?.totalCallDuration ? initialData.totalCallDuration / 60 : 0,
+    chat_price: initialData?.chat_price || '',
+    commission_chat_price: initialData?.commission_chat_price || '',
+    totalChatDuration: initialData?.totalChatDuration ? initialData.totalChatDuration / 60 : 0,
+    normal_video_call_price: initialData?.normal_video_call_price || 0,
+    commission_normal_video_call_price: initialData?.commission_normal_video_call_price || 0,
+    totalVideoCallDuration: initialData?.totalVideoCallDuration ? initialData.totalVideoCallDuration / 60 : 0,
+    video_call_price: initialData?.video_call_price || 0,
+    commission_video_call_price: initialData?.commission_video_call_price || 0,
+    gift_commission: initialData?.gift_commission || 0,
+    consultation_commission_call: initialData?.consultation_commission_call || '',
+    consultation_call_price: initialData?.consultation_call_price || '',
+    consultation_commission_chat: initialData?.consultation_commission_chat || '',
+    consultation_chat_price: initialData?.consultation_chat_price || '',
+    consultation_commission_videocall: initialData?.consultation_commission_videocall || '',
+    consultation_videocall_price: initialData?.consultation_videocall_price || '',
+    consultation_commission: initialData?.consultation_commission || '',
+    short_bio: initialData?.short_bio || '',
+    about: initialData?.about || '',
+    tagLine: initialData?.tagLine || '',
+    commission_remark: initialData?.commission_remark || '',
+    workingOnOtherApps: initialData?.workingOnOtherApps || 'No',
+    long_bio: initialData?.long_bio || '',
+  });
+
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(true);
+
+  const [skills, setSkills] = useState<Skill[]>([]);
+  const [mainExpertise, setMainExpertise] = useState<Expertise[]>([]);
+  const [remedies, setRemedies] = useState<Remedy[]>([]);
+  const [languages, setLanguages] = useState<Language[]>([]);
+  const [slotDurations, setSlotDurations] = useState<SlotDuration[]>([]);
+  const [consultationPrices, setConsultationPrices] = useState<ConsultationPrice[]>([]);
+
+  const [selectedSkills, setSelectedSkills] = useState<string[]>(
+    initialData?.skill?.map((s: any) => s._id) || []
+  );
+  const [selectedRemedies, setSelectedRemedies] = useState<string[]>(
+    initialData?.remedies?.map((r: any) => r._id) || []
+  );
+  const [selectedMainExpertise, setSelectedMainExpertise] = useState<string[]>(
+    initialData?.mainExpertise?.map((e: any) => e._id) || []
+  );
+  const [selectedLanguages, setSelectedLanguages] = useState<string[]>(
+    Array.isArray(initialData?.language) ? initialData.language : []
+  );
+
+const [selectedReportTypes, setSelectedReportTypes] = useState<string[]>(
+  initialData?.reportTypes || []
+);
+  // Add after line ~183 where other states are declared
+const [countries] = useState(Country.getAllCountries());
+const [states, setStates] = useState<any[]>([]);
+const [cities, setCities] = useState<any[]>([]);
+
+  
+  const [image, setImage] = useState<{ file: string; bytes: File | null }>({
+    file: initialData?.profileImage ? `${img_url}${initialData.profileImage}` : '',
+    bytes: null,
+  });
+  const [bankProof, setBankProof] = useState<{ file: string; bytes: File | null }>({
+    file: initialData?.bank_proof_image ? `${img_url}${initialData.bank_proof_image}` : '',
+    bytes: null,
+  });
+  const [idProof, setIdProof] = useState<{ file: string; bytes: File | null }>({
+    file: initialData?.id_proof_image ? `${img_url}${initialData.id_proof_image}` : '',
+    bytes: null,
+  });
+  const [bulkImages, setBulkImages] = useState<{ file: string; bytes: File | null }[]>(
+    initialData?.multipleImages?.map((img: string) => ({ file: `${img_url}${img}`, bytes: null })) || []
+  );
+  const [bulkVideos, setBulkVideos] = useState<{ file: string; bytes: File | null }[]>(
+    initialData?.multipleVideos?.map((vid: string) => ({ file: `${img_url}${vid}`, bytes: null })) || []
+  );
+
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [selectedCountry, setSelectedCountry] = useState<any>({ name: 'India', isoCode: 'IN' });
+  const [selectedState, setSelectedState] = useState<any>({});
+
+  // Initialize country, state, city on mount (in edit mode)
+useEffect(() => {
+  if (initialData?.country) {
+    const country = countries.find((c) => c.name === initialData.country);
+    if (country) {
+      setSelectedCountry(country);
+      const countryStates = State.getStatesOfCountry(country.isoCode);
+      setStates(countryStates);
+      
+      if (initialData?.state) {
+        const state = countryStates.find((s: any) => s.name === initialData.state);
+        if (state) {
+          setSelectedState(state);
+          const stateCities = City.getCitiesOfState(country.isoCode, state.isoCode);
+          setCities(stateCities);
+        }
+      }
+    }
+  }
+}, [initialData, countries]);
+
+// Update states when country changes
+useEffect(() => {
+  if (form.country) {
+    const country = countries.find((c) => c.name === form.country);
+    if (country) {
+      setSelectedCountry(country);
+      const countryStates = State.getStatesOfCountry(country.isoCode);
+      setStates(countryStates);
+      
+      // Reset state and city when country changes
+      if (form.country !== initialData?.country) {
+        setForm((prev) => ({ ...prev, state: '', city: '' }));
+        setSelectedState(null);
+        setCities([]);
+      }
+    }
+  }
+}, [form.country, countries]);
+
+// Update cities when state changes
+useEffect(() => {
+  if (form.state && selectedCountry) {
+    const state = states.find((s) => s.name === form.state);
+    if (state) {
+      setSelectedState(state);
+      const stateCities = City.getCitiesOfState(selectedCountry.isoCode, state.isoCode);
+      setCities(stateCities);
+      
+      // Reset city when state changes
+      if (form.state !== initialData?.state) {
+        setForm((prev) => ({ ...prev, city: '' }));
+      }
+    }
+  }
+}, [form.state, selectedCountry, states]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const [
+          skillsRes,
+          expertiseRes,
+          remediesRes,
+          languagesRes,
+          slotsRes,
+        ] = await Promise.all([
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/${get_skill}`),
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/${get_main_expertise}`),
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/${get_remedies}`),
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/${get_language}`),
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/${get_slot_duration}`),
+        ]);
+
+        if (!skillsRes.ok || !expertiseRes.ok || !remediesRes.ok || !languagesRes.ok || !slotsRes.ok) {
+          throw new Error('Failed to fetch lookup data');
+        }
+
+        const [skillsData, expertiseData, remediesData, languagesData, slotsData] = await Promise.all([
+          skillsRes.json(),
+          expertiseRes.json(),
+          remediesRes.json(),
+          languagesRes.json(),
+          slotsRes.json(),
+        ]);
+
+        setSkills(skillsData?.skills || []);
+        setMainExpertise(expertiseData?.mainExpertise || []);
+        setRemedies(remediesData?.remedies || []);
+        setLanguages(languagesData?.languageData || []);
+        setSlotDurations(slotsData?.slots || []);
+
+        if (isEdit && initialData?._id) {
+          const cpRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/get-consultation-price`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ astrologerId: initialData._id }),
+          });
+
+          if (cpRes.ok) {
+            const cpData = await cpRes.json();
+            setConsultationPrices(cpData?.data || []);
+          }
+        }
+      } catch (err) {
+        onSnack({ open: true, message: 'Failed to load lookup data.' });
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, [isEdit, initialData?._id, onSnack]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setForm(prev => ({ ...prev, [name]: value }));
+    setErrors(prev => ({ ...prev, [name]: '' }));
+  };
+
+  const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setForm(prev => ({ ...prev, [name]: value }));
+    setErrors(prev => ({ ...prev, [name]: '' }));
+
+  };
+
+  const handleMultiSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    const selected = Array.from(e.target.selectedOptions, option => option.value);
+    if (name === 'language') setSelectedLanguages(selected);
+  };
+
+  const handleImage = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && file.size < 500 * 1024) {
+      setImage({ file: URL.createObjectURL(file), bytes: file });
+    } else if (file) {
+      onSnack({ open: true, message: 'Profile image must be < 500KB' });
+    }
+  };
+
+  const handleBulk = (e: React.ChangeEvent<HTMLInputElement>, type: 'image' | 'video') => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (type === 'video' && file.size > 30 * 1024 * 1024) {
+      onSnack({ open: true, message: 'Video must be < 30MB' });
+      return;
+    }
+    const url = URL.createObjectURL(file);
+    if (type === 'image') setBulkImages(prev => [...prev, { file: url, bytes: file }]);
+    else setBulkVideos(prev => [...prev, { file: url, bytes: file }]);
+  };
+
+  const removeBulk = (index: number, type: 'image' | 'video') => {
+    if (type === 'image') setBulkImages(prev => prev.filter((_, i) => i !== index));
+    else setBulkVideos(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleCheckbox = (
+    id: string,
+    list: string[],
+    setter: React.Dispatch<React.SetStateAction<string[]>>
+  ) => {
+    setter(prev => (prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]));
+  };
+
+  const validate = () => {
+    const newErrors: Record<string, string> = {};
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const mobileRegex = /^\d{10}$/;
+
+    if (!form.astrologerName) newErrors.astrologerName = 'Name required';
+    if (!emailRegex.test(form.email)) newErrors.email = 'Invalid email';
+    if (!mobileRegex.test(form.phoneNumber)) newErrors.phoneNumber = '10-digit mobile required';
+    // Only require password for new astrologers
+    if (form.isDealInReport && selectedReportTypes.length === 0) {
+    newErrors.reportTypes = 'Select at least one report type';
+  }
+
+if (!isEdit) {
+  if (!form.password) {
+    newErrors.password = 'Password required';
+  } else if (form.password.length < 6) {
+    newErrors.password = 'Password must be at least 6 characters';
+  }
+  
+  if (!form.confirm_password) {
+    newErrors.confirm_password = 'Please confirm password';
+  }
+}
+
+// Only validate password match if password is provided
+    if (form.password && form.password !== form.confirm_password) {newErrors.confirm_password = 'Passwords do not match';}
+
+    if (!form.dateOfBirth) newErrors.dateOfBirth = 'DOB required';
+    if (calculateAge(form.dateOfBirth) < 18) newErrors.dateOfBirth = 'Must be 18+';
+    if (!form.experience) newErrors.experience = 'Experience required';
+    if (selectedLanguages.length === 0) newErrors.language = 'Select at least one language';
+    if (!image.bytes && !isEdit) newErrors.image = 'Profile image required';
+    if (selectedSkills.length === 0) newErrors.skills = 'Select at least one skill';
+    if (selectedRemedies.length === 0) newErrors.remedies = 'Select at least one remedy';
+    if (selectedMainExpertise.length === 0) newErrors.mainExpertise = 'Select at least one expertise';
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+const handleSubmit = async () => {
+  if (!validate()) return;
+
+  const formData = new FormData();
+  
+  // ✅ Append report fields FIRST
+  formData.append('isDealInReport', form.isDealInReport.toString());
+  selectedReportTypes.forEach(type => formData.append('reportTypes[]', type));
+
+  // ✅ Skip isDealInReport when looping through form
+  Object.entries(form).forEach(([key, value]) => {
+    // Skip report fields (already appended above)
+    if (key === 'isDealInReport') return; // ✅ ADD THIS
+    
+    // Skip empty passwords in edit mode
+    if (isEdit && (key === 'password' || key === 'confirm_password') && !value) {
+      return;
+    }
+    
+    if (Array.isArray(value)) {
+      value.forEach(v => formData.append(`${key}[]`, v));
+    } else {
+      formData.append(key, value);
+    }
+  });
+
+  if (image.bytes) formData.append('profileImage', image.bytes);
+  if (bankProof.bytes) formData.append('bank_proof_image', bankProof.bytes);
+  if (idProof.bytes) formData.append('id_proof_image', idProof.bytes);
+  bulkImages.forEach(img => img.bytes && formData.append('multipleImages', img.bytes));
+  bulkVideos.forEach(vid => vid.bytes && formData.append('multipleVideos', vid.bytes));
+
+  selectedSkills.forEach(id => formData.append('skill[]', id));
+  selectedRemedies.forEach(id => formData.append('remedies[]', id));
+  selectedMainExpertise.forEach(id => formData.append('mainExpertise[]', id));
+  selectedLanguages.forEach(lang => formData.append('language[]', lang));
+
+  consultationPrices.forEach((cp, i) => {
+    formData.append(`consultationPrices[${i}][duration]`, cp.duration._id);
+    formData.append(`consultationPrices[${i}][price]`, cp.price.toString());
+  });
+
+  if (isEdit) formData.append('astrologerId', initialData._id);
+
+  // ✅ DEBUG - Verify FormData contents
+  console.log('=== FormData Debug ===');
+  for (let pair of formData.entries()) {
+    if (pair[0].includes('Deal') || pair[0].includes('report')) {
+      console.log(pair[0] + ':', pair[1]);
+    }
+  }
+  console.log('====================');
+
+  try {
+    const endpoint = isEdit ? update_astrologer_by_id : create_astrologer;
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/${endpoint}`, {
+      method: 'POST',
+      body: formData,
+    });
+
+    const result = await res.json();
+    if (res.ok) {
+      Swal.fire('Success', result.message || 'Saved!', 'success');
+      window.location.href = '/astrologer';
+    } else {
+      onSnack({ open: true, message: result.message || 'Failed' });
+    }
+  } catch (err) {
+    onSnack({ open: true, message: 'Network error' });
+  }
+};
+
+  if (loading) {
+    return (
+      <div className="flex justify-center p-8">
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Profile Image */}
+      <div className="md:col-span-4">
+        <div className="border border-gray-300 rounded-md p-4">
+          <div className="flex items-center space-x-4">
+            <div className="w-14 h-14">
+              <img
+                src={image.file || '/placeholder-avatar.jpg'}
+                alt="Profile"
+                className="w-full h-full object-contain rounded"
+              />
+            </div>
+            <div>
+              <label htmlFor="upload-image" className="cursor-pointer block">
+                <span className="text-red-500">*</span> Choose Astrologer Image
+                <span className="text-green-600 text-xs block">png / jpg / jpeg (&lt; 500KB)</span>
+                <input id="upload-image" type="file" accept="image/*" hidden onChange={handleImage} />
+              </label>
+            </div>
+          </div>
+        </div>
+        {errors.image && <p className="text-red-600 text-sm mt-1">{errors.image}</p>}
+      </div>
+
+      {/* Basic Info */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            Full Name <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            name="astrologerName"
+            value={form.astrologerName}
+            onChange={handleChange}
+            className={`mt-1 block w-full rounded-md border ${errors.astrologerName ? 'border-red-500' : 'border-gray-300'} px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500`}
+          />
+          {errors.astrologerName && <p className="text-red-600 text-sm mt-1">{errors.astrologerName}</p>}
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Display Name</label>
+          <input
+            type="text"
+            name="displayName"
+            value={form.displayName}
+            onChange={handleChange}
+            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            Email <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="email"
+            name="email"
+            value={form.email}
+            onChange={handleChange}
+            className={`mt-1 block w-full rounded-md border ${errors.email ? 'border-red-500' : 'border-gray-300'} px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500`}
+          />
+          {errors.email && <p className="text-red-600 text-sm mt-1">{errors.email}</p>}
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            Mobile Number <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            name="phoneNumber"
+            value={form.phoneNumber}
+            onChange={handleChange}
+            className={`mt-1 block w-full rounded-md border ${errors.phoneNumber ? 'border-red-500' : 'border-gray-300'} px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500`}
+          />
+          {errors.phoneNumber && <p className="text-red-600 text-sm mt-1">{errors.phoneNumber}</p>}
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Alternate Mobile</label>
+          <input
+            type="text"
+            name="alternateNumber"
+            value={form.alternateNumber}
+            onChange={handleChange}
+            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Currency *</label>
+          <select
+            name="currency"
+            value={form.consultation_price ? 'INR' : ''}
+            onChange={handleSelectChange}
+            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="INR">INR</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Gender *</label>
+          <select
+            name="gender"
+            value={form.gender}
+            onChange={handleSelectChange}
+            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="">Select</option>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+
+      <div>
+  <label className="block text-sm font-medium text-gray-700">
+    Password {!isEdit && <span className="text-red-500">*</span>}
+    {/* {isEdit && <span className="text-xs text-gray-500 ml-2">(leave blank to keep current)</span>} */}
+  </label>
+  <div className="mt-1 relative">
+    <input
+      type={showPassword ? 'text' : 'password'}
+      name="password"
+      value={form.password}
+      onChange={handleChange}
+      placeholder={isEdit ? 'Leave blank to keep current password' : 'Enter password'}
+      className={`block w-full rounded-md border ${
+        errors.password ? 'border-red-500' : 'border-gray-300'
+      } px-3 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500`}
+    />
+    <button
+      type="button"
+      onClick={() => setShowPassword(!showPassword)}
+      className="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer hover:text-gray-700"
+    >
+      {showPassword ? (
+        // Eye Open Icon (password visible)
+        <svg 
+          className="h-5 w-5 text-gray-500" 
+          fill="none" 
+          viewBox="0 0 24 24" 
+          stroke="currentColor"
+        >
+          <path 
+            strokeLinecap="round" 
+            strokeLinejoin="round" 
+            strokeWidth={2} 
+            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" 
+          />
+          <path 
+            strokeLinecap="round" 
+            strokeLinejoin="round" 
+            strokeWidth={2} 
+            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" 
+          />
+        </svg>
+      ) : (
+        // Eye Closed Icon (password hidden)
+        <svg 
+          className="h-5 w-5 text-gray-500" 
+          fill="none" 
+          viewBox="0 0 24 24" 
+          stroke="currentColor"
+        >
+          <path 
+            strokeLinecap="round" 
+            strokeLinejoin="round" 
+            strokeWidth={2} 
+            d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" 
+          />
+        </svg>
+      )}
+    </button>
+  </div>
+  {errors.password && <p className="text-red-600 text-sm mt-1">{errors.password}</p>}
+</div>
+
+<div>
+  <label className="block text-sm font-medium text-gray-700">
+    Confirm Password {!isEdit && <span className="text-red-500">*</span>}
+  </label>
+  <div className="mt-1 relative">
+    <input
+      type={showConfirmPassword ? 'text' : 'password'}
+      name="confirm_password"
+      value={form.confirm_password}
+      onChange={handleChange}
+      placeholder={isEdit ? 'Leave blank to keep current password' : 'Confirm password'}
+      className={`block w-full rounded-md border ${
+        errors.confirm_password ? 'border-red-500' : 'border-gray-300'
+      } px-3 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500`}
+    />
+    <button
+      type="button"
+      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+      className="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer hover:text-gray-700"
+    >
+      {showConfirmPassword ? (
+        // Eye Open Icon
+        <svg 
+          className="h-5 w-5 text-gray-500" 
+          fill="none" 
+          viewBox="0 0 24 24" 
+          stroke="currentColor"
+        >
+          <path 
+            strokeLinecap="round" 
+            strokeLinejoin="round" 
+            strokeWidth={2} 
+            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" 
+          />
+          <path 
+            strokeLinecap="round" 
+            strokeLinejoin="round" 
+            strokeWidth={2} 
+            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" 
+          />
+        </svg>
+      ) : (
+        // Eye Closed Icon
+        <svg 
+          className="h-5 w-5 text-gray-500" 
+          fill="none" 
+          viewBox="0 0 24 24" 
+          stroke="currentColor"
+        >
+          <path 
+            strokeLinecap="round" 
+            strokeLinejoin="round" 
+            strokeWidth={2} 
+            d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" 
+          />
+        </svg>
+      )}
+    </button>
+  </div>
+  {errors.confirm_password && <p className="text-red-600 text-sm mt-1">{errors.confirm_password}</p>}
+</div>
+
+
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            Date of Birth <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="date"
+            name="dateOfBirth"
+            value={form.dateOfBirth}
+            onChange={handleChange}
+            max={get_date_value(18)}
+            className={`mt-1 block w-full rounded-md border ${errors.dateOfBirth ? 'border-red-500' : 'border-gray-300'} px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500`}
+          />
+          {errors.dateOfBirth && <p className="text-red-600 text-sm mt-1">{errors.dateOfBirth}</p>}
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            Experience (years) <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="number"
+            name="experience"
+            value={form.experience}
+            onChange={handleChange}
+            min="0"
+            className={`mt-1 block w-full rounded-md border ${errors.experience ? 'border-red-500' : 'border-gray-300'} px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500`}
+          />
+          {errors.experience && <p className="text-red-600 text-sm mt-1">{errors.experience}</p>}
+        </div>
+        
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            Total Consultation <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            name="consultation"
+            value={form.consultation}
+            onChange={handleChange}
+            min="0"
+            className={`mt-1 block w-full rounded-md border ${errors.consultation ? 'border-red-500' : 'border-gray-300'} px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500`}
+          />
+          {errors.consultation && <p className="text-red-600 text-sm mt-1">{errors.consultation}</p>}
+        </div>
+
+<div>
+  <label className="block text-sm font-medium text-gray-700">
+    Select Language <span className="text-red-500">*</span>
+  </label>
+  <select
+    name="language"
+    multiple
+    size={8} // Shows 8 items at once without scrolling
+    value={selectedLanguages}
+    onChange={() => {}} // Disabled - we handle clicks manually
+    onMouseDown={(e) => {
+      const target = e.target as HTMLOptionElement;
+      if (target.tagName !== 'OPTION') return;
+      
+      e.preventDefault(); // Prevent default Ctrl behavior
+      const value = target.value;
+      const scrollPos = (e.currentTarget as HTMLSelectElement).scrollTop;
+      
+      // Toggle selection without Ctrl
+      if (selectedLanguages.includes(value)) {
+        setSelectedLanguages(selectedLanguages.filter(l => l !== value));
+      } else {
+        setSelectedLanguages([...selectedLanguages, value]);
+      }
+      
+      // Preserve scroll position
+      setTimeout(() => {
+        (e.currentTarget as HTMLSelectElement).scrollTop = scrollPos;
+      }, 0);
+      
+      setErrors((prev) => ({ ...prev, language: '' }));
+    }}
+    className={`mt-1 block w-full rounded-md border ${
+      errors.language ? 'border-red-500' : 'border-gray-300'
+    } px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 h-32`}
+  >
+    {languages
+      .sort((a, b) => {
+        const aSelected = selectedLanguages.includes(a.languageName);
+        const bSelected = selectedLanguages.includes(b.languageName);
+        if (aSelected && !bSelected) return -1;
+        if (!aSelected && bSelected) return 1;
+        return a.languageName.localeCompare(b.languageName);
+      })
+      .map((l) => (
+        <option
+          key={l._id}
+          value={l.languageName}
+          className={selectedLanguages.includes(l.languageName) ? 'bg-blue-100 font-semibold' : ''}
+        >
+          {selectedLanguages.includes(l.languageName) ? '✓ ' : '  '}{l.languageName}
+        </option>
+      ))
+    }
+  </select>
+  {selectedLanguages.length > 0 && (
+    <p className="text-sm text-gray-600 mt-1">
+      Selected: {selectedLanguages.join(', ')}
+    </p>
+  )}
+  {errors.language && <p className="text-red-600 text-sm mt-1">{errors.language}</p>}
+</div>
+
+      </div>
+
+      {/* Address */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="md:col-span-2">
+          <label className="block text-sm font-medium text-gray-700">Address</label>
+          <input
+            type="text"
+            name="address"
+            value={form.address}
+            onChange={handleChange}
+            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Country *</label>
+          <select
+            name="country"
+            value={form.country}
+            onChange={handleSelectChange}
+            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            {Country.getAllCountries().map((c: any) => (
+              <option key={c.isoCode} value={c.name}>{c.name}</option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">State *</label>
+          <select
+            name="state"
+            value={form.state}
+            onChange={handleSelectChange}
+            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="">Select State</option>
+            {State.getStatesOfCountry(selectedCountry.isoCode).map((s: any) => (
+              <option key={s.isoCode} value={s.name}>{s.name}</option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">City</label>
+          <select
+            name="city"
+            value={form.city}
+            onChange={handleSelectChange}
+            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="">Select City</option>
+            {cities.map((c: any) => (
+              <option key={c.name} value={c.name}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Pin Code</label>
+          <input
+            type="text"
+            name="zipCode"
+            value={form.zipCode}
+            onChange={handleChange}
+            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+      </div>
+
+      {/* Bank Details */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Bank Name</label>
+          <input
+            type="text"
+            name="bank_name"
+            value={form.bank_name}
+            onChange={handleChange}
+            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            Account Number <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            name="account_number"
+            value={form.account_number}
+            onChange={handleChange}
+            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Account Type</label>
+          <select
+            name="account_type"
+            value={form.account_type}
+            onChange={handleSelectChange}
+            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="">Select</option>
+            <option value="saving">Saving</option>
+            <option value="current">Current</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Account Holder Name</label>
+          <input
+            type="text"
+            name="account_holder_name"
+            value={form.account_holder_name}
+            onChange={handleChange}
+            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">IFSC Code</label>
+          <input
+            type="text"
+            name="IFSC_code"
+            value={form.IFSC_code}
+            onChange={handleChange}
+            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            Aadhar Number <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            name="aadharNumber"
+            value={form.aadharNumber}
+            onChange={handleChange}
+            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            PAN Number <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            name="panCard"
+            value={form.panCard}
+            onChange={handleChange}
+            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+      </div>
+
+      {/* Proofs */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <div className="border border-gray-300 rounded-md p-4">
+            <div className="flex items-center space-x-4">
+              <div className="w-14 h-14">
+                <img
+                  src={bankProof.file || '/placeholder-doc.jpg'}
+                  alt="Bank Proof"
+                  className="w-full h-full object-cover rounded"
+                />
+              </div>
+              <div>
+                <label htmlFor="upload-bank-proof" className="cursor-pointer block">
+                  Upload Bank Proof
+                  <span className="text-green-600 text-xs block">png / jpg / jpeg</span>
+                  <input id="upload-bank-proof" type="file" accept="image/*" hidden onChange={e => {
+                    const f = e.target.files?.[0];
+                    if (f) setBankProof({ file: URL.createObjectURL(f), bytes: f });
+                  }} />
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div className="border border-gray-300 rounded-md p-4">
+            <div className="flex items-center space-x-4">
+              <div className="w-14 h-14">
+                <img
+                  src={idProof.file || '/placeholder-doc.jpg'}
+                  alt="ID Proof"
+                  className="w-full h-full object-cover rounded"
+                />
+              </div>
+              <div>
+                <label htmlFor="upload-id-proof" className="cursor-pointer block">
+                  Upload ID Proof
+                  <span className="text-green-600 text-xs block">png / jpg / jpeg</span>
+                  <input id="upload-id-proof" type="file" accept="image/*" hidden onChange={e => {
+                    const f = e.target.files?.[0];
+                    if (f) setIdProof({ file: URL.createObjectURL(f), bytes: f });
+                  }} />
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Bulk Images */}
+      <div>
+        <div className={`border ${bulkImages.length ? 'border-blue-600' : 'border-gray-300'} rounded-md p-4 mb-4`}>
+          <div className="flex flex-wrap gap-4 mb-4">
+            {bulkImages.map((img, i) => (
+              <div key={i} className="relative">
+                <img src={img.file} alt="" className="w-36 h-36 object-cover rounded" />
+                <button
+                  onClick={() => removeBulk(i, 'image')}
+                  className="absolute -top-2 -right-2 bg-white rounded-full p-1 shadow-md"
+                >
+                  <CrossSvg />
+                </button>
+              </div>
+            ))}
+          </div>
+          <label
+            htmlFor="upload-bulk-image"
+            className="flex items-center justify-center gap-2 cursor-pointer bg-gray-100 p-3 rounded-md"
+          >
+            <UploadImageSvg h="25" w="25" color="#000" />
+            <span className="font-semibold">Upload Image</span>
+          </label>
+          <input id="upload-bulk-image" type="file" accept="image/*" hidden onChange={e => handleBulk(e, 'image')} />
+        </div>
+      </div>
+
+      {/* Bulk Videos */}
+      <div>
+        <div className={`border ${bulkVideos.length ? 'border-blue-600' : 'border-gray-300'} rounded-md p-4`}>
+          <div className="flex flex-wrap gap-4 mb-4">
+            {bulkVideos.map((vid, i) => (
+              <div key={i} className="relative">
+                <video controls className="w-36 h-36 rounded">
+                  <source src={vid.file} />
+                </video>
+                <button
+                  onClick={() => removeBulk(i, 'video')}
+                  className="absolute -top-2 -right-2 bg-white rounded-full p-1 shadow-md"
+                >
+                  <CrossSvg />
+                </button>
+              </div>
+            ))}
+          </div>
+          <label
+            htmlFor="upload-bulk-video"
+            className="flex items-center justify-center gap-2 cursor-pointer bg-gray-100 p-3 rounded-md"
+          >
+            <UploadImageSvg h="25" w="25" color="#000" />
+            <span className="font-semibold">Upload Video</span>
+          </label>
+          <input id="upload-bulk-video" type="file" accept="video/*" hidden onChange={e => handleBulk(e, 'video')} />
+        </div>
+      </div>
+
+      {/* Commission & Bios */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700">
+          Consultation Commission (%) <span className="text-red-500">*</span>
+        </label>
+        <input
+          type="text"
+          name="consultation_commission"
+          value={form.consultation_commission}
+          onChange={handleChange}
+          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700">Tag Line</label>
+        <textarea
+          name="tagLine"
+          value={form.tagLine}
+          onChange={handleChange}
+          rows={2}
+          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700">Short Bio</label>
+        <textarea
+          name="short_bio"
+          value={form.short_bio}
+          onChange={handleChange}
+          rows={2}
+          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700">About</label>
+        <textarea
+          name="about"
+          value={form.about}
+          onChange={handleChange}
+          rows={3}
+          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700">Long Bio</label>
+        <textarea
+          name="long_bio"
+          value={form.long_bio}
+          onChange={handleChange}
+          rows={6}
+          placeholder="Detailed biography..."
+          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+
+      {/* Skills, Remedies, Expertise */}
+      <div>
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700">
+            Skills <span className="text-red-500">*</span>
+          </label>
+          {errors.skills && <p className="text-red-600 text-sm">{errors.skills}</p>}
+          <div className="flex flex-wrap gap-4 mt-2">
+            {skills.sort((a, b) => a.skill.localeCompare(b.skill)).map(s => (
+              <label key={s._id} className="flex items-center space-x-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={selectedSkills.includes(s._id)}
+                  onChange={() => handleCheckbox(s._id, selectedSkills, setSelectedSkills)}
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span>{s.skill}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700">
+            Remedies <span className="text-red-500">*</span>
+          </label>
+          {errors.remedies && <p className="text-red-600 text-sm">{errors.remedies}</p>}
+          <div className="flex flex-wrap gap-4 mt-2">
+            {remedies.sort((a, b) => a.title.localeCompare(b.title)).map(r => (
+              <label key={r._id} className="flex items-center space-x-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={selectedRemedies.includes(r._id)}
+                  onChange={() => handleCheckbox(r._id, selectedRemedies, setSelectedRemedies)}
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span>{r.title}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+
+{/* Report Management Section */}
+{/* <div className="border-t pt-6 mt-6">
+  <h3 className="text-lg font-semibold mb-4 text-gray-800">Report Management</h3>
+  
+  <div className="mb-4">
+    <label className="flex items-center space-x-3 cursor-pointer">
+      <input
+        type="checkbox"
+        checked={form.isDealInReport}
+        onChange={(e) => {
+          setForm(prev => ({ ...prev, isDealInReport: e.target.checked }));
+          // Clear report types if unchecked
+          if (!e.target.checked) {
+            setSelectedReportTypes([]);
+          }
+        }}
+        className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+      />
+      <span className="text-sm font-medium text-gray-700">
+        Astrologer deals with report writing
+      </span>
+    </label>
+  </div>
+
+  {form.isDealInReport && (
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-2">
+        Assignable Report Types <span className="text-red-500">*</span>
+      </label>
+      <div className="flex flex-wrap gap-4">
+        {['LJR', 'LCR', 'LR', 'KM'].map(reportType => (
+          <label key={reportType} className="flex items-center space-x-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={selectedReportTypes.includes(reportType)}
+              onChange={() => {
+                setSelectedReportTypes(prev =>
+                  prev.includes(reportType)
+                    ? prev.filter(r => r !== reportType)
+                    : [...prev, reportType]
+                );
+              }}
+              className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            />
+            <span className="text-sm font-medium text-gray-700">{reportType}</span>
+          </label>
+        ))}
+      </div>
+      {selectedReportTypes.length > 0 && (
+        <p className="text-sm text-gray-600 mt-2">
+          Selected: {selectedReportTypes.join(', ')}
+        </p>
+      )}
+    </div>
+  )}
+</div> */}
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            Main Expertise <span className="text-red-500">*</span>
+          </label>
+          {errors.mainExpertise && <p className="text-red-600 text-sm">{errors.mainExpertise}</p>}
+          <div className="flex flex-wrap gap-4 mt-2">
+            {mainExpertise.sort((a, b) => a.mainExpertise.localeCompare(b.mainExpertise)).map(e => (
+              <label key={e._id} className="flex items-center space-x-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={selectedMainExpertise.includes(e._id)}
+                  onChange={() => handleCheckbox(e._id, selectedMainExpertise, setSelectedMainExpertise)}
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span>{e.mainExpertise}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+      </div>
+
+{/* Report Management Section - ADD THIS ENTIRE BLOCK */}
+<div className="border-t pt-6 mt-6">
+  <h3 className="text-lg font-semibold mb-4 text-gray-800">📊 Report Management</h3>
+  
+  <div className="mb-4">
+    <label className="flex items-center space-x-3 cursor-pointer p-3 bg-gray-50 rounded-md hover:bg-gray-100 transition-colors">
+      <input
+        type="checkbox"
+        checked={form.isDealInReport}
+        onChange={(e) => {
+          setForm(prev => ({ ...prev, isDealInReport: e.target.checked }));
+          if (!e.target.checked) {
+            setSelectedReportTypes([]);
+          }
+        }}
+        className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+      />
+      <span className="text-sm font-medium text-gray-700">
+        This astrologer deals with report writing
+      </span>
+    </label>
+  </div>
+
+  {form.isDealInReport && (
+    <div className="pl-4 border-l-4 border-blue-500">
+      <label className="block text-sm font-medium text-gray-700 mb-3">
+        Assignable Report Types <span className="text-red-500">*</span>
+      </label>
+      <div className="flex flex-wrap gap-3">
+        {['LJR', 'LCR', 'LR', 'KM'].map(reportType => (
+          <label 
+            key={reportType} 
+            className={`flex items-center space-x-2 px-4 py-2 rounded-md border-2 cursor-pointer transition-all ${
+              selectedReportTypes.includes(reportType)
+                ? 'border-blue-500 bg-blue-50'
+                : 'border-gray-300 hover:border-blue-300'
+            }`}
+          >
+            <input
+              type="checkbox"
+              checked={selectedReportTypes.includes(reportType)}
+              onChange={() => {
+                setSelectedReportTypes(prev =>
+                  prev.includes(reportType)
+                    ? prev.filter(r => r !== reportType)
+                    : [...prev, reportType]
+                );
+              }}
+              className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            />
+            <span className="font-medium text-gray-700">{reportType}</span>
+          </label>
+        ))}
+      </div>
+      {selectedReportTypes.length > 0 && (
+        <div className="mt-3 p-2 bg-green-50 rounded-md">
+          <p className="text-sm text-green-700 font-medium">
+            ✓ Can handle: {selectedReportTypes.join(', ')} reports
+          </p>
+        </div>
+      )}
+      {errors.reportTypes && (
+        <p className="text-red-600 text-sm mt-2">{errors.reportTypes}</p>
+      )}
+    </div>
+  )}
+</div>
+
+      {/* Submit */}
+      <div>
+        <button
+          onClick={handleSubmit}
+          className="px-6 py-2.5 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 transition-colors"
+        >
+          {isEdit ? 'Update' : 'Submit'}
+        </button>
+      </div>
+
+      {/* Consultation Prices (Edit Only) */}
+      {isEdit && (
+        <ConsultationPriceSection
+          astrologerId={initialData._id}
+          slotDurations={slotDurations}
+          consultationPrices={consultationPrices}
+          setConsultationPrices={setConsultationPrices}
+          onSnack={onSnack}
+        />
+      )}
+    </div>
+  );
+}
+
+/* Consultation Price Section */
+interface ConsultationPriceSectionProps {
+  astrologerId: string;
+  slotDurations: SlotDuration[];
+  consultationPrices: ConsultationPrice[];
+  setConsultationPrices: React.Dispatch<React.SetStateAction<ConsultationPrice[]>>;
+  onSnack: (snack: { open: boolean; message: string }) => void;
+}
+
+const ConsultationPriceSection: React.FC<ConsultationPriceSectionProps> = ({
+  astrologerId,
+  slotDurations,
+  consultationPrices,
+  setConsultationPrices,
+  onSnack,
+}) => {
+  const [duration, setDuration] = useState('');
+  const [price, setPrice] = useState('');
+  const [adding, setAdding] = useState(false);
+  const [deleting, setDeleting] = useState<string | null>(null);
+
+  const handleAdd = async () => {
+    if (!duration || !price) {
+      onSnack({ open: true, message: 'Select duration and enter price' });
+      return;
+    }
+
+    if (consultationPrices.some(p => p.duration._id === duration)) {
+      onSnack({ open: true, message: 'This duration already exists' });
+      return;
+    }
+
+    setAdding(true);
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/consultation-price`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ astrologerId, durationId: duration, price: Number(price) }),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        const newPrice: ConsultationPrice = {
+          _id: data?.data?._id || `cp${Date.now()}`,
+          duration: slotDurations.find(s => s._id === duration)!,
+          price: Number(price),
+        };
+        setConsultationPrices(prev => [...prev, newPrice]);
+        setDuration('');
+        setPrice('');
+        onSnack({ open: true, message: 'Price added' });
+      } else {
+        onSnack({ open: true, message: data.message || 'Failed to add price' });
+      }
+    } catch (err) {
+      onSnack({ open: true, message: 'Network error' });
+    } finally {
+      setAdding(false);
+    }
+  };
+
+  const handleDelete = async (durationId: string) => {
+    setDeleting(durationId);
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/delete-consultation-price`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ astrologerId, durationId }),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        setConsultationPrices(prev => prev.filter(p => p.duration._id !== durationId));
+        onSnack({ open: true, message: 'Price removed' });
+      } else {
+        onSnack({ open: true, message: data.message || 'Failed to delete' });
+      }
+    } catch (err) {
+      onSnack({ open: true, message: 'Network error' });
+    } finally {
+      setDeleting(null);
+    }
+  };
+
+  return (
+    <div className="mt-8 p-6 bg-white rounded-lg shadow">
+      <h3 className="text-lg font-semibold mb-4">Consultation Price</h3>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Duration</label>
+          <select
+            value={duration}
+            onChange={e => setDuration(e.target.value)}
+            disabled={adding}
+            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="">Select</option>
+            {slotDurations
+              .filter(s => s.active && !consultationPrices.some(p => p.duration._id === s._id))
+              .map(s => (
+                <option key={s._id} value={s._id}>{s.slotDuration}</option>
+              ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Price (INR)</label>
+          <input
+            type="number"
+            value={price}
+            onChange={e => setPrice(e.target.value)}
+            disabled={adding}
+            min="0"
+            step="1"
+            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+
+        <div>
+          <button
+            onClick={handleAdd}
+            disabled={adding || !duration || !price}
+            className={`w-full px-4 py-2 rounded-md text-white font-medium transition-colors ${
+              adding || !duration || !price
+                ? 'bg-gray-400 cursor-not-allowed'
+                : 'bg-blue-600 hover:bg-blue-700'
+            }`}
+          >
+            {adding ? 'Adding...' : 'Add'}
+          </button>
+        </div>
+      </div>
+
+      <div className="mt-6">
+        {consultationPrices.length === 0 ? (
+          <p className="text-gray-500">No consultation prices set yet.</p>
+        ) : (
+          <div className="space-y-2">
+            {consultationPrices.map((p, i) => (
+              <div
+                key={p.duration._id}
+                className="flex justify-between items-center p-3 border-b border-gray-200"
+              >
+                <span>{i + 1}. {p.duration.slotDuration} – ₹{p.price}</span>
+                <button
+                  onClick={() => handleDelete(p.duration._id)}
+                  disabled={deleting === p.duration._id}
+                  className="text-red-600 hover:text-red-800"
+                >
+                  {deleting === p.duration._id ? (
+                    <div className="animate-spin inline-block w-4 h-4 border-2 border-current border-t-transparent rounded-full"></div>
+                  ) : (
+                    <DeleteSvg />
+                  )}
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};

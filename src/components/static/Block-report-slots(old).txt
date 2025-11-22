@@ -5,33 +5,14 @@ import { toast } from 'react-toastify';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, Calendar, CheckSquare, Square, User, Users } from 'lucide-react';
+import { Loader2, Calendar, CheckSquare, Square } from 'lucide-react';
 
 const reportPrefixes = [
-  { value: '#LJR-', label: 'Life Journey Report', code: 'LJR' },
-  { value: '#LCR-', label: 'Life Changing Report', code: 'LCR' },
-  { value: '#KM-', label: 'Kundli Matching Report', code: 'KM' },
-  { value: '#LR-', label: 'Love Report', code: 'LR' },
+  { value: '#LJR-', label: 'Life Journey Report' },
+  { value: '#LCR-', label: 'Life Changing Report' },
+  { value: '#KM-', label: 'Kundli Matching Report' },
+  { value: '#LR-', label: 'Love Report' },
 ];
-
-interface Astrologer {
-  _id: string;
-  name: string;
-  email: string;
-  profileImage?: string;
-  reportTypes: string[];
-}
-
-interface Slot {
-  time: string;
-  capacity: number;
-  availableAstrologers: Array<{ _id: string; name: string }>;
-  isAvailable: boolean;
-  isBlocked?: boolean;
-  blockedSlotId?: string | null;
-  reason?: string;
-  blockedBy?: string;
-}
 
 export default function BlockedSlotsManagement() {
   const getTomorrowDate = () => {
@@ -42,10 +23,7 @@ export default function BlockedSlotsManagement() {
 
   const [selectedDate, setSelectedDate] = useState(getTomorrowDate());
   const [selectedPrefix, setSelectedPrefix] = useState('#LJR-');
-  const [selectedAstrologer, setSelectedAstrologer] = useState<string>('all');
-  const [astrologers, setAstrologers] = useState<Astrologer[]>([]);
-  const [loadingAstrologers, setLoadingAstrologers] = useState(false);
-  const [slots, setSlots] = useState<Slot[]>([]);
+  const [slots, setSlots] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [processingSlots, setProcessingSlots] = useState<Set<string>>(new Set());
   const [selectionMode, setSelectionMode] = useState(false);
@@ -72,96 +50,49 @@ export default function BlockedSlotsManagement() {
     if (!selectedDate || !selectedPrefix) return;
     setLoading(true);
     try {
-      // Build params
-      const params = new URLSearchParams({
-        date: selectedDate,
-        prefix: selectedPrefix
-      });
-
-      if (selectedAstrologer !== 'all') {
-        params.append('astrologerId', selectedAstrologer);
-      }
-
-      // Fetch available slots
       const availableResponse = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/life-journey-report/available-consultation-slots?${params.toString()}`
+        `${process.env.NEXT_PUBLIC_API_URL}/api/life-journey-report/available-consultation-slots?date=${selectedDate}&prefix=${encodeURIComponent(selectedPrefix)}`
       );
       const availableData = await availableResponse.json();
-
-      if (!availableData.success) {
-        toast.error(availableData.message || "Failed to fetch slots");
-        setSlots([]);
-        setAstrologers([]);
-        setLoading(false);
-        return;
-      }
-
-      // Update astrologers list from API response
-      if (availableData.astrologers) {
-        setAstrologers(availableData.astrologers);
-      }
-
-      // Fetch blocked slots
       const blockedParams = new URLSearchParams({
         date: selectedDate,
         prefix: selectedPrefix
       });
-
-      if (selectedAstrologer !== 'all') {
-        blockedParams.append('astrologerId', selectedAstrologer);
-      } else {
-        blockedParams.append('astrologerId', 'global');
-      }
-
       const blockedResponse = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/api/life-journey-report/blocked-slots?${blockedParams.toString()}`
       );
       const blockedData = await blockedResponse.json();
 
-      const availableSlots = availableData.slots || [];
+      const availableSlots = availableData.success ? availableData.slots || [] : [];
       const blockedSlots = blockedData.success ? blockedData.blockedSlots || [] : [];
+      const filteredBlockedSlots = blockedSlots.filter((slot: any) =>
+        slot.prefix === selectedPrefix && slot.date === selectedDate
+      );
 
-      // Create map of blocked slots
       const blockedSlotsMap = new Map();
-      blockedSlots.forEach((slot: any) => {
+      filteredBlockedSlots.forEach((slot: any) => {
         blockedSlotsMap.set(slot.timeRange, {
           id: slot._id,
           isActive: slot.isActive,
           reason: slot.reason,
           blockedBy: slot.blockedBy,
-          prefix: slot.prefix,
-          astrologerId: slot.astrologerId?._id,
-          astrologerName: slot.astrologerId?.astrologerName
+          prefix: slot.prefix
         });
       });
 
-      // Combine all time ranges
-      const allTimeRanges = new Set<string>();
+      const allTimeRanges = new Set();
       availableSlots.forEach((slot: any) => allTimeRanges.add(slot.time));
-      blockedSlots.forEach((slot: any) => allTimeRanges.add(slot.timeRange));
+      filteredBlockedSlots.forEach((slot: any) => allTimeRanges.add(slot.timeRange));
 
-      // Generate all possible slots if none exist
-      if (allTimeRanges.size === 0) {
-        const allPossibleSlots = generateAllTimeSlots();
-        allPossibleSlots.forEach(slot => allTimeRanges.add(slot));
-      }
-
-      // Map to slot objects
       const allSlots = Array.from(allTimeRanges).sort().map(timeRange => {
-        const availableSlot = availableSlots.find((s: any) => s.time === timeRange);
         const blockedInfo = blockedSlotsMap.get(timeRange);
-
         return {
           time: timeRange,
-          capacity: availableSlot?.capacity || 0,
-          availableAstrologers: availableSlot?.availableAstrologers || [],
-          isAvailable: availableSlot ? true : false,
           isBlocked: blockedInfo ? true : false,
           blockedSlotId: blockedInfo?.id || null,
           isActive: blockedInfo?.isActive ?? true,
           reason: blockedInfo?.reason,
-          blockedBy: blockedInfo?.blockedBy,
-          astrologerName: blockedInfo?.astrologerName
+          blockedBy: blockedInfo?.blockedBy
         };
       });
 
@@ -174,39 +105,11 @@ export default function BlockedSlotsManagement() {
     }
   };
 
-  // Generate all time slots (20 min + 5 min break)
-  const generateAllTimeSlots = () => {
-    const slots = [];
-    let currentMinute = 10 * 60; // 10 AM
-    const endMinute = 19 * 60; // 7 PM
-
-    while (currentMinute < endMinute) {
-      const startHour = Math.floor(currentMinute / 60);
-      const startMin = currentMinute % 60;
-      const endTime = currentMinute + 20; // 20 minute slot
-      const endHour = Math.floor(endTime / 60);
-      const endMin = endTime % 60;
-
-      if (endTime > endMinute) break;
-
-      const formatTime = (h: number, m: number) => {
-        const period = h >= 12 ? 'PM' : 'AM';
-        const hour12 = h > 12 ? h - 12 : h === 0 ? 12 : h;
-        return `${hour12}:${String(m).padStart(2, '0')}${period}`;
-      };
-
-      slots.push(`${formatTime(startHour, startMin)}-${formatTime(endHour, endMin)}`);
-      currentMinute += 25; // 20 min slot + 5 min break
-    }
-
-    return slots;
-  };
-
   useEffect(() => {
     fetchSlots();
     setSelectionMode(false);
     setSelectedSlots(new Set());
-  }, [selectedDate, selectedPrefix, selectedAstrologer]);
+  }, [selectedDate, selectedPrefix]);
 
   const handleBlock = async (timeRange: string) => {
     setProcessingSlots(prev => new Set(prev).add(timeRange));
@@ -217,7 +120,6 @@ export default function BlockedSlotsManagement() {
           : slot
       )
     );
-
     try {
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/api/life-journey-report/blocked-slots`,
@@ -228,8 +130,6 @@ export default function BlockedSlotsManagement() {
             date: selectedDate,
             timeRange,
             prefix: selectedPrefix,
-            astrologerId: selectedAstrologer === 'all' ? null : selectedAstrologer,
-            blockedBy: 'Admin'
           }),
         }
       );
@@ -243,15 +143,13 @@ export default function BlockedSlotsManagement() {
               ? { 
                   ...slot, 
                   isBlocked: true, 
-                  blockedSlotId: data.blockedSlot?._id,
-                  reason: data.blockedSlot?.reason,
-                  blockedBy: data.blockedSlot?.blockedBy,
-                  astrologerName: data.blockedSlot?.astrologerId?.astrologerName
+                  blockedSlotId: data.blockedSlot?._id || data.slot?._id,
+                  reason: data.blockedSlot?.reason || data.slot?.reason,
+                  blockedBy: data.blockedSlot?.blockedBy || data.slot?.blockedBy
                 }
               : slot
           )
         );
-        toast.success("Slot blocked successfully");
         return true;
       } else {
         toast.error(data.message || "Failed to block slot");
@@ -289,7 +187,6 @@ export default function BlockedSlotsManagement() {
       toast.error("Invalid slot ID");
       return false;
     }
-
     setProcessingSlots(prev => new Set(prev).add(timeRange));
     setSlots(prevSlots =>
       prevSlots.map(slot =>
@@ -298,7 +195,6 @@ export default function BlockedSlotsManagement() {
           : slot
       )
     );
-
     try {
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/api/life-journey-report/blocked-slots/${blockedSlotId}`,
@@ -308,7 +204,6 @@ export default function BlockedSlotsManagement() {
       const data = await response.json();
 
       if (data.success) {
-        toast.success("Slot unblocked successfully");
         return true;
       } else {
         toast.error(data.message || "Failed to unblock slot");
@@ -343,10 +238,12 @@ export default function BlockedSlotsManagement() {
 
   const toggleSelectionMode = () => {
     if (!selectionMode) {
+      // Select all slots when entering selection mode
       const allSlotTimes = slots.map(slot => slot.time);
       setSelectedSlots(new Set(allSlotTimes));
       setSelectionMode(true);
     } else {
+      // Clear selection when exiting
       setSelectionMode(false);
       setSelectedSlots(new Set());
     }
@@ -384,7 +281,7 @@ export default function BlockedSlotsManagement() {
         const success = await handleBlock(timeRange);
         if (success) successCount++;
         else failCount++;
-      } else if (action === 'unblock' && slot.isBlocked && slot.blockedSlotId) {
+      } else if (action === 'unblock' && slot.isBlocked) {
         const success = await handleUnblock(slot.blockedSlotId, timeRange);
         if (success) successCount++;
         else failCount++;
@@ -421,39 +318,31 @@ export default function BlockedSlotsManagement() {
 
   const selectedUnblockedCount = selectedSlots.size - selectedBlockedCount;
 
-  const currentAstrologerName = selectedAstrologer === 'all' 
-    ? 'All Astrologers (General Availability)' 
-    : astrologers.find(a => a._id === selectedAstrologer)?.name || 'Unknown';
-
   return (
-    <div className="min-h-screen py-8 px-4 bg-gray-50">
+    <div className="min-h-screen py-8 px-4">
       <div className="container mx-auto max-w-7xl">
         <Card className="mb-6 p-6 bg-[#EF4444] text-white border-none shadow-lg">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl md:text-3xl font-bold mb-2">
-                Slot Management Dashboard
+                Slot Management
               </h1>
               <p className="text-white/90 text-sm md:text-base">
-                Manage report consultation time slots and astrologer availability
+                Manage consultation time slots availability
               </p>
             </div>
           </div>
         </Card>
 
-        <Card className="mb-6 p-6 border-gray-200 bg-white shadow-md">
+        <Card className="mb-6 p-6 border-[#661726]/30 bg-white shadow-md">
           <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* Report Type */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="text-sm font-medium text-gray-700 mb-2 block flex items-center gap-2">
-                  <span className="text-[#EF4444]">1.</span> Report Type
+                <label className="text-sm font-medium text-[#EF4444] mb-2 block">
+                  Report Type
                 </label>
-                <Select value={selectedPrefix} onValueChange={(value) => {
-                  setSelectedPrefix(value);
-                  setSelectedAstrologer('all'); // Reset astrologer when report changes
-                }}>
-                  <SelectTrigger className="border-gray-300">
+                <Select value={selectedPrefix} onValueChange={setSelectedPrefix}>
+                  <SelectTrigger className="border-[#661726]/30">
                     <SelectValue placeholder="Select report type" />
                   </SelectTrigger>
                   <SelectContent className="bg-white">
@@ -466,61 +355,22 @@ export default function BlockedSlotsManagement() {
                 </Select>
               </div>
 
-              {/* Date */}
               <div>
-                <label className="text-sm font-medium text-gray-700 mb-2 block flex items-center gap-2">
-                  <span className="text-[#EF4444]">2.</span> Select Date
+                <label className="text-sm font-medium text-[#EF4444] mb-2 block">
+                  Select Date
                 </label>
                 <input
                   type="date"
                   value={selectedDate}
                   onChange={(e) => setSelectedDate(e.target.value)}
                   min={getTomorrowDate()}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#EF4444]"
+                  className="w-full px-3 py-2 border border-[#661726]/30 rounded-md focus:outline-none focus:ring-2 focus:ring-[#EF4444]"
                 />
-              </div>
-
-              {/* Astrologer */}
-              <div>
-                <label className="text-sm font-medium text-gray-700 mb-2 block flex items-center gap-2">
-                  <span className="text-[#EF4444]">3.</span> Astrologer (Optional)
-                </label>
-                <Select 
-                  value={selectedAstrologer} 
-                  onValueChange={setSelectedAstrologer}
-                  disabled={loadingAstrologers || astrologers.length === 0}
-                >
-                  <SelectTrigger className="border-gray-300">
-                    <SelectValue placeholder="Select astrologer" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-white">
-                    <SelectItem value="all">
-                      <div className="flex items-center gap-2">
-                        <Users className="w-4 h-4" />
-                        All Astrologers (General)
-                      </div>
-                    </SelectItem>
-                    {astrologers.map((astrologer) => (
-                      <SelectItem key={astrologer._id} value={astrologer._id}>
-                        <div className="flex items-center gap-2">
-                          <User className="w-4 h-4" />
-                          {astrologer.name}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {astrologers.length === 0 && !loadingAstrologers && (
-                  <p className="text-xs text-orange-600 mt-1">
-                    ⚠️ No astrologers assigned to this report type
-                  </p>
-                )}
               </div>
             </div>
 
-            {/* Quick Date Selection */}
             <div>
-              <label className="text-sm font-medium text-gray-700 mb-3 block">
+              <label className="text-sm font-medium text-[#EF4444] mb-3 block">
                 Quick Select Next 10 Days
               </label>
               <div className="flex flex-wrap gap-2">
@@ -532,8 +382,8 @@ export default function BlockedSlotsManagement() {
                     onClick={() => setSelectedDate(day.date)}
                     className={`${
                       selectedDate === day.date
-                        ? 'bg-[#EF4444] text-white hover:bg-[#DC2626]'
-                        : 'border-gray-300 hover:bg-gray-100'
+                        ? 'bg-[#EF4444] text-white'
+                        : 'border-[#661726]/30 hover:bg-[#FFF5E9]'
                     }`}
                   >
                     {day.label}
@@ -542,30 +392,14 @@ export default function BlockedSlotsManagement() {
               </div>
             </div>
 
-            {/* Info Banner */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <div className="flex items-start gap-3">
-                <div className="text-blue-600 mt-0.5">ℹ️</div>
-                <div className="flex-1">
-                  <p className="text-sm text-blue-900 font-medium mb-1">
-                    Viewing: {formatDate(selectedDate)}
-                  </p>
-                  <p className="text-xs text-blue-700">
-                    Current filter: <strong>{currentAstrologerName}</strong>
-                  </p>
-                  <p className="text-xs text-blue-700 mt-1">
-                    💡 Blocking a slot for "All Astrologers" will make it unavailable for everyone. 
-                    Blocking for a specific astrologer only affects that individual.
-                  </p>
-                </div>
-              </div>
+            <div className="text-sm text-[#7A665D] pt-2">
+              Showing slots for: <span className="font-semibold text-[#EF4444]">{formatDate(selectedDate)}</span>
             </div>
           </div>
         </Card>
 
-        {/* Bulk Actions */}
         {!loading && slots.length > 0 && (
-          <Card className="mb-4 p-4 border-gray-200 bg-white shadow-md">
+          <Card className="mb-4 p-4 border-[#661726]/30 bg-white shadow-md">
             <div className="flex flex-wrap items-center gap-3">
               <Button
                 onClick={toggleSelectionMode}
@@ -577,7 +411,7 @@ export default function BlockedSlotsManagement() {
 
               {selectionMode && (
                 <>
-                  <div className="text-sm text-gray-600">
+                  <div className="text-sm text-[#7A665D]">
                     Selected: <span className="font-semibold text-[#EF4444]">{selectedSlots.size}</span> slot(s)
                   </div>
                   
@@ -620,24 +454,23 @@ export default function BlockedSlotsManagement() {
           </Card>
         )}
 
-        {/* Slots Grid */}
         {loading ? (
-          <Card className="p-12 text-center border-gray-200 bg-white">
-            <Loader2 className="w-12 h-12 animate-spin text-[#EF4444] mx-auto mb-4" />
-            <p className="text-gray-600">Loading slots...</p>
+          <Card className="p-12 text-center border-[#661726]/30 bg-white">
+            <Loader2 className="w-12 h-12 animate-spin text-[#661726] mx-auto mb-4" />
+            <p className="text-[#7A665D]">Loading slots...</p>
           </Card>
         ) : slots.length === 0 ? (
-          <Card className="p-12 text-center border-gray-200 bg-white">
-            <Calendar className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-gray-800 mb-2">
+          <Card className="p-12 text-center border-[#661726]/30 bg-white">
+            <Calendar className="w-16 h-16 text-[#661726]/30 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-[#2F211D] mb-2">
               No Slots Available
             </h3>
-            <p className="text-gray-600">
+            <p className="text-[#7A665D]">
               No time slots found for the selected date and report type
             </p>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {slots.map((slot) => {
               const isProcessing = processingSlots.has(slot.time);
               const isSelected = selectedSlots.has(slot.time);
@@ -645,69 +478,53 @@ export default function BlockedSlotsManagement() {
               return (
                 <Card
                   key={slot.time}
-                  className={`p-4 border-2 transition-all cursor-pointer hover:shadow-md ${
+                  className={`p-4 border transition-all cursor-pointer ${
                     isSelected ? 'ring-2 ring-[#EF4444]' : ''
                   } ${
                     slot.isBlocked
                       ? 'bg-red-50 border-red-300'
-                      : slot.capacity > 0
-                      ? 'bg-green-50 border-green-300'
-                      : 'bg-gray-50 border-gray-300'
+                      : 'bg-green-50 border-green-300'
                   }`}
                   onClick={() => selectionMode && toggleSlotSelection(slot.time)}
                 >
                   <div className="space-y-3">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-start gap-2 flex-1">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
                         {selectionMode && (
                           <div onClick={(e) => e.stopPropagation()}>
                             {isSelected ? (
                               <CheckSquare 
-                                className="w-5 h-5 text-[#EF4444] cursor-pointer flex-shrink-0 mt-0.5" 
+                                className="w-5 h-5 text-[#EF4444] cursor-pointer" 
                                 onClick={() => toggleSlotSelection(slot.time)}
                               />
                             ) : (
                               <Square 
-                                className="w-5 h-5 text-gray-400 cursor-pointer flex-shrink-0 mt-0.5" 
+                                className="w-5 h-5 text-[#7A665D] cursor-pointer" 
                                 onClick={() => toggleSlotSelection(slot.time)}
                               />
                             )}
                           </div>
                         )}
-                        <div className="flex-1 min-w-0">
-                          <p className="font-bold text-gray-900 text-base leading-tight">
-                            {slot.time}
-                          </p>
-                          {/* {!slot.isBlocked && slot.capacity > 0 && (
-                            <p className="text-xs text-green-700 mt-1">
-                              {slot.capacity} astrologer{slot.capacity > 1 ? 's' : ''} available
-                            </p>
-                          )} */}
-                          {slot.isBlocked && (
-                            <p className="text-xs text-red-700 mt-1">
-                              🚫 Blocked
-                            </p>
-                          )}
-                        </div>
+                        <p className="font-bold text-[#2F211D] text-lg mb-0">
+                          {slot.time}
+                        </p>
                       </div>
                       
                       {!selectionMode && (
-                        <div className="ml-2 flex-shrink-0">
+                        <div className="ml-auto">
                           {slot.isBlocked ? (
                             <Button
                               size="sm"
                               variant="outline"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                if (slot.blockedSlotId) {
-                                  handleUnblock(slot.blockedSlotId, slot.time);
-                                }
+                                handleUnblock(slot.blockedSlotId, slot.time);
                               }}
-                              disabled={isProcessing || !slot.blockedSlotId}
-                              className="bg-green-500 hover:bg-green-600 text-white border-none text-xs px-2 py-1 h-auto"
+                              disabled={isProcessing}
+                              className="bg-green-500 hover:bg-green-600 text-white border-none"
                             >
                               {isProcessing ? (
-                                <Loader2 className="w-3 h-3 animate-spin" />
+                                <Loader2 className="w-4 h-4 animate-spin" />
                               ) : (
                                 'Unblock'
                               )}
@@ -720,10 +537,10 @@ export default function BlockedSlotsManagement() {
                                 handleBlock(slot.time);
                               }}
                               disabled={isProcessing}
-                              className="bg-red-500 hover:bg-red-600 text-white text-xs px-2 py-1 h-auto"
+                              className="bg-red-500 hover:bg-red-600 text-white"
                             >
                               {isProcessing ? (
-                                <Loader2 className="w-3 h-3 animate-spin" />
+                                <Loader2 className="w-4 h-4 animate-spin" />
                               ) : (
                                 'Block'
                               )}
@@ -735,7 +552,7 @@ export default function BlockedSlotsManagement() {
 
                     {slot.isBlocked && slot.reason && (
                       <div className="pt-2 border-t border-red-200">
-                        <p className="text-xs text-gray-600">
+                        <p className="text-xs text-[#7A665D]">
                           <span className="font-medium">Reason:</span> {slot.reason}
                         </p>
                       </div>
