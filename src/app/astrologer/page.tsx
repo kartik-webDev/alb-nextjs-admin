@@ -18,6 +18,7 @@ import {
   WalletSvg,
   CrossSvg,
 } from "@/components/svgs/page";
+import { DocumentScanner, Report } from "@mui/icons-material";
 
 // ---------------------------------------------------------------------
 // Types
@@ -356,7 +357,7 @@ export default function AstrologerPage() {
       {
         name: "Action",
         cell: (row) => (
-          <div style={{ display: "flex", gap: "20px", alignItems: "center" }}>
+          <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
             <div
               onClick={() => {
                 sessionStorage.setItem(
@@ -378,6 +379,7 @@ export default function AstrologerPage() {
             >
               <EditSvg />
             </div>
+            
             <div style={{ cursor: "pointer" }} onClick={() => openWallet(row)}>
               <WalletSvg />
             </div>
