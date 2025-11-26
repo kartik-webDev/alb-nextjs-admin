@@ -272,26 +272,7 @@ export default function Consultation() {
       ),
       width: '120px'
     },
-    {
-      name: 'Action',
-      cell: (row: Consultation) => (
-        <div className="flex gap-3">
-          <button 
-            onClick={() => router.push(`/consultation/view-consultation?id=${row._id}`)} 
-            className="text-blue-600 hover:underline text-sm"
-          >
-            View
-          </button>
-          <button 
-            onClick={() => router.push(`/consultation/edit-consultation?id=${row._id}`)} 
-            className="text-green-600 hover:underline text-sm"
-          >
-            Edit
-          </button>
-        </div>
-      ),
-      width: '120px'
-    },
+
   ];
 
   const handleClearFilters = () => {
