@@ -29,6 +29,7 @@ interface Consultation {
   _id: string;
   astrologerId?: Astrologer;
   fullName?: string;
+  email?: string;
   customerId?: Customer;
   mobileNumber?: string;
   gender?:string;
@@ -73,7 +74,7 @@ const DeepSearchSpace = (data: Consultation[], searchText: string): Consultation
     const searchableFields = [
       item?.astrologerId?.astrologerName,
       item?.fullName,
-      item?.customerId?.email,
+      item?.email,
       item?.mobileNumber,
       item?.dateOfBirth,
       item?.timeOfBirth,
@@ -209,7 +210,7 @@ export default function Consultation() {
     },
     { 
       name: 'Email', 
-      selector: (row: Consultation) => row?.customerId?.email || 'N/A',
+      selector: (row: Consultation) => row?.email || 'N/A',
       width: '200px'
     },
     { 
@@ -291,7 +292,7 @@ const prepareCSVData = () => {
   return consultationData.map((item, index) => ({
     'Astrologer': item?.astrologerId?.astrologerName || 'N/A',
     'Customer': item?.fullName || 'N/A',
-    'Email': item?.customerId?.email || 'N/A',
+    'Email': item?.email || 'N/A',
     'Mobile': item?.mobileNumber || 'N/A',
     'Gender': item?.gender || '',
     'Date of Birth': item?.dateOfBirth ? `\t${item.dateOfBirth}` : 'N/A',
