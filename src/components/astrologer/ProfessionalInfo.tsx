@@ -23,6 +23,8 @@ export default function ProfessionalInfo({ astrologerId, initialData, onUpdate }
     short_bio: initialData?.short_bio || '',
     long_bio: initialData?.long_bio || '',
     tagLine: initialData?.tagLine || '',
+    title: initialData?.title || '',
+    isLive: initialData?.isLive || false,
     languages: [] as string[],
     youtubeLink: initialData?.youtubeLink || '',
     workingOnOtherApps: initialData?.workingOnOtherApps === 'Yes' || initialData?.workingOnOtherApps === true,
@@ -34,7 +36,11 @@ export default function ProfessionalInfo({ astrologerId, initialData, onUpdate }
   const [allLanguages, setAllLanguages] = useState<Language[]>([]);
   const [loadingLanguages, setLoadingLanguages] = useState(true);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isTitleDropdownOpen, setIsTitleDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const titleDropdownRef = useRef<HTMLDivElement>(null);
+
+  const titleOptions = ['Celebrity', 'Top Astrologer', 'Rising Star'];
 
   useEffect(() => {
     fetchLanguages();
@@ -44,6 +50,9 @@ export default function ProfessionalInfo({ astrologerId, initialData, onUpdate }
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsDropdownOpen(false);
+      }
+      if (titleDropdownRef.current && !titleDropdownRef.current.contains(event.target as Node)) {
+        setIsTitleDropdownOpen(false);
       }
     };
 
@@ -93,6 +102,11 @@ export default function ProfessionalInfo({ astrologerId, initialData, onUpdate }
       [name]: type === 'checkbox' ? checked : value 
     }));
     setErrors(prev => ({ ...prev, [name]: '' }));
+  };
+
+  const handleTitleSelect = (value: string) => {
+    setForm(prev => ({ ...prev, title: value }));
+    setIsTitleDropdownOpen(false);
   };
 
   const toggleLanguage = (langId: string) => {
@@ -162,7 +176,7 @@ export default function ProfessionalInfo({ astrologerId, initialData, onUpdate }
         astrologerId,
         astrologerName: initialData?.astrologerName || '',
         displayName: initialData?.displayName || '',
-        title: initialData?.title || '',
+        title: form.title,
         email: initialData?.email || '',
         phoneNumber: initialData?.phoneNumber || '',
         alternateNumber: initialData?.alternateNumber || '',
@@ -183,6 +197,7 @@ export default function ProfessionalInfo({ astrologerId, initialData, onUpdate }
         long_bio: form.long_bio,
         youtubeLink: form.youtubeLink,
         tagLine: form.tagLine,
+        isLive: form.isLive,
         language: languageNames,
         workingOnOtherApps: form.workingOnOtherApps ? 'Yes' : 'No',
         
@@ -262,10 +277,10 @@ export default function ProfessionalInfo({ astrologerId, initialData, onUpdate }
         <h3 className="text-2xl font-bold text-gray-900 mb-2">Professional Information</h3>
       </div>
 
-      {/* Compact Top Section - 4 Columns */}
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-        {/* Experience - Smaller (2 cols) */}
-        <div className="md:col-span-2">
+      {/* First Row - Experience, Title, Other Apps, Is Live */}
+      <div className="grid grid-cols-12 gap-4">
+        {/* Experience (2 cols) */}
+        <div className="col-span-2">
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Experience (Years) <span className="text-red-500">*</span>
           </label>
@@ -284,23 +299,79 @@ export default function ProfessionalInfo({ astrologerId, initialData, onUpdate }
           )}
         </div>
 
-        {/* YouTube Link (3 cols) */}
-        <div className="md:col-span-3">
+        {/* Title (4 cols) - Shadcn Style Select */}
+        <div className="col-span-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            YouTube Link
+            Title
           </label>
-          <input
-            type="url"
-            name="youtubeLink"
-            value={form.youtubeLink}
-            onChange={handleChange}
-            placeholder="https://youtube.com/..."
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
-          />
+          <div className="relative" ref={titleDropdownRef}>
+            <button
+              type="button"
+              onClick={() => setIsTitleDropdownOpen(!isTitleDropdownOpen)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 text-left flex items-center justify-between bg-white hover:bg-gray-50 transition-colors"
+            >
+              <span className={`text-sm ${form.title ? 'text-gray-900' : 'text-gray-400'}`}>
+                {form.title || 'Select Title'}
+              </span>
+              <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform flex-shrink-0 ${isTitleDropdownOpen ? 'rotate-180' : ''}`} />
+            </button>
+
+            {isTitleDropdownOpen && (
+              <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg overflow-hidden">
+                {titleOptions.map(option => (
+                  <button
+                    key={option}
+                    type="button"
+                    onClick={() => handleTitleSelect(option)}
+                    className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-100 transition-colors ${
+                      form.title === option ? 'bg-red-50 text-red-700 font-medium' : 'text-gray-700'
+                    }`}
+                  >
+                    {option}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Languages (4 cols) */}
-        <div className="md:col-span-4">
+        {/* Working on Other Apps (3 cols) */}
+        <div className="col-span-3 flex items-end">
+          <label className="flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors border border-gray-200 h-[42px] w-full">
+            <input
+              type="checkbox"
+              name="workingOnOtherApps"
+              checked={form.workingOnOtherApps}
+              onChange={handleChange}
+              className="w-4 h-4 text-red-600 focus:ring-red-500 rounded flex-shrink-0"
+            />
+            <span className="text-sm font-medium text-gray-900">
+              Working on Other Apps
+            </span>
+          </label>
+        </div>
+
+        {/* Is Live (3 cols) */}
+        <div className="col-span-3 flex items-end">
+          <label className="flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors border border-gray-200 h-[42px] w-full">
+            <input
+              type="checkbox"
+              name="isLive"
+              checked={form.isLive}
+              onChange={handleChange}
+              className="w-4 h-4 text-red-600 focus:ring-red-500 rounded flex-shrink-0"
+            />
+            <span className="text-sm font-medium text-gray-900">
+              Is Live
+            </span>
+          </label>
+        </div>
+      </div>
+
+      {/* Second Row - Languages and YouTube Link */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Languages */}
+        <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Languages <span className="text-red-500">*</span>
           </label>
@@ -308,7 +379,7 @@ export default function ProfessionalInfo({ astrologerId, initialData, onUpdate }
             <button
               type="button"
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 text-left flex items-center justify-between ${
+              className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 text-left flex items-center justify-between ${
                 errors.languages ? 'border-red-500' : 'border-gray-300'
               }`}
             >
@@ -359,20 +430,19 @@ export default function ProfessionalInfo({ astrologerId, initialData, onUpdate }
           )}
         </div>
 
-        {/* Working on Other Apps Checkbox (3 cols) */}
-        <div className="md:col-span-3 flex items-end pb-[1px]">
-          <label className="flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors border border-gray-200 h-[42px] w-full">
-            <input
-              type="checkbox"
-              name="workingOnOtherApps"
-              checked={form.workingOnOtherApps}
-              onChange={handleChange}
-              className="w-4 h-4 text-red-600 focus:ring-red-500 rounded flex-shrink-0"
-            />
-            <span className="text-sm font-medium text-gray-900">
-              Working on Other Apps
-            </span>
+        {/* YouTube Link */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            YouTube Link
           </label>
+          <input
+            type="url"
+            name="youtubeLink"
+            value={form.youtubeLink}
+            onChange={handleChange}
+            placeholder="https://youtube.com/..."
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+          />
         </div>
       </div>
 
