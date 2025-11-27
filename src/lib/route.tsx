@@ -244,4 +244,15 @@ export const RouteName = [
   //   name: "Announcement",
   //   icon: <AnnouncementRouteSvg/>,
   // },
+
+   {
+    path: "/recommendation",
+    name: "Recommendations",
+    icon: <CustomerRouteSvg />,
+  },
+    {
+    path: "/products",
+    name: "products",
+    icon: <CustomerRouteSvg />,
+  },
 ];
