@@ -80,14 +80,38 @@ export default function Consultations({ astrologerId, initialData, onUpdate }: C
   };
 
   function getMinPrice(prices: ConsultationPrice[]): number {
-  const valid = prices
-    .map(p => p.price);
+    const valid = prices.map(p => p.price);
+    if (valid.length === 0) return 0;
+    return Math.min(...valid);
+  }
 
-  if (valid.length === 0) return 0;
+  // Get the second minimum price (next minimum after the current minimum)
+  function getNextMinPrice(prices: ConsultationPrice[]): number {
+    const valid = prices.map(p => p.price).sort((a, b) => a - b);
+    if (valid.length <= 1) return 0;
+    return valid[1]; // Return second smallest value
+  }
 
-  return Math.min(...valid);
-}
+  // Check if the price being deleted is the minimum price
+  function isMinPrice(durationId: string, prices: ConsultationPrice[]): boolean {
+    const priceToDelete = prices.find(p => p.duration === durationId);
+    if (!priceToDelete) return false;
+    const minPrice = getMinPrice(prices);
+    return priceToDelete.price === minPrice;
+  }
 
+  // Check if save button should be disabled
+  const isSaveDisabled = (): boolean => {
+    const actualShownPrice = getMinPrice(initialData?.consultationPrices || []);
+    const enteredOriginalPrice = Number(originalPrice);
+    
+    // Disable if original price is entered and is less than actual shown price
+    if (originalPrice !== '' && enteredOriginalPrice < actualShownPrice + 1) {
+      return true;
+    }
+    
+    return submitting;
+  };
 
   const handleAddPrice = async () => {
     if (!newPrice.durationId) {
@@ -135,6 +159,9 @@ export default function Consultations({ astrologerId, initialData, onUpdate }: C
 
   const handleDeletePrice = async (durationId: string) => {
     try {
+      const isDeletingMinPrice = isMinPrice(durationId, existingPrices);
+      
+      // Delete the price first
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/api/admin/delete-consultation-price`,
         {
@@ -151,6 +178,16 @@ export default function Consultations({ astrologerId, initialData, onUpdate }: C
 
       if (data.success) {
         toast.success('Consultation price deleted successfully');
+        
+        // If we deleted the minimum price, update with next min price + 1000
+        if (isDeletingMinPrice && existingPrices.length > 1) {
+          const nextMinPrice = getNextMinPrice(existingPrices);
+          const newOriginalPrice = nextMinPrice + 1000;
+          
+          // Call the update API with new original price
+          await updateOriginalPriceAfterDelete(newOriginalPrice);
+        }
+        
         onUpdate();
       } else {
         toast.error(data.message || 'Failed to delete price');
@@ -158,6 +195,95 @@ export default function Consultations({ astrologerId, initialData, onUpdate }: C
     } catch (error) {
       console.error('Error deleting price:', error);
       toast.error('Network error occurred');
+    }
+  };
+
+  // Update original price after deleting minimum price
+  const updateOriginalPriceAfterDelete = async (newOriginalPrice: number) => {
+    try {
+      const payload: any = {
+        astrologerId,
+        astrologerName: initialData?.astrologerName || '',
+        displayName: initialData?.displayName || '',
+        title: initialData?.title || '',
+        email: initialData?.email || '',
+        phoneNumber: initialData?.phoneNumber || '',
+        alternateNumber: initialData?.alternateNumber || '',
+        country_phone_code: initialData?.country_phone_code || '91',
+        gender: initialData?.gender || '',
+        dateOfBirth: initialData?.dateOfBirth || '',
+        address: initialData?.address || '',
+        country: initialData?.country || 'India',
+        state: initialData?.state || '',
+        city: initialData?.city || '',
+        zipCode: initialData?.zipCode || '',
+        password: initialData?.password || '',
+        confirm_password: initialData?.confirm_password || initialData?.password || '',
+        
+        experience: initialData?.experience || '',
+        about: initialData?.about || '',
+        short_bio: initialData?.short_bio || '',
+        long_bio: initialData?.long_bio || '',
+        youtubeLink: initialData?.youtubeLink || '',
+        tagLine: initialData?.tagLine || '',
+        language: initialData?.language || [],
+        workingOnOtherApps: initialData?.workingOnOtherApps || 'No',
+        
+        skill: initialData?.skill?.map((s: any) => s._id) || [],
+        mainExpertise: initialData?.mainExpertise?.map((e: any) => e._id) || [],
+        remedies: initialData?.remedies?.map((r: any) => r._id) || [],
+        
+        account_holder_name: initialData?.account_holder_name || '',
+        account_number: initialData?.account_number || '',
+        account_type: initialData?.account_type || '',
+        IFSC_code: initialData?.IFSC_code || '',
+        account_name: initialData?.account_name || '',
+        panCard: initialData?.panCard || '',
+        aadharNumber: initialData?.aadharNumber || '',
+        
+        consultation: totalConsultations,
+        consultation_commission: consultationCommission,
+        original_price: newOriginalPrice,
+        
+        free_min: initialData?.free_min || 0,
+        chat_price: initialData?.chat_price || null,
+        call_price: initialData?.call_price || null,
+        video_call_price: initialData?.video_call_price || 0,
+        normal_video_call_price: initialData?.normal_video_call_price || 0,
+        commission_call_price: initialData?.commission_call_price || '0',
+        commission_chat_price: initialData?.commission_chat_price || '0',
+        commission_video_call_price: initialData?.commission_video_call_price || 0,
+        commission_normal_video_call_price: initialData?.commission_normal_video_call_price || 0,
+        gift_commission: initialData?.gift_commission || 0,
+        
+        follower_count: initialData?.follower_count || 0,
+        totalCallDuration: initialData?.totalCallDuration || 0,
+        totalChatDuration: initialData?.totalChatDuration || 0,
+        totalVideoCallDuration: initialData?.totalVideoCallDuration || 0,
+        currency: initialData?.currency || 'INR',
+        
+        isDealInReport: initialData?.isDealInReport || false,
+        reportTypes: initialData?.reportTypes || [],
+      };
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/admin/update-astrologer`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        }
+      );
+
+      const responseData = await response.json();
+
+      if (responseData.success) {
+        toast.success(`Original price automatically updated to ₹${newOriginalPrice}`);
+        setOriginalPrice(String(newOriginalPrice));
+      }
+    } catch (error) {
+      console.error('Error updating original price:', error);
+      toast.error('Failed to update original price automatically');
     }
   };
 
@@ -260,6 +386,9 @@ export default function Consultations({ astrologerId, initialData, onUpdate }: C
   };
 
   const availableSlots = getAvailableSlots();
+  const actualShownPrice = getMinPrice(initialData?.consultationPrices || []);
+  const enteredOriginalPrice = Number(originalPrice);
+  const showValidationError = originalPrice !== '' && enteredOriginalPrice < actualShownPrice;
 
   return (
     <div className="space-y-6">
@@ -307,8 +436,17 @@ export default function Consultations({ astrologerId, initialData, onUpdate }: C
               value={originalPrice}
               onChange={(e) => setOriginalPrice(e.target.value)}
               min="0"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 text-sm"
+              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 text-sm ${
+                showValidationError 
+                  ? 'border-red-500 focus:ring-red-500' 
+                  : 'border-gray-300 focus:ring-red-500'
+              }`}
             />
+            {/* {showValidationError && (
+              <p className="text-xs text-red-600 mt-1">
+                Must be ≥ ₹{actualShownPrice}
+              </p>
+            )} */}
           </div>
 
           <div>
@@ -318,16 +456,16 @@ export default function Consultations({ astrologerId, initialData, onUpdate }: C
             <input
               type="number"
               disabled
-              value={getMinPrice(initialData?.consultationPrices)}
+              value={actualShownPrice}
               min="0"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 text-sm"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 text-sm bg-gray-100"
             />
           </div>
 
           <button
             type="button"
             onClick={handleUpdateBasicInfo}
-            disabled={submitting}
+            disabled={isSaveDisabled()}
             className="px-4 py-2 bg-red-600 text-white rounded-[2px] font-medium hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 text-sm"
           >
             {submitting ? (
