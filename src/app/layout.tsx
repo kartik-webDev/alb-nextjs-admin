@@ -43,8 +43,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             }`}
           >
             {/* Header */}
-            <header className="bg-white shadow-sm border-b border-gray-200 z-10 flex-shrink-0">
-              <Header isSidebarOpen={isSidebarOpen} onToggleSidebar={handleToggleSidebar} />
+                      <header className="bg-white shadow-sm border-b border-gray-200 z-10 flex-shrink-0">
+              <Header 
+                isSidebarOpen={isSidebarOpen} 
+                setIsSidebarOpen={setIsSidebarOpen}  // ← Ye correct hai
+              />
             </header>
 
             {/* Page Content */}
