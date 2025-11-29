@@ -30,6 +30,11 @@ function PasswordModal({ isOpen, onClose }: PasswordModalProps) {
     setErrorMessage("");
 
     // Validation
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      setErrorMessage('All fields are required');
+      return;
+    }
+
     if (newPassword.length < 6) {
       setErrorMessage('New password must be at least 6 characters long');
       return;
@@ -42,6 +47,15 @@ function PasswordModal({ isOpen, onClose }: PasswordModalProps) {
 
     try {
       const username = localStorage.getItem("userDetails");
+
+      if (!username) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'User session expired. Please login again.',
+        });
+        return;
+      }
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/change-password`, {
         method: 'POST',
@@ -58,7 +72,14 @@ function PasswordModal({ isOpen, onClose }: PasswordModalProps) {
       const data = await response.json();
 
       if (response.ok) {
+        // Reset form
+        setCurrentPassword("");
+        setNewPassword("");
+        setConfirmPassword("");
+        setErrorMessage("");
+        
         onClose();
+        
         await Swal.fire({
           icon: 'success',
           title: 'Password Changed Successfully',
@@ -66,27 +87,12 @@ function PasswordModal({ isOpen, onClose }: PasswordModalProps) {
           showConfirmButton: false,
           timer: 2000,
         });
-        // Reset form
-        setCurrentPassword("");
-        setNewPassword("");
-        setConfirmPassword("");
-        setErrorMessage("");
       } else {
-        onClose();
-        Swal.fire({
-          icon: 'error',
-          title: 'Error',
-          text: data.error || 'Failed to change password',
-        });
+        setErrorMessage(data.error || 'Failed to change password');
       }
     } catch (error) {
-      onClose();
       console.error('Error changing password:', error);
-      Swal.fire({
-        icon: 'error',
-        title: 'Error',
-        text: 'Something went wrong. Please try again.',
-      });
+      setErrorMessage('Something went wrong. Please try again.');
     }
   };
 
@@ -251,26 +257,41 @@ export default function Header({ isSidebarOpen, setIsSidebarOpen }: HeaderProps)
 
     if (result.isConfirmed) {
       try {
-        await fetch('/api/logout', {
+        // STEP 1: Call logout API to clear cookies FIRST
+        const response = await fetch('/api/logout', {
           method: 'POST',
+          credentials: 'include',
+          cache: 'no-store', // Prevent caching
         });
 
-        setData("");
+        // STEP 2: Clear localStorage and sessionStorage
         localStorage.clear();
+        sessionStorage.clear();
+        setData("");
 
-        await Swal.fire({
+        // STEP 3: Show success message (brief)
+        Swal.fire({
           icon: 'success',
           title: 'Logged out successfully',
           showConfirmButton: false,
-          timer: 1500,
+          timer: 1000,
         });
 
-        router.push('/login');
-        router.refresh();
-      } catch (e) {
-        console.log(e);
+        // STEP 4: Wait a bit then hard redirect
+        setTimeout(() => {
+          window.location.replace('/login'); // Use replace instead of href
+        }, 1000);
+        
+      } catch (error) {
+        console.error('Logout error:', error);
+        
+        // Even if API fails, clear everything
         localStorage.clear();
-        router.push('/login');
+        sessionStorage.clear();
+        setData("");
+        
+        // Hard redirect
+        window.location.replace('/login');
       }
     }
   };

@@ -45,24 +45,37 @@ export function middleware(request: NextRequest) {
   const token = request.cookies.get('token')?.value;
   const { pathname } = request.nextUrl;
 
-  // Public routes jo bina login ke accessible honge
+  // Public routes 
   const publicRoutes = ['/login', '/register'];
   const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route));
 
-  // Agar user logged in hai aur login page par jaana chahta hai
+  // 
   if (token && isPublicRoute) {
     return NextResponse.redirect(new URL('/', request.url));
   }
 
-  // Agar user logged in nahi hai aur protected route access kar raha hai
+  // if no token and trying to access protected route
   if (!token && !isPublicRoute) {
-    return NextResponse.redirect(new URL('/login', request.url));
+    const response = NextResponse.redirect(new URL('/login', request.url));
+    
+    // Extra safety: Clear any remaining cookies
+    response.cookies.delete('token');
+    response.cookies.delete('adminToken');
+    
+    return response;
   }
 
-  return NextResponse.next();
+  // For all other requests, ensure fresh cookie check
+  const response = NextResponse.next();
+  
+  // Add cache control headers to prevent stale authentication state
+  response.headers.set('Cache-Control', 'no-store, must-revalidate');
+  response.headers.set('Pragma', 'no-cache');
+  response.headers.set('Expires', '0');
+  
+  return response;
 }
 
-// Ye config batata hai ki middleware kis routes par chalega
 export const config = {
   matcher: [
     /*
