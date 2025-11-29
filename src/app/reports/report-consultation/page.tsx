@@ -204,17 +204,19 @@ export default function ConsultationSlots() {
   // Handle Manual Date Change
   const handleStartDateChange = (newDate: string) => {
     setStartDate(newDate);
+    if (moment(newDate).isAfter(moment(endDate))) {
+      setEndDate(newDate);
+    }
     // setDateRangeType('custom'); // Switch to custom when manually changed
   };
 
 const handleEndDateChange = (newDate: string) => {
   // Add 7 days using moment
   const nextDate = moment(newDate).add(7, 'days').format('YYYY-MM-DD');
-  setEndDate(nextDate);
+  setEndDate(newDate);
   // setDateRangeType('custom');
 };
 
-  // Table Columns
  // Table Columns
   const columns = [
 
@@ -389,7 +391,7 @@ const handleEndDateChange = (newDate: string) => {
         isLoading={loading}
         url=""
       />
-            {viewOpen && (
+      {viewOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-auto p-6">
             <h2 className="text-xl font-semibold mb-4">Order Details</h2>
