@@ -52,7 +52,8 @@ export default function ReportsAndAvailability({ astrologerId, initialData, onUp
     { code: '#LCR-', name: 'Life Changing Report' },
     { code: '#LR-', name: 'Love Report' },
     { code: '#KM-', name: 'Kundli Matching' },
-    { code: '#VR-', name: 'Name Number Report' },
+    { code: '#NNR-', name: 'Name Number Report' },
+    { code: '#VR-', name: 'Varshphal Report' },
     { code: '#BNR-', name: 'Baby Name Report' }
   ];
 
