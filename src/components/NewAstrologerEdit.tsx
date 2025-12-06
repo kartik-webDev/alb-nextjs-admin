@@ -12,6 +12,7 @@ import SkillsExpertise from '@/components/astrologer/SkillsExpertise';
 import Consultations from '@/components/astrologer/Consultations';
 import ReportsAndAvailability from '@/components/astrologer/AstrologerUnavailibilty';
 import { Mail, Phone, Briefcase } from 'lucide-react';
+import SpecialOffers from './astrologer/SpecialOffers';
 
 export default function EditAstrologer() {
   const params = useParams();
@@ -30,7 +31,8 @@ export default function EditAstrologer() {
     'Media & Gallery',
     'Skills & Expertise',
     'Consultations',
-    'Reports & Unavailability'
+    'Reports & Unavailability',
+    'Special Offers'
   ];
 
   useEffect(() => {
@@ -177,6 +179,13 @@ export default function EditAstrologer() {
           )}
           {activeTab === 6 && (
             <ReportsAndAvailability
+              astrologerId={astrologerId || ''} 
+              initialData={astrologer}
+              onUpdate={fetchAstrologer}
+            />
+          )}
+          {activeTab === 7 && (
+            <SpecialOffers
               astrologerId={astrologerId || ''} 
               initialData={astrologer}
               onUpdate={fetchAstrologer}
