@@ -44,6 +44,11 @@ export const RouteName = [
         name: "List Of Astrologers",
         icon: <OtherRouteSvg />,
       },
+      {
+        path: "/astrologer-price",
+        name: "Set Customer Offer price",
+        icon: <OtherRouteSvg />,
+      },
       // {
       //   path: "/astrologer-enquiry",
       //   name: "Astrologer Enquiry",
