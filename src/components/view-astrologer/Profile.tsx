@@ -1,8 +1,9 @@
 // app/astrologer/view-astrologer/components/profile.tsx
-import React from "react";
-import moment from "moment";
+import { img_url } from '@/lib/api-routes';
 import { IndianRupee } from "@/utils/common-function";
-import { base_url } from "@/lib/api-routes";
+import moment from "moment";
+import React from "react";
+
 
 // Types
 interface Astrologer {
@@ -123,7 +124,7 @@ const Profile: React.FC<ProfileProps> = ({ astrologer }) => {
         {/* Profile Image */}
         <div className="lg:col-span-4">
           <img
-            src={`${base_url}${profileImage}`}
+              src={img_url + profileImage}
             alt={astrologerName}
             className="w-full h-64 object-cover rounded-xl border border-gray-200 shadow-sm"
           />
