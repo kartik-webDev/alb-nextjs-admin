@@ -43,12 +43,7 @@ export const RouteName = [
         path: "/astrologer",
         name: "List Of Astrologers",
         icon: <OtherRouteSvg />,
-      },
-      {
-        path: "/astrologer-price",
-        name: "Set Customer Offer price",
-        icon: <OtherRouteSvg />,
-      },
+      }
       // {
       //   path: "/astrologer-enquiry",
       //   name: "Astrologer Enquiry",
@@ -136,6 +131,11 @@ export const RouteName = [
       {
         path: "/logs/list-of-logs",
         name: "List of logs",
+        icon: <OtherRouteSvg />,
+      },
+      {
+        path: "/first-consultation-price",
+        name: "First Consultation Price",
         icon: <OtherRouteSvg />,
       },
     ],

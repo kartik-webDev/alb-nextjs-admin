@@ -323,7 +323,7 @@ export default function SpecialOffers({ astrologerId, initialData, onUpdate }: S
       {/* Header */}
       <div>
         <div className="flex items-center gap-2 mb-1">
-          <h2 className="text-2xl font-bold text-gray-900">Special Offers Management</h2>
+          <h2 className="text-2xl font-bold text-gray-900">New Astrologer Special Offers Management</h2>
         </div>
         <p className="text-gray-600 text-sm">Create time-limited promotional offers with special pricing</p>
       </div>
