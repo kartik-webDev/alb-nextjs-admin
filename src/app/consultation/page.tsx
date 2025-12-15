@@ -494,7 +494,11 @@ export default function Consultation() {
       </div>
 
       <MainDatatable
-        columns={columns}
+        columns={columns.map((col) => ({
+          ...col,
+          minwidth: col.width,
+          width: undefined,
+        }))}
         data={finalFilteredData}
         isLoading={loading}
         title=""

@@ -220,7 +220,7 @@ const handleEndDateChange = (newDate: string) => {
  // Table Columns
   const columns = [
 
-    { name: "", selector: (_: ConsultationSlot, idx?: number) => (idx || 0) + 1, width: "70px" },
+    { name: "S.No.", selector: (_: ConsultationSlot, idx?: number) => (idx || 0) + 1, width: "70px" },
     {
       name: "Order ID",
       selector: (row: ConsultationSlot) => row?.orderID || 'N/A',
@@ -385,7 +385,11 @@ const handleEndDateChange = (newDate: string) => {
 
       {/* Data Table */}
       <MainDatatable
-        columns={columns}
+         columns={columns.map((col) => ({
+          ...col,
+          minwidth: col.width,
+          width: undefined,
+        }))}
         data={filteredData}
         title="Consultation Slots"
         isLoading={loading}

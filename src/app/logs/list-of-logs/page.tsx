@@ -552,7 +552,11 @@ const ConsultationLogsPage = () => {
       <div className="mx-auto">
         <MainDatatable
           data={filteredLogs}
-          columns={columns}
+          columns={columns.map((col) => ({
+            ...col,
+            minwidth: col.width,
+            width: undefined,
+          }))}
           title="Consultation Logs"
           isLoading={loading}
           showSearch={true}
