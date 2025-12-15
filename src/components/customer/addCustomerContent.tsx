@@ -274,62 +274,57 @@ const AddCustomerContent = () => {
           </div>
 
           <div className="p-4 sm:p-6 lg:p-10">
-            {/* Image Upload Section */}
-            <div className="mb-8 lg:mb-10">
-              <label className="block text-base sm:text-lg font-semibold text-gray-800 mb-3 sm:mb-4">
+            {/* Image Upload Section - COMPACT */}
+           <div className="mb-4">
+              <label className="block text-sm font-semibold text-gray-800 mb-2">
                 Customer Photo
               </label>
-              <div className="relative border-2 border-dashed border-gray-300 rounded-2xl overflow-hidden hover:border-red-400 transition-all bg-gradient-to-br from-gray-50 to-white">
+              <div className="relative border-2 border-dashed border-gray-300 rounded-xl overflow-hidden hover:border-red-400 transition-all bg-gradient-to-br from-gray-50 to-white">
                 {image.file ? (
-                  // <label
-                  //   onDragOver={(e) => e.preventDefault()}
-                  //   onDrop={handleDrop}
-                  //   htmlFor="upload-image"
-                  //   className="block cursor-pointer group"
-                  // >
-                
-                  // </label>
-                      <div className="relative bg-white">
-                      <img
-                        src={getImageSrc()}
-                        alt="Customer"
-                        className="w-full h-96 object-contain p-4"
-                      />
-                      <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all flex items-center justify-center">
-                        {/* <div className="opacity-0 group-hover:opacity-100 transition-all text-center px-4">
-                          <p className="text-white font-bold text-lg mb-2">Change Photo</p>
-                          <p className="text-white text-sm">Click or drop new image here</p>
-                        </div> */}
-                      </div>
-                    </div>
+                  <div className="relative bg-white flex justify-center">
+                    <img
+                      src={getImageSrc()}
+                      alt="Customer"
+                      className="w-auto h-40 object-contain p-2"
+                    />
+                  </div>
                 ) : (
                   <label
                     onDragOver={(e) => e.preventDefault()}
                     onDrop={handleDrop}
                     htmlFor="upload-image"
-                    className="flex flex-col items-center justify-center py-24 sm:py-28 lg:py-32 cursor-pointer hover:bg-gray-100 transition-all"
+                    className="flex flex-col items-center justify-center py-8 cursor-pointer hover:bg-gray-100 transition-all"
                   >
-                    <div className="w-24 h-24 sm:w-28 sm:h-28 bg-gradient-to-br from-red-100 to-red-200 rounded-full flex items-center justify-center mb-5 shadow-lg">
-                      <svg className="w-12 h-12 sm:w-14 sm:h-14 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    <div className="w-16 h-16 bg-gradient-to-br from-red-100 to-red-200 rounded-full flex items-center justify-center mb-2 shadow">
+                      <svg
+                        className="w-8 h-8 text-red-600"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                        />
                       </svg>
                     </div>
-                    <p className="text-xl font-bold text-gray-800 mb-2">Choose Image</p>
-                    <p className="text-base text-gray-600 mb-3">or drag and drop here</p>
-                
+                    {/* <p className="text-sm font-bold text-gray-800">Choose Image</p>
+                    <p className="text-xs text-gray-600">or drag & drop</p> */}
                   </label>
                 )}
-                <input
+                {/* <input
                   id="upload-image"
                   type="file"
                   accept="image/*"
                   hidden
                   onChange={handleImage}
-                />
+                /> */}
               </div>
               {errors.image && (
-                <p className="text-red-600 text-sm mt-3 flex items-center bg-red-50 px-4 py-2 rounded-lg">
-                  <span className="mr-2 text-lg">⚠️</span> {errors.image}
+                <p className="text-red-600 text-xs mt-2 flex items-center bg-red-50 px-2 py-1 rounded">
+                  <span className="mr-1">⚠️</span> {errors.image}
                 </p>
               )}
             </div>

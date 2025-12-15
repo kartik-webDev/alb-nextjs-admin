@@ -1,7 +1,7 @@
 // components/customer/profile.tsx
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import moment from 'moment';
 import Image from 'next/image';
 
@@ -84,8 +84,9 @@ const Profile: React.FC<ProfileProps> = ({ customer }) => {
     updatedAt,
     placeOfBirth,
   } = customer;
-  const baseURL = process.env.NEXT_PUBLIC_API_URL;
 
+  const [imageError, setImageError] = useState(false);
+  const baseURL = process.env.NEXT_PUBLIC_API_URL;
 
   const formatAddress = () => {
     if (!address) return '';
@@ -116,31 +117,29 @@ const Profile: React.FC<ProfileProps> = ({ customer }) => {
     }).format(amount || 0);
   };
 
+  // Check if image should be shown
+  const shouldShowImage = image && !imageError;
+
   return (
     <div className="bg-white rounded-2xl shadow-lg p-6 mb-5">
       <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-        {/* Profile Image Section */}
-        <div className="md:col-span-4">
-          <div className="relative w-full aspect-[3/4] rounded-xl overflow-hidden border border-gray-200 bg-gradient-to-br from-blue-100 to-blue-200">
-            {image ? (
-              // Next.js Image component with proper configuration
+        {/* Profile Image Section - Compact */}
+        <div className="md:col-span-2">
+          <div className="relative w-full max-w-[160px] mx-auto aspect-[3/4] rounded-xl overflow-hidden border border-gray-200 bg-gradient-to-br from-blue-100 to-blue-200">
+            {shouldShowImage ? (
               <Image
                 src={`${process.env.NEXT_PUBLIC_IMAGE_URL2}${image}`}
                 alt={customerName || 'Customer Profile'}
                 fill
-                sizes="(max-width: 768px) 100vw, 33vw"
+                sizes="160px"
                 className="object-cover"
-                quality={85}
-                priority={true} // Since it's a main profile image
-                onError={(e) => {
-                  console.error('Profile image failed to load');
-                  // Error handling - image will hide automatically
-                }}
+                quality={70}
+                priority={true}
+                onError={() => setImageError(true)}
               />
             ) : (
-              // Fallback when no image
               <div className="w-full h-full flex items-center justify-center">
-                <div className="text-6xl font-bold text-blue-600">
+                <div className="text-4xl font-bold text-blue-600">
                   {customerName?.charAt(0)?.toUpperCase() || 'C'}
                 </div>
               </div>
@@ -148,8 +147,8 @@ const Profile: React.FC<ProfileProps> = ({ customer }) => {
           </div>
         </div>
 
-        {/* Profile Information Section */}
-        <div className="md:col-span-8">
+        {/* Profile Information Section - More space now */}
+        <div className="md:col-span-10">
           <div className="space-y-4">
             <h1 className="text-3xl font-bold text-gray-800 mb-6">
               {customerName}
@@ -175,23 +174,21 @@ const Profile: React.FC<ProfileProps> = ({ customer }) => {
                 </div>
               )}
 
-              <div className="flex items-start">
-                <span className="font-semibold text-gray-700 min-w-[140px]">Location:</span>
-                <span className="text-gray-600">{formatAddress()}</span>
-              </div>
-
-              {dateOfBirth && (
+              {formatAddress() && (
                 <div className="flex items-start">
-                  <span className="font-semibold text-gray-700 min-w-[140px]">Date of Birth:</span>
-                  <span className="text-gray-600">
-                    {moment(dateOfBirth).isValid()
-                      ? moment(dateOfBirth).format('DD MMM YYYY')
-                      : ''}
-                  </span>
+                  <span className="font-semibold text-gray-700 min-w-[140px]">Location:</span>
+                  <span className="text-gray-600">{formatAddress()}</span>
                 </div>
               )}
 
-              
+              {dateOfBirth && moment(dateOfBirth).isValid() && (
+                <div className="flex items-start">
+                  <span className="font-semibold text-gray-700 min-w-[140px]">Date of Birth:</span>
+                  <span className="text-gray-600">
+                    {moment(dateOfBirth).format('DD MMM YYYY')}
+                  </span>
+                </div>
+              )}
 
               {placeOfBirth && (
                 <div className="flex items-start">
