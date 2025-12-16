@@ -325,7 +325,7 @@ const AddEditBlogContent = () => {
                 className="flex flex-col items-center p-5 cursor-pointer"
               >
                 <img
-                  src={image.file}
+                  src={process.env.NEXT_PUBLIC_IMAGE_URL3 + image.file}
                   alt="Blog preview"
                   className="h-[300px] w-[300px] object-cover"
                 />
