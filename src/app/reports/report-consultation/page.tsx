@@ -345,6 +345,9 @@ const handleEndDateChange = (newDate: string) => {
               type="date"
               value={startDate}
               onChange={(e) => handleStartDateChange(e.target.value)}
+              onKeyDown={(e) => e.preventDefault()}
+              onPaste={(e) => e.preventDefault()}
+              onInput={(e) => e.preventDefault()}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
             />
           </div>
@@ -359,7 +362,10 @@ const handleEndDateChange = (newDate: string) => {
               value={endDate}
               min={startDate}
               onChange={(e) => handleEndDateChange(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+              onKeyDown={(e) => e.preventDefault()}
+              onPaste={(e) => e.preventDefault()}
+              onInput={(e) => e.preventDefault()}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors "
             />
           </div>
 
@@ -367,7 +373,7 @@ const handleEndDateChange = (newDate: string) => {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Report Type <span className="text-red-500">*</span>
-            </label>
+            </label>.
             <select
               value={prefix}
               onChange={(e) => setPrefix(e.target.value)}
