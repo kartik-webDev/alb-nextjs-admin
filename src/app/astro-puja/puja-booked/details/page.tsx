@@ -231,7 +231,7 @@ function PujaBookedDetailfunction(){
             {/* Puja Details */}
             <div className="flex-1 space-y-3">
               <h3 className="text-xl font-semibold text-gray-800">
-                {value.pujaId?.pujaName || 'N/A'}
+                {value.pujaId?.pujaName || ''}
               </h3>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -248,7 +248,7 @@ function PujaBookedDetailfunction(){
                 <div className="flex items-center gap-2">
                   <span className="font-medium text-gray-700">Puja Date:</span>
                   <span className="text-gray-600">
-                    {moment(value.pujaDate).format('DD-MMM-YYYY')}
+                    {moment(value.pujaDate).format('DD/MM/YYYY')}
                   </span>
                 </div>
                 
@@ -262,21 +262,21 @@ function PujaBookedDetailfunction(){
                 <div className="flex items-center gap-2">
                   <span className="font-medium text-gray-700">Booking Date:</span>
                   <span className="text-gray-600">
-                    {moment(value.bookingDate).format('DD-MMM-YYYY')}
+                    {moment(value.bookingDate).format('DD/MM/YYYY')}
                   </span>
                 </div>
                 
                 <div className="flex items-center gap-2">
                   <span className="font-medium text-gray-700">Assigned Astrologer:</span>
                   <span className="text-gray-600">
-                    {value.assignedAstro?.astrologerName || 'N/A'}
+                    {value.assignedAstro?.astrologerName || ''}
                   </span>
                 </div>
               </div>
               
               <div className="flex items-start gap-2">
                 <span className="font-medium text-gray-700">Notes:</span>
-                <span className="text-gray-600">{value.notes || 'N/A'}</span>
+                <span className="text-gray-600">{value.notes || ''}</span>
               </div>
             </div>
 
@@ -284,7 +284,7 @@ function PujaBookedDetailfunction(){
             <div className="flex flex-col gap-4">
               <button 
                 onClick={() => handleStatusButton(value.status, value.pujaId._id)}
-                className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg cursor-pointer font-medium transition-colors duration-200 text-sm"
+                className="bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-lg cursor-pointer font-medium transition-colors duration-200 text-sm"
               >
                 {value.status}
               </button>
@@ -323,7 +323,7 @@ function PujaBookedDetailfunction(){
                   name="status"
                   value={inputFieldDetail.status}
                   onChange={handleInputField}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
                 >
                   <option value="">Select status</option>
                   <option value="pending">Pending</option>
@@ -341,7 +341,7 @@ function PujaBookedDetailfunction(){
                   value={inputFieldDetail.note}
                   onChange={handleInputField}
                   rows={4}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
                   placeholder="Enter note..."
                 />
               </div>
@@ -349,7 +349,7 @@ function PujaBookedDetailfunction(){
               <div className="flex justify-end">
                 <button
                   onClick={handleSubmitStatus}
-                  className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg cursor-pointer font-medium transition-colors duration-200"
+                  className="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-lg cursor-pointer font-medium transition-colors duration-200"
                 >
                   Submit
                 </button>
@@ -381,7 +381,7 @@ function PujaBookedDetailfunction(){
                 <select
                   value={assignedAstrologerDetail}
                   onChange={(e) => setAssignedAstrologerDetail(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
                 >
                   <option value="">Select astrologer</option>
                   {astrologersRegisteredPuja.map((option, index) => (
@@ -395,7 +395,7 @@ function PujaBookedDetailfunction(){
               <div className="flex justify-end">
                 <button
                   onClick={handleSubmitAssignedAstrologer}
-                  className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg cursor-pointer font-medium transition-colors duration-200"
+                  className="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-lg cursor-pointer font-medium transition-colors duration-200"
                 >
                   Submit
                 </button>

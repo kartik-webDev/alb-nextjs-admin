@@ -338,7 +338,7 @@ const AddPujaContent: React.FC = () => {
                 <div className="text-2xl font-medium text-black">{mode} Puja</div>
                 <button
                     onClick={() => router.push("/astro-puja/puja")}
-                    className="font-medium bg-blue-600 text-white px-4 py-2 rounded cursor-pointer text-sm hover:bg-blue-700 transition"
+                    className="font-medium bg-red-500 text-white px-4 py-2 rounded cursor-pointer text-sm hover:bg-blue-700 transition"
                 >
                     Display
                 </button>
@@ -358,7 +358,7 @@ const AddPujaContent: React.FC = () => {
                                 >
                                     <div className="relative w-full h-[300px]">
                                         <Image
-                                            src={image.file}
+                                            src={`${process.env.NEXT_PUBLIC_IMAGE_URL3}${image.file}`}
                                             alt="Puja"
                                             fill
                                             className="object-contain"
@@ -547,7 +547,7 @@ const AddPujaContent: React.FC = () => {
                     <div className="flex justify-between items-center">
                         <button
                             type="submit"
-                            className="font-medium bg-blue-600 text-white px-6 py-3 rounded cursor-pointer text-base hover:bg-blue-700 transition"
+                            className="font-medium bg-red-500 text-white px-4 py-2 rounded cursor-pointer text-base hover:bg-blue-700 transition"
                         >
                             Submit
                         </button>
@@ -555,7 +555,7 @@ const AddPujaContent: React.FC = () => {
                         <button
                             type="button"
                             onClick={handleAddNewSection}
-                            className="font-medium bg-blue-600 text-white px-6 py-3 rounded cursor-pointer text-base hover:bg-blue-700 transition"
+                            className="font-medium bg-red-500 text-white px-4 py-2 rounded cursor-pointer text-base hover:bg-blue-700 transition"
                         >
                             Add New Section
                         </button>

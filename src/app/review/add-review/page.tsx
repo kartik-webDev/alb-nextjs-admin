@@ -58,7 +58,7 @@ function AddReviewContent() {
       if (editMode && reviewId) {
         try {
           setFetching(true);
-          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/reviews/${reviewId}`);
+          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/reviews?=${reviewId}`);
           const data = await response.json();
           
           if (data.success && data.data) {
