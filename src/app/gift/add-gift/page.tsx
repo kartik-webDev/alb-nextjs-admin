@@ -61,6 +61,7 @@ function AddGiftContent() {
     file: '',
     bytes: null
   });
+    console.log(image.file, "local iamge hai ya nahai")
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(editMode && !!giftId);
   const [allGifts, setAllGifts] = useState<Gift[]>([]);
@@ -102,7 +103,7 @@ function AddGiftContent() {
           // Find the specific gift by ID
           const specificGift = gifts.find(gift => gift._id === giftId);
           
-          console.log('Found gift:', specificGift); // Debug log
+          console.log('Found gift:', specificGift);
           
           if (specificGift) {
             // Set the form data with the gift information
@@ -112,15 +113,15 @@ function AddGiftContent() {
               shortBio: specificGift.description || ''
             });
 
-            // Set the image if available
+            // Set the image if available - directly store the API path
             if (specificGift.giftIcon) {
               setImage({
-                file: `${process.env.NEXT_PUBLIC_API_URL}/${specificGift.giftIcon}`,
+                file: specificGift.giftIcon, // Direct path from API
                 bytes: null
               });
             }
             
-            console.log('Form data set successfully'); // Debug log
+            console.log('Form data set successfully');
           } else {
             throw new Error('Gift not found with the provided ID');
           }
@@ -216,7 +217,7 @@ function AddGiftContent() {
       handleInputFieldError("shortBio", "Please Enter Valid Short Bio (Letters only)");
       isValid = false;
     }
-    if (!image.bytes && !image.file && !editMode) {
+    if (!image.file && !editMode) {
       handleInputFieldError("image", "Please Upload Image");
       isValid = false;
     }
@@ -323,6 +324,16 @@ function AddGiftContent() {
     }
   };
 
+  // Function to get the correct image URL
+  const getImageUrl = (imagePath: string) => {
+    // If it's a blob URL (newly uploaded), return as is
+    if (imagePath.startsWith('blob:')) {
+      return imagePath;
+    }
+    // If it's an API path, prepend the API URL
+    return `${process.env.NEXT_PUBLIC_API_URL}/${imagePath}`;
+  };
+
   if (fetching) {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -341,9 +352,7 @@ function AddGiftContent() {
         <div className="flex justify-between items-center mb-6">
           <div className="text-xl font-semibold text-gray-800">
             {editMode ? 'Edit' : 'Add'} Gift
-            {editMode && giftId && (
-              <span className="text-sm text-gray-500 ml-2">(ID: {giftId})</span>
-            )}
+           
           </div>
           <button
             onClick={() => router.push("/gift")}
@@ -370,11 +379,11 @@ function AddGiftContent() {
               {image.file ? (
                 <div className="flex flex-col items-center">
                   <div className="relative w-48 h-48 mb-4">
-                    <img
-                      src={image.file}
-                      alt="Gift icon"
-                      className="object-contain rounded-lg"
-                    />
+                  <img
+                    src={image.file.startsWith('blob:') ? image.file : process.env.NEXT_PUBLIC_IMAGE_URL3 + image.file}
+                    alt="Gift icon"
+                    className="w-full h-full object-contain rounded-lg"
+                  />
                   </div>
                   <p className="text-sm text-gray-600">Click or drag to change image</p>
                 </div>
