@@ -260,62 +260,71 @@ export default function AstrologerPage() {
   // -----------------------------------------------------------------
   // Change Status with Swal
   // -----------------------------------------------------------------
-  const changeStatus = async (
-    field: "chat_status" | "call_status" | "video_call_status",
-    id: string,
-    current: string | undefined
-  ) => {
-    const newVal = current === "online" ? "offline" : "online";
-    const fieldName = field.replace("_status", "").replace("_", " ");
+const changeStatus = async (
+  field: "chat_status" | "call_status" | "video_call_status",
+  id: string,
+  current: string | undefined
+) => {
+  const newVal = current === "online" ? "offline" : "online";
+  const fieldName = field.replace("_status", "").replace("_", " ");
 
-    const result = await Swal.fire({
-      title: `Change ${fieldName} status?`,
-      text: `Set ${fieldName} to ${newVal}?`,
-      icon: "question",
-      showCancelButton: true,
-      confirmButtonColor: "#3085d6",
-      cancelButtonColor: "#d33",
-      confirmButtonText: `Yes, set to ${newVal}`,
-      cancelButtonText: "Cancel",
+  const result = await Swal.fire({
+    title: `Change ${fieldName} status?`,
+    text: `Set ${fieldName} to ${newVal}?`,
+    icon: "question",
+    showCancelButton: true,
+    confirmButtonColor: "#3085d6",
+    cancelButtonColor: "#d33",
+    confirmButtonText: `Yes, set to ${newVal}`,
+    cancelButtonText: "Cancel",
+  });
+
+  if (!result.isConfirmed) return;
+
+  try {
+    Swal.fire({
+      title: "Updating Status...",
+      text: "Please wait",
+      allowOutsideClick: false,
+      didOpen: () => {
+        Swal.showLoading();
+      },
     });
 
-    if (!result.isConfirmed) return;
+    // Dynamically determine the endpoint based on the field
+    const endpointMap = {
+      chat_status: "/api/astrologer/change-chat-status",
+      call_status: "/api/astrologer/change-call-status",
+      video_call_status: "/api/astrologer/change-video-call-status",
+    };
 
-    try {
-      Swal.fire({
-        title: "Updating Status...",
-        text: "Please wait",
-        allowOutsideClick: false,
-        didOpen: () => {
-          Swal.showLoading();
-        },
-      });
+    const endpoint = endpointMap[field];
 
-      await fetch("/api/astrologers/status", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ astrologerId: id, field, value: newVal }),
-      });
+    await fetch(`${process.env.NEXT_PUBLIC_API_URL}${endpoint}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ astrologerId: id, [field]: newVal }),
+    });
 
-      await fetchAstrologers();
-      closeEdit();
+    await fetchAstrologers();
+    closeEdit();
 
-      Swal.fire({
-        icon: "success",
-        title: "Status Updated!",
-        text: `${fieldName} set to ${newVal}`,
-        timer: 2000,
-        showConfirmButton: false,
-      });
-    } catch (e) {
-      console.error(e);
-      Swal.fire({
-        icon: "error",
-        title: "Error",
-        text: "Failed to update status",
-      });
-    }
-  };
+    Swal.fire({
+      icon: "success",
+      title: "Status Updated!",
+      text: `${fieldName} set to ${newVal}`,
+      timer: 2000,
+      showConfirmButton: false,
+    });
+  } catch (e) {
+    console.error(e);
+    Swal.fire({
+      icon: "error",
+      title: "Error",
+      text: "Failed to update status",
+    });
+  }
+};
 
   // -----------------------------------------------------------------
   // Table Columns
