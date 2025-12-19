@@ -11,6 +11,7 @@ import MediaGallery from '@/components/astrologer/MediaGallery';
 import SkillsExpertise from '@/components/astrologer/SkillsExpertise';
 import Consultations from '@/components/astrologer/Consultations';
 import ReportsAndAvailability from '@/components/astrologer/AstrologerUnavailibilty';
+import FirstTimeOfferManagement from './astrologer/FirstTimeOfferManagement';
 import { Mail, Phone, Briefcase } from 'lucide-react';
 
 export default function EditAstrologer() {
@@ -30,6 +31,7 @@ export default function EditAstrologer() {
     'Media & Gallery',
     'Skills & Expertise',
     'Consultations',
+    'First Time Customer Offer',
     'Reports & Unavailability'
   ];
 
@@ -176,6 +178,13 @@ export default function EditAstrologer() {
             />
           )}
           {activeTab === 6 && (
+            <FirstTimeOfferManagement
+              astrologerId={astrologerId || ''} 
+              initialData={astrologer}
+              onUpdate={fetchAstrologer}
+            />
+          )}
+          {activeTab === 7 && (
             <ReportsAndAvailability
               astrologerId={astrologerId || ''} 
               initialData={astrologer}

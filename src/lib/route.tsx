@@ -134,6 +134,11 @@ export const RouteName = [
         name: "List of logs",
         icon: <OtherRouteSvg />,
       },
+      {
+        path: "/first-consultation-price",
+        name: "First Consultation Price",
+        icon: <OtherRouteSvg />,
+      },
     ],
   },
 
