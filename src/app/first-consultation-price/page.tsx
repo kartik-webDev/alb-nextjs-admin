@@ -8,6 +8,7 @@ import { SwitchOnSvg, SwitchOffSvg } from "@/components/svgs/page";
 interface GlobalOfferPrice {
   _id?: string;
   OfferPrice: number;
+  isActive: boolean;
 }
 
 interface Astrologer {
@@ -128,6 +129,7 @@ export default function GlobalOfferPricePage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             OfferPrice: Number(priceInput),
+            offerPriceActive: globalOfferPrice?.isActive ?? true, // Include current isActive status
           }),
         }
       );
@@ -146,6 +148,50 @@ export default function GlobalOfferPricePage() {
       toast.error("Failed to update global offer price");
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  // Toggle Offer Active Status
+  const toggleOfferActive = async () => {
+    if (!globalOfferPrice?._id) {
+      toast.error("No offer price available to toggle");
+      return;
+    }
+
+    try {
+      const newActiveStatus = !(globalOfferPrice.isActive ?? true);
+      
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/customers/offer-price`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            OfferPrice: globalOfferPrice.OfferPrice,
+            offerPriceActive: newActiveStatus,
+          }),
+        }
+      );
+
+      if (!res.ok) throw new Error("Failed to update");
+
+      const data = await res.json();
+
+      if (data.success) {
+        // Update local state optimistically
+        setGlobalOfferPrice({
+          ...globalOfferPrice,
+          isActive: newActiveStatus,
+        });
+        toast.success(
+          newActiveStatus 
+            ? "Global offer activated" 
+            : "Global offer deactivated"
+        );
+      }
+    } catch (e) {
+      console.error("Error toggling offer status:", e);
+      toast.error("Failed to toggle offer status");
     }
   };
 
@@ -273,9 +319,31 @@ export default function GlobalOfferPricePage() {
           <div className="flex items-center gap-3">
             {!isEditing ? (
               <>
+                {/* Active Status Toggle */}
+                <div className="flex items-center gap-2 p-2 rounded-md">
+                  <span className="text-xs font-medium text-gray-700 whitespace-nowrap">
+                    Offer Active:
+                  </span>
+                  <button
+                    onClick={toggleOfferActive}
+                    className="p-1 rounded-md transition-colors"
+                    title={globalOfferPrice?.isActive ? "Click to deactivate" : "Click to activate"}
+                  >
+                    {globalOfferPrice?.isActive ? (
+                      <SwitchOnSvg  />
+                    ) : (
+                      <SwitchOffSvg  />
+                    )}
+                  </button>
+                </div>
+                
                 <div className="text-right">
                   <p className="text-xs text-gray-500">Current Global Price</p>
-                  <p className="text-lg font-bold text-red-600">
+                  <p className={`text-lg font-bold ${
+                    globalOfferPrice?.isActive 
+                      ? "text-red-600" 
+                      : "text-gray-400 line-through"
+                  }`}>
                     ₹{globalOfferPrice?.OfferPrice ?? "Not Set"}
                   </p>
                 </div>
@@ -289,6 +357,24 @@ export default function GlobalOfferPricePage() {
               </>
             ) : (
               <div className="flex items-center gap-3">
+                {/* Active Status Toggle - Keep visible during editing */}
+                <div className="flex items-center gap-2 p-2  rounded-md">
+                  <span className="text-xs font-medium text-gray-700 whitespace-nowrap">
+                    Offer Active:
+                  </span>
+                  <button
+                    onClick={toggleOfferActive}
+                    className="p-1 rounded-md  "
+                    title={globalOfferPrice?.isActive ? "Click to deactivate" : "Click to activate"}
+                  >
+                    {globalOfferPrice?.isActive ? (
+                      <SwitchOnSvg />
+                    ) : (
+                      <SwitchOffSvg  />
+                    )}
+                  </button>
+                </div>
+                
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">
                     Global Offer Price (₹)
@@ -359,7 +445,8 @@ export default function GlobalOfferPricePage() {
           </div>
         </div>
 
-        {/* Astrologers table section */}
+        {/* Rest of the component remains exactly the same */}
+        {/* ... astrologers table section ... */}
         <div className="space-y-4">
           <div className="flex items-center justify-between mt-4">
             <h3 className="text-base font-semibold text-gray-900">
@@ -457,7 +544,7 @@ export default function GlobalOfferPricePage() {
           </div>
 
           <p className="text-xs text-gray-500">
-            Toggle “Use Global Pricing” to indicate which astrologers should use
+            Toggle "Use Global Pricing" to indicate which astrologers should use
             the platform-wide first-time offer price. When turned off, the
             astrologer will fall back to their base consultation price.
           </p>
