@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useEffect, useState, useMemo, Suspense } from "react";
-import dynamic from "next/dynamic";
+import React, { useEffect, useState, useMemo } from "react";
 import moment from "moment";
+import { CSVLink } from "react-csv";
 import { DeepSearchSpace } from "@/utils/common-function";
 
 import { Color } from "@/assets/colors";
@@ -33,155 +33,12 @@ interface CSVRow {
   [key: string]: string | number | boolean | undefined;
 }
 
-// Dynamically import CSVLink to avoid SSR issues
-const CSVLink = dynamic(
-  () => import("react-csv").then((mod) => mod.CSVLink),
-  { ssr: false }
-);
-
-// DateRangeFilter Component (Client-side only)
-const DateRangeFilter = ({
-  fromDate,
-  toDate,
-  setFromDate,
-  setToDate,
-  handleDateFilter,
-  handleResetDate,
-  csvData,
-  filteredDataLength,
-}: {
-  fromDate: string;
-  toDate: string;
-  setFromDate: (date: string) => void;
-  setToDate: (date: string) => void;
-  handleDateFilter: () => void;
-  handleResetDate: () => void;
-  csvData: CSVRow[];
-  filteredDataLength: number;
-}) => {
-  const [isMounted, setIsMounted] = useState(false);
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
-  if (!isMounted) {
-    return (
-      <div className="mb-4 p-4 bg-gray-50 rounded-lg">
-        <div className="flex flex-wrap gap-4 items-center">
-          <div className="h-10 w-32 bg-gray-200 rounded animate-pulse"></div>
-          <div className="h-10 w-32 bg-gray-200 rounded animate-pulse"></div>
-          <div className="flex gap-2">
-            <div className="h-10 w-32 bg-gray-200 rounded animate-pulse"></div>
-            <div className="h-10 w-32 bg-gray-200 rounded animate-pulse"></div>
-            <div className="h-10 w-32 bg-gray-200 rounded animate-pulse"></div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="mb-4 p-4 bg-gray-50 rounded-lg">
-      <div className="flex flex-wrap gap-4 items-center">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            From Date
-          </label>
-          <input
-            type="date"
-            value={fromDate}
-            onChange={(e) => setFromDate(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-        
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            To Date
-          </label>
-          <input
-            type="date"
-            value={toDate}
-            onChange={(e) => setToDate(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-        
-        <div className="flex gap-2 items-end">
-          <button
-            onClick={handleDateFilter}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            Apply Filter
-          </button>
-          
-          <button
-            onClick={handleResetDate}
-            className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500"
-          >
-            Reset to Today
-          </button>
-          
-          <CSVLink
-            data={csvData}
-            filename={`enquiries_${fromDate}_to_${toDate}.csv`}
-            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 no-underline"
-          >
-            Export CSV
-          </CSVLink>
-        </div>
-        
-        <div className="ml-auto">
-          <div className="text-sm text-gray-600">
-            Showing {filteredDataLength} records
-            {fromDate && toDate && (
-              <span className="ml-2">
-                (From {moment(fromDate).format("DD/MM/YYYY")} to {moment(toDate).format("DD/MM/YYYY")})
-              </span>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
 export default function ContactEnquiryPage() {
   // State
   const [enquiries, setEnquiries] = useState<ContactEnquiry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchText, setSearchText] = useState("");
-  const [fromDate, setFromDate] = useState<string>("");
-  const [toDate, setToDate] = useState<string>("");
-  const [isClient, setIsClient] = useState(false);
-
-  // Set client-side flag
-  useEffect(() => {
-    setIsClient(true);
-    
-    // Default to today's date only on client side
-    const today = moment().format("YYYY-MM-DD");
-    setFromDate(today);
-    setToDate(today);
-  }, []);
-
-  // Filter data based on search text AND date range
-  const filteredData = useMemo(() => {
-    let filtered = DeepSearchSpace(enquiries, searchText);
-    
-    if (fromDate && toDate && isClient) {
-      const startDate = moment(fromDate).startOf('day');
-      const endDate = moment(toDate).endOf('day');
-      
-      filtered = filtered.filter((item) => {
-        const itemDate = moment(item.createdAt);
-        return itemDate.isBetween(startDate, endDate, null, '[]');
-      });
-    }
-    
-    return filtered;
-  }, [enquiries, searchText, fromDate, toDate, isClient]);
+  const filteredData = DeepSearchSpace(enquiries, searchText);
 
   // View Modal
   const [viewModal, setViewModal] = useState<{
@@ -190,20 +47,14 @@ export default function ContactEnquiryPage() {
   }>({ open: false, data: null });
 
   // -----------------------------------------------------------------
-  // Data Fetching with Date Range
+  // Data Fetching
   // -----------------------------------------------------------------
-  const fetchEnquiries = async (dateFilter: { from: string; to: string } = { from: "", to: "" }) => {
+  const fetchEnquiries = async () => {
     try {
       setIsLoading(true);
-      
-      let url = `${process.env.NEXT_PUBLIC_API_URL}/api/admin/leads`;
-      
-      // If date range is provided, use the date range API
-      if (dateFilter.from && dateFilter.to) {
-        url = `${process.env.NEXT_PUBLIC_API_URL}/api/admin/leads-by-date?fromDate=${dateFilter.from}&toDate=${dateFilter.to}`;
-      }
-      
-      const res = await fetch(url);
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/admin/leads`
+      );
       if (!res.ok) throw new Error("Failed to fetch");
 
       const result = await res.json();
@@ -219,26 +70,9 @@ export default function ContactEnquiryPage() {
     }
   };
 
-  // Initial fetch with today's date (only on client)
   useEffect(() => {
-    if (isClient && fromDate && toDate) {
-      fetchEnquiries({ from: fromDate, to: toDate });
-    }
-  }, [fromDate, toDate, isClient]);
-
-  // Handle date range change
-  const handleDateFilter = () => {
-    if (fromDate && toDate) {
-      fetchEnquiries({ from: fromDate, to: toDate });
-    }
-  };
-
-  // Reset to today's date
-  const handleResetDate = () => {
-    const today = moment().format("YYYY-MM-DD");
-    setFromDate(today);
-    setToDate(today);
-  };
+    fetchEnquiries();
+  }, []);
 
   // -----------------------------------------------------------------
   // CSV Data (Transformed for Export)
@@ -344,47 +178,11 @@ export default function ContactEnquiryPage() {
     []
   );
 
-  // Show loading state during initial client-side hydration
-  if (!isClient) {
-    return (
-      <div className="p-4">
-        <div className="h-10 w-64 bg-gray-200 rounded mb-4 animate-pulse"></div>
-        <div className="h-[400px] bg-gray-100 rounded animate-pulse"></div>
-      </div>
-    );
-  }
-
   // -----------------------------------------------------------------
   // Render
   // -----------------------------------------------------------------
   return (
     <>
-      {/* Date Range Filter */}
-      <Suspense fallback={
-        <div className="mb-4 p-4 bg-gray-50 rounded-lg">
-          <div className="flex flex-wrap gap-4 items-center">
-            <div className="h-10 w-32 bg-gray-200 rounded animate-pulse"></div>
-            <div className="h-10 w-32 bg-gray-200 rounded animate-pulse"></div>
-            <div className="flex gap-2">
-              <div className="h-10 w-32 bg-gray-200 rounded animate-pulse"></div>
-              <div className="h-10 w-32 bg-gray-200 rounded animate-pulse"></div>
-              <div className="h-10 w-32 bg-gray-200 rounded animate-pulse"></div>
-            </div>
-          </div>
-        </div>
-      }>
-        <DateRangeFilter
-          fromDate={fromDate}
-          toDate={toDate}
-          setFromDate={setFromDate}
-          setToDate={setToDate}
-          handleDateFilter={handleDateFilter}
-          handleResetDate={handleResetDate}
-          csvData={csvData}
-          filteredDataLength={filteredData.length}
-        />
-      </Suspense>
-      
       <div style={{ width: "100%", overflowX: "auto" }}>
         <MainDatatable
           columns={columns.map((col) => ({
