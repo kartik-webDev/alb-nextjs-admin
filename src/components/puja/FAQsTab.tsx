@@ -71,13 +71,13 @@ const FAQsTab: React.FC<Props> = ({
           </p> */}
         </div>
         <div className="flex items-center gap-3">
-          <button
+          {/* <button
             type="button"
             onClick={() => setShowTemplates(!showTemplates)}
             className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
           >
             {showTemplates ? 'Hide Templates' : 'Show Templates'}
-          </button>
+          </button> */}
           <button
             type="button"
             onClick={() => {

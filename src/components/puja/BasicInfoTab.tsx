@@ -215,7 +215,7 @@ const BasicInfoTab: React.FC<Props> = ({
             )}
           </div>
 
-          {/* Admin Commission */}
+          {/* Admin Commission - Fixed: Only whole numbers */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Admin Commission (%) <span className="text-red-500">*</span>
@@ -232,7 +232,7 @@ const BasicInfoTab: React.FC<Props> = ({
               required
               min="0"
               max="100"
-              step="0.01"
+              step="1"
             />
             {fieldErrors['adminCommission'] && (
               <p className="text-red-500 text-xs mt-1.5">{fieldErrors['adminCommission']}</p>

@@ -82,15 +82,15 @@ export const RouteName = [
         icon: <OtherRouteSvg />,
       },
       {
-        path: "/astro-puja/puja",
+        path: "/pooja",
         name: "Puja",
         icon: <OtherRouteSvg />,
       },
-      {
-        path: "/astro-puja/puja-booked",
-        name: "Puja Booked",
-        icon: <OtherRouteSvg />,
-      }
+      // {
+      //   path: "/astro-puja/puja-booked",
+      //   name: "Puja Booked",
+      //   icon: <OtherRouteSvg />,
+      // }
     ],
   },
   {
