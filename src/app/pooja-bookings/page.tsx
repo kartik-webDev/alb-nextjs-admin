@@ -586,6 +586,7 @@ const PujaBookingsPage = () => {
           selectedStatus={paymentFilter}
           dateFilters={dateFiltersComponent}
           addButtonActive={false}
+          showDownloadButton={false}
         />
       </div>
     </div>

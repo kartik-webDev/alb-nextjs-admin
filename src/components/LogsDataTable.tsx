@@ -38,6 +38,7 @@ interface MainDatatableProps {
   selectedStatus?: string;
   dateFilters?: React.ReactNode;
   additionalFilters?: React.ReactNode;
+  showDownloadButton?: boolean; 
 }
 
 // Deep search function
@@ -99,7 +100,8 @@ const MainDatatable: React.FC<MainDatatableProps> = ({
   onStatusFilterChange,
   selectedStatus = 'all',
   dateFilters,
-  additionalFilters
+  additionalFilters,
+  showDownloadButton = true
 }) => {
   const router = useRouter();
   const [searchText, setSearchText] = useState('');
@@ -240,22 +242,24 @@ const MainDatatable: React.FC<MainDatatableProps> = ({
             {/* Action Buttons - CSV Download and Add Button */}
             <div className="flex gap-3 items-center lg:ml-4">
               {/* CSV Download */}
-              {csvData.length > 0 ? (
-                <CSVLink 
-                  filename={`${title}.csv`} 
-                  data={csvData} 
-                  className="text-gray-800 text-base no-underline flex items-center gap-2 cursor-pointer hover:text-gray-600 transition-colors"
-                >
-                  <div className="text-base font-medium text-gray-600">
-                    <DownloadIcon />
+              {showDownloadButton && (
+                csvData.length > 0 ? (
+                  <CSVLink 
+                    filename={`${title}.csv`} 
+                    data={csvData} 
+                    className="text-gray-800 text-base no-underline flex items-center gap-2 cursor-pointer hover:text-gray-600 transition-colors"
+                  >
+                    <div className="text-base font-medium text-gray-600">
+                      <DownloadIcon />
+                    </div>
+                  </CSVLink>
+                ) : (
+                  <div className="text-gray-400 text-base flex items-center gap-2 cursor-not-allowed opacity-50">
+                    <div className="text-base font-medium">
+                      <DownloadIcon />
+                    </div>
                   </div>
-                </CSVLink>
-              ) : (
-                <div className="text-gray-400 text-base flex items-center gap-2 cursor-not-allowed opacity-50">
-                  <div className="text-base font-medium">
-                    <DownloadIcon />
-                  </div>
-                </div>
+                )
               )}
 
               {/* Add Button */}
