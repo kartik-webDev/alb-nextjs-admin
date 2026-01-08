@@ -475,12 +475,12 @@ const handleDeleteToggle = async (customer: Customer) => {
           >
             <EditSvg />
           </div>
-          <div
+          {/* <div
             onClick={() => handleWalletModalOpen(row._id)}
             className="cursor-pointer hover:text-blue-600 transition-colors"
           >
             <WalletSvg />
-          </div>
+          </div> */}
         </div>
       ),
       width: "150px",

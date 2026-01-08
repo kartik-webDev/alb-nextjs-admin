@@ -31,7 +31,11 @@ const dateRangeOptions = [
 
 // Types
 // ---------------------------------------------------------------------
-
+interface FieldConfig {
+  label: string;
+  truncate?: boolean;
+  formatter?: (value: any) => string;
+}
 interface Order {
   orderID: string;
   name: string;
@@ -212,6 +216,93 @@ export default function ConsultationSlots() {
     }
     // setDateRangeType('custom'); // Switch to custom when manually changed
   };
+// Helper function to format order details with custom labels and filtering
+const formatOrderDetails = (order: any): Array<{ label: string; value: string; fullValue: string; isLong: boolean }> => {
+  const fieldMap: Record<string, FieldConfig> = {
+    // Essential customer info
+    name: { label: 'Customer Name' },
+    email: { label: 'Email', truncate: true },
+    whatsapp: { label: 'WhatsApp', truncate: true },
+    gender: { label: 'Gender' },
+    
+    // Birth details
+    dateOfBirth: { 
+      label: 'Date of Birth', 
+      formatter: (v: string) => moment(v).format('DD/MM/YYYY')
+    },
+    timeOfBirth: { label: "Time of Birth" },
+    placeOfBirth: { label: 'Place of Birth', truncate: true },
+    placeOfBirthPincode: { label: 'Pincode' },
+    
+    // Partner details
+    partnerName: { label: "Partner's Name", truncate: true },
+    partnerDateOfBirth: { 
+      label: "Partner's DOB", 
+      formatter: (v: string) => moment(v).format('DD/MM/YYYY')
+    },
+    partnerTimeOfBirth: { label: "Partner's TOB" },
+    partnerPlaceOfBirth: { label: "Partner's POB", truncate: true },
+    
+    // Order details
+    orderID: { label: 'Order ID' },
+    planName: { label: 'Plan Name', truncate: true },
+    paymentTxnId: { label: 'Payment ID' },
+    amount: { label: 'Amount' },
+    paymentAt: { 
+      label: 'Payment Date', 
+      formatter: (v: string) => moment(v).format('DD/MM/YYYY hh:mm A')
+    },
+    consultationDate: { 
+      label: 'Consultation Date', 
+      formatter: (v: string) => moment(v).format('DD/MM/YYYY')
+    },
+    consultationTime: { label: 'Consultation Time' },
+    problemType: { label: 'Problem Type' },
+    status: { label: 'Status' },
+    createdAt: { 
+      label: 'Created', 
+      formatter: (v: string) => moment(v).format('DD/MM/YYYY hh:mm A')
+    },
+    updatedAt: { 
+      label: 'Updated', 
+      formatter: (v: string) => moment(v).format('DD/MM/YYYY hh:mm A')
+    },
+    
+    reportLanguage: { label: 'Language' },
+    expressDelivery: { label: 'Express Delivery' },
+    astroConsultation: { label: 'Consultation' },
+    assignedAstrologerId: { label: 'Astrologer', truncate: true },
+  };
+
+  const filteredEntries = Object.entries(order)
+    .filter(([key]) => fieldMap[key] !== undefined)
+    .filter(([_, value]) => {
+      return value !== null && 
+             value !== undefined && 
+             typeof value !== 'object';
+    })
+    .map(([key, rawValue]) => {
+      const config = fieldMap[key];
+      let displayValue = String(rawValue);
+      
+      // ✅ TypeScript safe formatter check
+      if (config.formatter) {
+        displayValue = config.formatter(rawValue);
+      }
+      
+      const isLong = Boolean(config.truncate) && displayValue.length > 50;
+      const truncatedValue = isLong ? `${displayValue.substring(0, 50)}...` : displayValue;
+      
+      return {
+        label: config.label,
+        value: truncatedValue,
+        fullValue: displayValue,
+        isLong
+      };
+    });
+
+  return filteredEntries;
+};
 
 const handleEndDateChange = (newDate: string) => {
   // Add 7 days using moment
@@ -405,10 +496,10 @@ const handleEndDateChange = (newDate: string) => {
         isLoading={loading}
         url=""
       />
-     {viewOpen && (
+  {viewOpen && activeRow && (
   <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
     <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-auto p-6 relative">
-      {/* Close Button - Fixed Top Right */}
+      {/* Close Button */}
       <button
         onClick={() => setViewOpen(false)}
         className="absolute top-4 right-4 text-gray-500 hover:text-gray-900 p-1 rounded-full hover:bg-gray-100 transition-all z-10"
@@ -417,21 +508,31 @@ const handleEndDateChange = (newDate: string) => {
         <X className="h-5 w-5" />
       </button>
       
-      <h2 className="text-xl font-semibold mb-4">Order Details</h2>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {activeRow && Object.entries(activeRow).map(([k, v]) => (
-          <div key={k}>
-            <div className="text-xs text-gray-600">{k}</div>
-            <div className="font-medium text-gray-900">{String(v ?? "")}</div>
+      <h2 className="text-xl font-semibold mb-6">Order Details</h2>
+      
+      {/* Filtered & Formatted Fields */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {formatOrderDetails(activeRow).map(({ label, value, isLong }) => (
+          <div key={label} className="space-y-1">
+            <div className="text-xs font-medium text-gray-600 uppercase tracking-wide">
+              {label}
+            </div>
+            <div 
+              className={`font-medium text-gray-900 break-words ${
+                isLong ? 'text-sm max-h-12 overflow-hidden hover:overflow-visible hover:max-h-none transition-all' : 'text-base'
+              }`}
+              title={isLong ? value : undefined}
+            >
+              {value || '—'}
+            </div>
           </div>
         ))}
       </div>
       
-      {/* Keep original close button as secondary option */}
-      <div className="flex justify-end mt-6">
+      <div className="flex justify-end mt-8">
         <button
           onClick={() => setViewOpen(false)}
-          className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
+          className="px-6 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
         >
           Close
         </button>
@@ -439,6 +540,7 @@ const handleEndDateChange = (newDate: string) => {
     </div>
   </div>
 )}
+
     </div>
   );
 }
