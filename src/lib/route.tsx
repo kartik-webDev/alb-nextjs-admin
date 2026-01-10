@@ -183,11 +183,11 @@ export const RouteName = [
   //   name: "Recharge",
   //   icon: <RechargeRouteSvg />,
   // },
-  // {
-  //   path: "/review",
-  //   name: "Review",
-  //   icon: <RatingRouteSvg />,
-  // },
+  {
+    path: "/review",
+    name: "Review",
+    icon: <RatingRouteSvg />,
+  },
   {
     name: "Astroblog",
     icon: <BlogsRouteSvg />,
