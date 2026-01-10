@@ -7,7 +7,7 @@ import SlotBlockingManagement from './TimeBlocker';
 import TimeRangeBlocking from './TimeRangeBlock';
 
 export default function BlockingManagement() {
-  const [isTimeRangeMode, setIsTimeRangeMode] = useState(false);
+  const [isTimeRangeMode, setIsTimeRangeMode] = useState(true);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -28,7 +28,7 @@ export default function BlockingManagement() {
             </div>
             
             {/* Toggle Switch */}
-            <div className="flex items-center space-x-3 ml-6">
+            {/* <div className="flex items-center space-x-3 ml-6">
               <div className="flex flex-col items-end">
                 <span className={`text-sm font-medium mb-1 ${!isTimeRangeMode ? 'text-white' : 'text-white/60'}`}>
                   Slot-Level
@@ -55,7 +55,7 @@ export default function BlockingManagement() {
                   Full day/Custom
                 </span>
               </div>
-            </div>
+            </div> */}
           </div>
         </Card>
       </div>
