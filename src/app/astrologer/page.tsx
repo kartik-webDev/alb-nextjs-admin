@@ -389,9 +389,6 @@ const changeStatus = async (
               <EditSvg />
             </div>
             
-            <div style={{ cursor: "pointer" }} onClick={() => openWallet(row)}>
-              <WalletSvg />
-            </div>
             <div
               onClick={() => openEdit(row)}
               style={{ cursor: "pointer" }}
