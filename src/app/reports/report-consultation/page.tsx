@@ -271,7 +271,23 @@ const formatOrderDetails = (order: any): Array<{ label: string; value: string; f
     reportLanguage: { label: 'Language' },
     expressDelivery: { label: 'Express Delivery' },
     astroConsultation: { label: 'Consultation' },
-    assignedAstrologerId: { label: 'Astrologer', truncate: true },
+    assignedAstrologerId: { 
+      label: 'Astrologer', 
+      truncate: true,
+      formatter: (v: any) => v?.astrologerName || 'N/A'
+    },
+    
+    // ✅ Razorpay Order ID - Normal truncation (appears in grid)
+    razorpayOrderId: { 
+      label: 'Razorpay Order ID', 
+      truncate: true 
+    },
+    
+    // ✅ Order Fingerprint - LAST ROW with FULL TEXT (no truncation)
+    orderFingerprint: { 
+      label: 'Order Fingerprint', 
+      truncate: false  // ✅ No truncation - shows full text
+    },
   };
 
   const filteredEntries = Object.entries(order)
@@ -290,8 +306,9 @@ const formatOrderDetails = (order: any): Array<{ label: string; value: string; f
         displayValue = config.formatter(rawValue);
       }
       
-      const isLong = Boolean(config.truncate) && displayValue.length > 50;
-      const truncatedValue = isLong ? `${displayValue.substring(0, 50)}...` : displayValue;
+      // ✅ SPECIAL CASE: Order Fingerprint shows FULL TEXT and goes LAST
+      const isLong = key === 'orderFingerprint' ? false : (Boolean(config.truncate) && displayValue.length > 50);
+      const truncatedValue = key === 'orderFingerprint' ? displayValue : (isLong ? `${displayValue.substring(0, 50)}...` : displayValue);
       
       return {
         label: config.label,
@@ -299,6 +316,12 @@ const formatOrderDetails = (order: any): Array<{ label: string; value: string; f
         fullValue: displayValue,
         isLong
       };
+    })
+    // ✅ SORT: Move orderFingerprint to LAST position
+    .sort((a, b) => {
+      if (a.label === 'Order Fingerprint') return 1;
+      if (b.label === 'Order Fingerprint') return -1;
+      return 0;
     });
 
   return filteredEntries;

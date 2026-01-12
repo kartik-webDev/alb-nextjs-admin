@@ -467,15 +467,31 @@ const debouncedFetch = useMemo(() =>
       reportLanguage: { label: 'Language' },
       expressDelivery: { label: 'Express Delivery' },
       astroConsultation: { label: 'Consultation' },
-      assignedAstrologerId: { label: 'Astrologer', truncate: true },
+      assignedAstrologerId: { 
+        label: 'Astrologer', 
+        truncate: true,
+        formatter: (v: any) => v?.astrologerName || 'N/A'
+      },
+      
+      // ✅ NEW: Razorpay Order ID - Normal truncation (appears in grid)
+      razorpayOrderId: { 
+        label: 'Razorpay Order ID', 
+        truncate: true 
+      },
+      
+      // ✅ NEW: Order Fingerprint - LAST ROW with FULL TEXT
+      orderFingerprint: { 
+        label: 'Order Fingerprint', 
+        truncate: false  // No truncation
+      },
     };
-  
+
     const filteredEntries = Object.entries(order)
       .filter(([key]) => fieldMap[key] !== undefined)
       .filter(([_, value]) => {
         return value !== null && 
-               value !== undefined && 
-               typeof value !== 'object';
+              value !== undefined && 
+              typeof value !== 'object';
       })
       .map(([key, rawValue]) => {
         const config = fieldMap[key];
@@ -486,8 +502,9 @@ const debouncedFetch = useMemo(() =>
           displayValue = config.formatter(rawValue);
         }
         
-        const isLong = Boolean(config.truncate) && displayValue.length > 50;
-        const truncatedValue = isLong ? `${displayValue.substring(0, 50)}...` : displayValue;
+        // ✅ SPECIAL HANDLING: Order Fingerprint = Full text, others truncate normally
+        const isLong = key === 'orderFingerprint' ? false : (Boolean(config.truncate) && displayValue.length > 50);
+        const truncatedValue = key === 'orderFingerprint' ? displayValue : (isLong ? `${displayValue.substring(0, 50)}...` : displayValue);
         
         return {
           label: config.label,
@@ -495,8 +512,14 @@ const debouncedFetch = useMemo(() =>
           fullValue: displayValue,
           isLong
         };
+      })
+      // ✅ SORT: Move Order Fingerprint to LAST position
+      .sort((a, b) => {
+        if (a.label === 'Order Fingerprint') return 1;
+        if (b.label === 'Order Fingerprint') return -1;
+        return 0;
       });
-  
+
     return filteredEntries;
   };
 
