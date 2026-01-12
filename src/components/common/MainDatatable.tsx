@@ -255,7 +255,7 @@ const MainDatatable: React.FC<MainDatatableProps> = ({
             }}
             customStyles={DataTableCustomStyles}
             fixedHeader
-            fixedHeaderScrollHeight="600px"
+            // fixedHeaderScrollHeight="600px"
             highlightOnHover
             pointerOnHover
             responsive
