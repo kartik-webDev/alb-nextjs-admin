@@ -13,7 +13,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   const handleToggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
 
   //hide sidebar for login page
-  if (pathname === "/login") {
+  if (pathname === "/login" || pathname === "/super-admin-dashboard") {
     return (
       <html lang="en">
         <body className="bg-gray-100 ">

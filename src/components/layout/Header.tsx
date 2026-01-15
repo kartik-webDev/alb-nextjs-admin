@@ -249,10 +249,6 @@ export default function Header({ isSidebarOpen, setIsSidebarOpen }: HeaderProps)
     setAnchorEl(null);
   };
 
-  const handleChangePassword = () => {
-    handleClose();
-    setIsPasswordModalOpen(true);
-  };
 
   const handleLogout = async () => {
     handleClose();
@@ -270,7 +266,7 @@ export default function Header({ isSidebarOpen, setIsSidebarOpen }: HeaderProps)
     if (result.isConfirmed) {
       try {
         // STEP 1: Call logout API to clear cookies FIRST
-        const response = await fetch('/api/logout', {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/logout`, {
           method: 'POST',
           credentials: 'include',
           cache: 'no-store', // Prevent caching
@@ -363,14 +359,7 @@ export default function Header({ isSidebarOpen, setIsSidebarOpen }: HeaderProps)
             {open && (
               <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden z-50">
                 
-                {/* Change Password Button */}
-                <button
-                  onClick={handleChangePassword}
-                  className="w-full px-4 py-3 text-left hover:bg-gray-50 transition duration-200 flex items-center gap-3 text-gray-700 border-b border-gray-200"
-                >
-                  <FaLock className="text-red-500" />
-                  <span>Change Password</span>
-                </button>
+            
 
                 {/* Logout Button */}
                 <button
