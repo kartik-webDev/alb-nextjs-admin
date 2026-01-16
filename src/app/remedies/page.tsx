@@ -184,3 +184,15 @@ const Remedies = () => {
 };
 
 export default Remedies;
+
+// import React from 'react'
+
+// const page = () => {
+//   return (
+//     <div className='p-20'>
+//       Remedies under progress...........
+//     </div>
+//   )
+// }
+
+// export default page

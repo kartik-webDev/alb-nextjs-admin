@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import DataTable from 'react-data-table-component';
 import { useRouter } from 'next/navigation';
 import { CSVLink } from 'react-csv';
@@ -13,6 +13,9 @@ interface Column {
   cell?: (row: any, index?: number) => React.ReactNode;
   width?: string;
   sortable?: boolean;
+  export?: boolean;  // CSV mein include karna hai ya nahi
+  omit?: boolean;    // UI se hide karna hai ya nahi
+  format?: (row: any) => any;  // CSV ke liye custom formatting
 }
 
 interface MainDatatableProps {
@@ -24,6 +27,8 @@ interface MainDatatableProps {
   buttonMessage?: string;
   isLoading?: boolean;
   showSearch?: boolean;
+  exportHeaders?: boolean;  // Custom headers ke saath export karna hai ya nahi
+  fileName?: string;  // Custom filename for CSV
 }
 
 // Deep search function
@@ -63,16 +68,83 @@ const MainDatatable: React.FC<MainDatatableProps> = ({
   addButtonActive = true, 
   buttonMessage = '',
   isLoading = false,
-  showSearch = true
+  showSearch = true,
+  exportHeaders = false,  // Default: false (raw data export)
+  fileName = 'data'  // Default filename
 }) => {
   const router = useRouter();
   const [searchText, setSearchText] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
 
-  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => setSearchText(e.target.value);
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchText(e.target.value);
+    setCurrentPage(1); // Reset to first page on search
+  };
+  
   const filteredData = DeepSearchSpace(data, searchText);
 
-  // Ensure data is always an array for CSV export
-  const csvData = Array.isArray(data) && data.length > 0 ? data : [];
+  // Calculate paginated data - jo screen par visible hai
+  const paginatedData = useMemo(() => {
+    const startIndex = (currentPage - 1) * rowsPerPage;
+    const endIndex = startIndex + rowsPerPage;
+    return filteredData.slice(startIndex, endIndex);
+  }, [filteredData, currentPage, rowsPerPage]);
+
+  // Prepare CSV data based on exportHeaders prop
+  const csvData = useMemo(() => {
+    // Use paginated data (jo screen par visible hai) instead of full data
+    const dataToExport = paginatedData;
+    
+    if (!Array.isArray(dataToExport) || dataToExport.length === 0) return [];
+
+    if (!exportHeaders) {
+      // Raw data export (original behavior)
+      return dataToExport;
+    }
+
+    // Custom headers export with formatted data
+    return dataToExport.map((row, index) => {
+      const formattedRow: any = {};
+      
+      columns.forEach(column => {
+        // Skip columns with export: false
+        if (column.export === false) return;
+        
+        const columnName = column.name || 'Column';
+        let value;
+
+        // Use format function if provided
+        if (column.format) {
+          value = column.format(row);
+        }
+        // Use selector function
+        else if (column.selector) {
+          value = column.selector(row, index);
+        }
+        // Fallback to empty
+        else {
+          value = '';
+        }
+
+        formattedRow[columnName] = value ?? 'N/A';
+      });
+
+      return formattedRow;
+    });
+  }, [paginatedData, columns, exportHeaders]);
+
+  // Prepare CSV headers (only if exportHeaders is true)
+  const csvHeaders = useMemo(() => {
+    if (!exportHeaders) return undefined;
+
+    return columns
+      .filter(column => column.export !== false)
+      .map(column => ({
+        label: column.name || 'Column',
+        key: column.name || 'Column'
+      }));
+  }, [columns, exportHeaders]);
 
   const onClickAdd = () => {
     if (addButtonActive && url) {
@@ -121,8 +193,9 @@ const MainDatatable: React.FC<MainDatatableProps> = ({
                 {/* Only show CSVLink if there's data to export */}
                 {csvData.length > 0 ? (
                   <CSVLink 
-                    filename={`${title}.csv`} 
-                    data={csvData} 
+                    filename={`${fileName || title || 'export'}.csv`}
+                    data={csvData}
+                    headers={csvHeaders}  // Custom headers (only if exportHeaders is true)
                     className="text-gray-800 text-base no-underline flex items-center gap-2 cursor-pointer hover:text-gray-600 transition-colors"
                   >
                     <div className="text-base font-medium text-gray-600">
@@ -175,9 +248,14 @@ const MainDatatable: React.FC<MainDatatableProps> = ({
               rowsPerPageText: 'Rows Per Page:',
               rangeSeparatorText: 'of',
             }}
+            onChangePage={(page) => setCurrentPage(page)}
+            onChangeRowsPerPage={(newRowsPerPage) => {
+              setRowsPerPage(newRowsPerPage);
+              setCurrentPage(1);
+            }}
             customStyles={DataTableCustomStyles}
             fixedHeader
-            fixedHeaderScrollHeight="600px"
+            // fixedHeaderScrollHeight="600px"
             highlightOnHover
             pointerOnHover
             responsive

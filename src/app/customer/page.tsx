@@ -8,6 +8,7 @@ import { DeepSearchSpace, IndianRupee } from '@/utils/common-function/index';
 import MainDatatable from '@/components/common/MainDatatable';
 import { EditSvg, ViewSvg, WalletSvg } from '@/components/svgs/page';
 import Swal from 'sweetalert2';
+import { Tooltip } from '@mui/material';
 
 // ---------------------------------------------------------------------
 // Types
@@ -19,10 +20,12 @@ interface Customer {
   wallet_balance: number;
   dateOfBirth: string;
   timeOfBirth: string;
+  isDeleted?: number;        // 👈 add
   banned_status: boolean;
   email?: string;
   gender?: string;
   image?: string;
+  createdAt: string
 }
 
 interface ApiResponse {
@@ -65,29 +68,35 @@ export default function Customer() {
   const [inputFieldError, setInputFieldError] = useState({ amount: '', type: '' });
 
   // Fetch Customers
-  useEffect(() => {
-    const fetchCustomers = async () => {
-      try {
-        setLoading(true);
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/customers/get-all-customers`);
-        const data: ApiResponse = await res.json();
+    useEffect(() => {
+      const fetchCustomers = async () => {
+        try {
+          setLoading(true);
+          const res = await fetch(
+            `${process.env.NEXT_PUBLIC_API_URL}/api/customers/get-all-customers`
+          );
+          const data: ApiResponse = await res.json();
 
-        if (data.success && Array.isArray(data.customers)) {
-          setCustomerData(data.customers);
-        } else {
-          console.error('Invalid API response structure');
+          if (data.success && Array.isArray(data.customers)) {
+            // Sort descending by createdAt (latest first)
+            const sortedCustomers = data.customers.sort(
+              (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+            );
+            setCustomerData(sortedCustomers);
+          } else {
+            console.error('Invalid API response structure', data);
+            setCustomerData([]);
+          }
+        } catch (error) {
+          console.error('Failed to fetch customers:', error);
           setCustomerData([]);
+        } finally {
+          setLoading(false);
         }
-      } catch (error) {
-        console.error('Failed to fetch customers:', error);
-        setCustomerData([]);
-      } finally {
-        setLoading(false);
-      }
-    };
+      };
 
-    fetchCustomers();
-  }, []);
+      fetchCustomers();
+    }, []);
 
   // Wallet Modal
   const handleWalletModalOpen = (id: string) => {
@@ -132,6 +141,79 @@ export default function Customer() {
     }
     return isValid;
   };
+
+  // Delete (soft-delete) toggle
+const handleDeleteToggle = async (customer: Customer) => {
+  const currentDeleted = customer.isDeleted === 1;
+  const newDeleted = !currentDeleted;
+  const action = newDeleted ? 'delete' : 'restore';
+
+  const result = await Swal.fire({
+    title: `Are you sure?`,
+    text: `You want to ${action} this customer?`,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: newDeleted ? '#d33' : '#3085d6',
+    cancelButtonColor: '#6b7280',
+    confirmButtonText: `Yes, ${action} customer!`,
+    cancelButtonText: 'Cancel',
+  });
+
+  if (!result.isConfirmed) return;
+
+  Swal.fire({
+    title: `${newDeleted ? 'Deleting' : 'Restoring'}...`,
+    text: 'Please wait',
+    allowOutsideClick: false,
+    didOpen: () => Swal.showLoading(),
+  });
+
+  const payload = {
+    customerId: customer._id,
+    isDeleted: newDeleted,       // 👈 this triggers isDeleted update only
+  };
+
+  try {
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/api/admin/change-banned-status`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      }
+    );
+
+    const data = await response.json();
+
+    if (response.ok && data.success) {
+      setCustomerData((prev) =>
+        prev.map((cust) =>
+          cust._id === customer._id
+            ? { ...cust, isDeleted: data.data.isDeleted }
+            : cust
+        )
+      );
+
+      Swal.fire({
+        icon: 'success',
+        title: 'Success!',
+        text: `Customer ${
+          newDeleted ? 'marked as deleted' : 'restored'
+        } successfully`,
+        timer: 2000,
+        showConfirmButton: false,
+      });
+    } else {
+      throw new Error(data.message || 'Failed to update delete status');
+    }
+  } catch (error: any) {
+    Swal.fire({
+      icon: 'error',
+      title: 'Error',
+      text: error.message,
+    });
+  }
+};
 
   const handleSubmit = () => {
     if (!handleValidation()) return;
@@ -208,7 +290,7 @@ export default function Customer() {
 
     const result = await Swal.fire({
       title: `Are you sure?`,
-      text: `You want to ${action} customer "${customer.customerName}"?`,
+      text: `You want to ${action} this customer?`,
       icon: 'warning',
       showCancelButton: true,
       confirmButtonColor: newStatus ? '#d33' : '#3085d6',
@@ -287,62 +369,96 @@ export default function Customer() {
   // Table Columns
   const columns = [
     {
-      name: "",
+      name: "S.No.",
       selector: (row: Customer) => customerData.indexOf(row) + 1,
-      width: "70px"
+      width: "40px"
     },
     {
       name: "Customer Name",
-      selector: (row: Customer) => row?.customerName || 'N/A',
-      width: "170px"
+      cell: (row: Customer) => {
+        const customerName = row?.customerName?.trim() || "";
+        return (
+          <Tooltip title={customerName}>
+            <span className="truncate block w-full">{customerName}</span>
+          </Tooltip>
+        );
+      },
+      width: "200px",
     },
     {
       name: "Email",
-      selector: (row: Customer) => row?.email || 'N/A',
-      width: '200px'
+      cell: (row: Customer) => {
+        const email = row?.email?.trim() || "";
+        return (
+          <Tooltip title={email}>
+            <span className="truncate block w-full">{email}</span>
+          </Tooltip>
+        );
+      },
+      width: "200px",
     },
     {
       name: "Contact",
       selector: (row: Customer) => row?.phoneNumber,
       width: '130px'
     },
-    {
-      name: "Wallet",
-      selector: (row: Customer) => IndianRupee(row?.wallet_balance) || 'N/A',
-      width: '130px'
-    },
+    // {
+    //   name: "Wallet",
+    //   selector: (row: Customer) => IndianRupee(row?.wallet_balance) || '',
+    //   width: '130px'
+    // },
     {
       name: "D.O.B",
-      selector: (row: Customer) => row?.dateOfBirth ? moment(row.dateOfBirth).format('DD/MM/YYYY') : 'N/A',
+      selector: (row: Customer) => row?.dateOfBirth ? moment(row.dateOfBirth).format('DD/MM/YYYY') : '',
       width: '120px'
     },
     {
       name: "T.O.B",
       selector: (row: Customer) => {
         const val = row?.timeOfBirth;
-        if (!val) return 'N/A';
+        if (!val) return '';
         try {
-          const formatted = moment(val, ['HH:mm', 'hh:mm:ss']).format('hh:mm A');
-          return formatted !== 'Invalid date' ? formatted : 'N/A';
+          const m = moment(val); // ISO string parse ho jayega
+          return m.isValid() ? m.format('hh:mm A') : '';
         } catch {
-          return 'N/A';
+          return '';
         }
       },
       width: '120px'
     },
     {
-      name: 'Status',
-      selector: (row: Customer) => (
-        <div
-          className="cursor-pointer flex justify-center"
-          onClick={() => handleStatusToggle(row)}
-        >
-          {row.banned_status ? <SwitchOffSvg /> : <SwitchOnSvg />}
-        </div>
-      ),
-      width: "140px",
-      center: "true"
-    },
+  name: 'is Not Ban',
+  selector: (row: Customer) => (
+    <div
+      className="cursor-pointer flex justify-center"
+      onClick={() => handleStatusToggle(row)}
+    >
+      {row.banned_status ? <SwitchOffSvg /> : <SwitchOnSvg />}
+    </div>
+  ),
+  width: '120px',
+},
+{
+  name: 'is Not Delete',
+  selector: (row: Customer) => {
+    const isDeleted = row.isDeleted === 1;
+    return (
+      <div
+        className="cursor-pointer flex justify-center"
+        onClick={() => handleDeleteToggle(row)}
+      >
+        {isDeleted ? (
+          // red toggle when deleted
+          <SwitchOffSvg />
+        ) : (
+          // green toggle when active
+          <SwitchOnSvg />
+        )}
+      </div>
+    );
+  },
+  width: '120px',
+},
     {
       name: 'Action',
       cell: (row: Customer) => (
@@ -359,12 +475,12 @@ export default function Customer() {
           >
             <EditSvg />
           </div>
-          <div
+          {/* <div
             onClick={() => handleWalletModalOpen(row._id)}
             className="cursor-pointer hover:text-blue-600 transition-colors"
           >
             <WalletSvg />
-          </div>
+          </div> */}
         </div>
       ),
       width: "150px",
@@ -378,7 +494,11 @@ export default function Customer() {
   return (
     <>
       <MainDatatable
-        columns={columns}
+        columns={columns.map((col) => ({
+          ...col,
+          minwidth: col.width,
+          width: undefined,
+        }))}
         data={filteredData}
         title="Customer"
         isLoading={loading}

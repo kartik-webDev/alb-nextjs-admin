@@ -7,7 +7,6 @@ import moment from "moment";
 import Swal from "sweetalert2";
 
 interface Review {
-  _id: string;
   customerName: string;
   astrologerName: string;
   rating: number;
@@ -64,7 +63,7 @@ const Review = () => {
 
     if (result.isConfirmed) {
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/review/delete_review`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/delete-review`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -201,7 +200,7 @@ const Review = () => {
     },
     { 
       name: 'Date', 
-      selector: (row: Review) => moment(row.createdAt).format('DD MMM YYYY') 
+      selector: (row: Review) => moment(row.createdAt).format('DD/MM/YYYY') 
     },
     // Uncomment if you have switch functionality
     // { 
@@ -221,13 +220,13 @@ const Review = () => {
       cell: (row: Review) => (
         <div className="flex gap-5 items-center">
           <div 
-            onClick={() => router.push(`/review/add-review?edit=true&id=${row._id}`)} 
+            onClick={() => router.push(`/review/add-review?edit=true&id=${row.reviewId}`)} 
             className="cursor-pointer hover:opacity-70 transition-opacity"
           >
             <EditSvg />
           </div>
           <div 
-            onClick={() => deleteAstrologerReview(row._id)} 
+            onClick={() => deleteAstrologerReview(row.reviewId || '')} 
             className="cursor-pointer hover:opacity-70 transition-opacity"
           >
             <DeleteSvg />
@@ -258,3 +257,15 @@ const Review = () => {
 };
 
 export default Review;
+
+// import React from 'react'
+
+// const page = () => {
+//   return (
+//     <div className='p-20'>
+//       Review under progress...........
+//     </div>
+//   )
+// }
+
+// export default page

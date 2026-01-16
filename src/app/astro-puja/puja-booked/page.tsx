@@ -169,3 +169,15 @@ const PujaBooked: React.FC = () => {
 };
 
 export default PujaBooked;
+
+// import React from 'react'
+
+// const page = () => {
+//   return (
+//     <div className='p-20'>
+//       Puja Booked under progress...........
+//     </div>
+//   )
+// }
+
+// export default page

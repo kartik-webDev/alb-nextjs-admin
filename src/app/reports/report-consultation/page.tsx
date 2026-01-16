@@ -7,6 +7,8 @@ import { DeepSearchSpace } from '@/utils/common-function/index';
 import MainDatatable from '@/components/common/MainDatatable';
 import { ViewSvg } from '@/components/svgs/page';
 import Swal from 'sweetalert2';
+import { Tooltip } from '@mui/material';
+import { X } from 'lucide-react';
 
 
 const reportPrefixes = [
@@ -14,7 +16,8 @@ const reportPrefixes = [
   { value: '#LCR-', label: 'Life Changing Report' },
   { value: '#KM-', label: 'Kundli Matching Report' },
   { value: '#LR-', label: 'Love Report' },
-  { value: '#VR-', label: 'Name & Number Report' },
+  { value: '#NNR-', label: 'Name & Number Report' },
+  { value: '#VR-', label: 'Varshphal Report' },
   // { value: '#BNR-', label: 'Baby Name Report' },
   // { value: '#CR-', label: 'Career Report' },
 ];
@@ -28,7 +31,11 @@ const dateRangeOptions = [
 
 // Types
 // ---------------------------------------------------------------------
-
+interface FieldConfig {
+  label: string;
+  truncate?: boolean;
+  formatter?: (value: any) => string;
+}
 interface Order {
   orderID: string;
   name: string;
@@ -209,6 +216,116 @@ export default function ConsultationSlots() {
     }
     // setDateRangeType('custom'); // Switch to custom when manually changed
   };
+// Helper function to format order details with custom labels and filtering
+const formatOrderDetails = (order: any): Array<{ label: string; value: string; fullValue: string; isLong: boolean }> => {
+  const fieldMap: Record<string, FieldConfig> = {
+    // Essential customer info
+    name: { label: 'Customer Name' },
+    email: { label: 'Email', truncate: true },
+    whatsapp: { label: 'WhatsApp', truncate: true },
+    gender: { label: 'Gender' },
+    
+    // Birth details
+    dateOfBirth: { 
+      label: 'Date of Birth', 
+      formatter: (v: string) => moment(v).format('DD/MM/YYYY')
+    },
+    timeOfBirth: { label: "Time of Birth" },
+    placeOfBirth: { label: 'Place of Birth', truncate: true },
+    placeOfBirthPincode: { label: 'Pincode' },
+    
+    // Partner details
+    partnerName: { label: "Partner's Name", truncate: true },
+    partnerDateOfBirth: { 
+      label: "Partner's DOB", 
+      formatter: (v: string) => moment(v).format('DD/MM/YYYY')
+    },
+    partnerTimeOfBirth: { label: "Partner's TOB" },
+    partnerPlaceOfBirth: { label: "Partner's POB", truncate: true },
+    
+    // Order details
+    orderID: { label: 'Order ID' },
+    planName: { label: 'Plan Name', truncate: true },
+    paymentTxnId: { label: 'Payment ID' },
+    amount: { label: 'Amount' },
+    paymentAt: { 
+      label: 'Payment Date', 
+      formatter: (v: string) => moment(v).format('DD/MM/YYYY hh:mm A')
+    },
+    consultationDate: { 
+      label: 'Consultation Date', 
+      formatter: (v: string) => moment(v).format('DD/MM/YYYY')
+    },
+    consultationTime: { label: 'Consultation Time' },
+    problemType: { label: 'Problem Type' },
+    status: { label: 'Status' },
+    createdAt: { 
+      label: 'Created', 
+      formatter: (v: string) => moment(v).format('DD/MM/YYYY hh:mm A')
+    },
+    updatedAt: { 
+      label: 'Updated', 
+      formatter: (v: string) => moment(v).format('DD/MM/YYYY hh:mm A')
+    },
+    
+    reportLanguage: { label: 'Language' },
+    expressDelivery: { label: 'Express Delivery' },
+    astroConsultation: { label: 'Consultation' },
+    assignedAstrologerId: { 
+      label: 'Astrologer', 
+      truncate: true,
+      formatter: (v: any) => v?.astrologerName || 'N/A'
+    },
+    
+    // ✅ Razorpay Order ID - Normal truncation (appears in grid)
+    razorpayOrderId: { 
+      label: 'Razorpay Order ID', 
+      truncate: true 
+    },
+    
+    // ✅ Order Fingerprint - LAST ROW with FULL TEXT (no truncation)
+    orderFingerprint: { 
+      label: 'Order Fingerprint', 
+      truncate: false  // ✅ No truncation - shows full text
+    },
+  };
+
+  const filteredEntries = Object.entries(order)
+    .filter(([key]) => fieldMap[key] !== undefined)
+    .filter(([_, value]) => {
+      return value !== null && 
+             value !== undefined && 
+             typeof value !== 'object';
+    })
+    .map(([key, rawValue]) => {
+      const config = fieldMap[key];
+      let displayValue = String(rawValue);
+      
+      // ✅ TypeScript safe formatter check
+      if (config.formatter) {
+        displayValue = config.formatter(rawValue);
+      }
+      
+      // ✅ SPECIAL CASE: Order Fingerprint shows FULL TEXT and goes LAST
+      const isLong = key === 'orderFingerprint' ? false : (Boolean(config.truncate) && displayValue.length > 50);
+      const truncatedValue = key === 'orderFingerprint' ? displayValue : (isLong ? `${displayValue.substring(0, 50)}...` : displayValue);
+      
+      return {
+        label: config.label,
+        value: truncatedValue,
+        fullValue: displayValue,
+        isLong
+      };
+    })
+    // ✅ SORT: Move orderFingerprint to LAST position
+    .sort((a, b) => {
+      if (a.label === 'Order Fingerprint') return 1;
+      if (b.label === 'Order Fingerprint') return -1;
+      return 0;
+    });
+
+  return filteredEntries;
+};
 
 const handleEndDateChange = (newDate: string) => {
   // Add 7 days using moment
@@ -220,80 +337,87 @@ const handleEndDateChange = (newDate: string) => {
  // Table Columns
   const columns = [
 
-    { name: "", selector: (_: ConsultationSlot, idx?: number) => (idx || 0) + 1, width: "70px" },
+    { name: "S.No.", selector: (_: ConsultationSlot, idx?: number) => (idx || 0) + 1, width: "70px" },
     {
       name: "Order ID",
-      selector: (row: ConsultationSlot) => row?.orderID || 'N/A',
+      selector: (row: ConsultationSlot) => row?.orderID || '',
       width: "110px"
     },
     {
       name: "Plan Name",
-      selector: (row: ConsultationSlot) => row?.planName || 'N/A',
+      selector: (row: ConsultationSlot) => row?.planName || '',
       width: "250px"
     },
     {
       name: "Customer Name",
-      selector: (row: ConsultationSlot) => row?.name || 'N/A',
+      selector: (row: ConsultationSlot) => row?.name || '',
       width: "150px"
     },
     {
       name: "Email",
-      selector: (row: ConsultationSlot) => row?.email || 'N/A',
-      width: "220px"
+      cell: (row: ConsultationSlot) => {
+        const email = row?.email?.trim() || "N/A";
+        return (
+          <Tooltip title={email}>
+            <span className="truncate block w-full">{email}</span>
+          </Tooltip>
+        );
+      },
+      width: "200px",
     },
     {
       name: "WhatsApp",
-      selector: (row: ConsultationSlot) => row?.whatsapp || 'N/A',
+      selector: (row: ConsultationSlot) => row?.whatsapp || '',
       width: "120px"
     },
     {
       name: "DOB",
       selector: (row: ConsultationSlot) => 
-        row?.dateOfBirth ? moment(row.dateOfBirth).format('DD/MM/YYYY') : 'N/A',
+        row?.dateOfBirth ? moment(row.dateOfBirth).format('DD/MM/YYYY') : '',
       width: "110px"
     },
     {
       name: "TOB",
-      selector: (row: ConsultationSlot) => row?.timeOfBirth || 'N/A',
+      selector: (row: ConsultationSlot) => row?.timeOfBirth || '',
       width: "80px"
     },
     {
       name: "POB",
-      selector: (row: ConsultationSlot) => row?.placeOfBirth || 'N/A',
+      selector: (row: ConsultationSlot) => row?.placeOfBirth || '',
       width: "110px"
     },
     {
       name: "Partner's Name",
-      selector: (row: ConsultationSlot) => row?.partnerName || 'N/A',
+      selector: (row: ConsultationSlot) => row?.partnerName || '',
       width: "150px"
     },
     {
       name: "Partner's DOB",
       selector: (row: ConsultationSlot) => 
-        row?.partnerDateOfBirth ? moment(row.partnerDateOfBirth).format('DD/MM/YYYY') : 'N/A',
+        row?.partnerDateOfBirth ? moment(row.partnerDateOfBirth).format('DD/MM/YYYY') : '',
       width: "130px"
     },
     {
       name: "Partner's TOB",
-      selector: (row: ConsultationSlot) => row?.partnerTimeOfBirth || 'N/A',
+      selector: (row: ConsultationSlot) => row?.partnerTimeOfBirth || '',
       width: "130px"
     },
     {
       name: "Partner's POB",
-      selector: (row: ConsultationSlot) => row?.partnerPlaceOfBirth || 'N/A',
+      selector: (row: ConsultationSlot) => row?.partnerPlaceOfBirth || '',
       width: "130px"
     },
 
     {
       name: "Time Slot",
-      selector: (row: ConsultationSlot) => row?.consultationTime || 'N/A',
+      selector: (row: ConsultationSlot) => row?.consultationTime || '',
       width: "150px"
     },
  
     {
       name: "Booked At",
       selector: (row: ConsultationSlot) => 
-        row?.consultationDate ? moment(row.consultationDate).format('DD/MM/YYYY hh:mm A') : 'N/A',
+        row?.consultationDate ? moment(row.consultationDate).format('DD/MM/YYYY hh:mm A') : '',
       width: "180px"
     },
    
@@ -385,35 +509,61 @@ const handleEndDateChange = (newDate: string) => {
 
       {/* Data Table */}
       <MainDatatable
-        columns={columns}
+         columns={columns.map((col) => ({
+          ...col,
+          minwidth: col.width,
+          width: undefined,
+        }))}
         data={filteredData}
         title="Consultation Slots"
         isLoading={loading}
         url=""
       />
-      {viewOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-auto p-6">
-            <h2 className="text-xl font-semibold mb-4">Order Details</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {activeRow && Object.entries(activeRow).map(([k, v]) => (
-                <div key={k}>
-                  <div className="text-xs text-gray-600">{k}</div>
-                  <div className="font-medium text-gray-900">{String(v ?? "")}</div>
-                </div>
-              ))}
+  {viewOpen && activeRow && (
+  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-auto p-6 relative">
+      {/* Close Button */}
+      <button
+        onClick={() => setViewOpen(false)}
+        className="absolute top-4 right-4 text-gray-500 hover:text-gray-900 p-1 rounded-full hover:bg-gray-100 transition-all z-10"
+        aria-label="Close modal"
+      >
+        <X className="h-5 w-5" />
+      </button>
+      
+      <h2 className="text-xl font-semibold mb-6">Order Details</h2>
+      
+      {/* Filtered & Formatted Fields */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {formatOrderDetails(activeRow).map(({ label, value, isLong }) => (
+          <div key={label} className="space-y-1">
+            <div className="text-xs font-medium text-gray-600 uppercase tracking-wide">
+              {label}
             </div>
-            <div className="flex justify-end mt-6">
-              <button
-                onClick={() => setViewOpen(false)}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
-              >
-                Close
-              </button>
+            <div 
+              className={`font-medium text-gray-900 break-words ${
+                isLong ? 'text-sm max-h-12 overflow-hidden hover:overflow-visible hover:max-h-none transition-all' : 'text-base'
+              }`}
+              title={isLong ? value : undefined}
+            >
+              {value || '—'}
             </div>
           </div>
-        </div>
-      )}
+        ))}
+      </div>
+      
+      <div className="flex justify-end mt-8">
+        <button
+          onClick={() => setViewOpen(false)}
+          className="px-6 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
+        >
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
     </div>
   );
 }

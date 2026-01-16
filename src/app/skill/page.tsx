@@ -119,14 +119,14 @@ const Skill = () => {
       width: '80px'
     },
     { 
-      name: 'Main Expertise', 
+      name: 'Skills', 
       selector: (row: Skill) => (
         <div className="capitalize">{row?.skill || 'N/A'}</div>
       )
     },
     { 
       name: 'Created Date', 
-      selector: (row: Skill) => moment(row?.createdAt)?.format('DD/MM/YYYY @ hh:mm a') 
+      selector: (row: Skill) => moment(row?.createdAt)?.format('DD/MM/YYYY hh:mm a') 
     },
     {
       name: 'Action',
@@ -169,3 +169,15 @@ const Skill = () => {
 };
 
 export default Skill;
+
+// import React from 'react'
+
+// const page = () => {
+//   return (
+//     <div className='p-20'>
+//       Skills under progress...........
+//     </div>
+//   )
+// }
+
+// export default page

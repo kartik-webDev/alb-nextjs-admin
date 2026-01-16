@@ -234,10 +234,10 @@ const AstrologerEnquiryClient = () => {
       name: 'Mobile', 
       selector: (row: Astrologer) => row.phoneNumber 
     },
-    { 
-      name: 'State', 
-      selector: (row: Astrologer) => row.state || 'N/A' 
-    },
+    // { 
+    //   name: 'State', 
+    //   selector: (row: Astrologer) => row.state === 'N/A' ? ' ' : row.state 
+    // },
     { 
       name: 'Experience', 
       selector: (row: Astrologer) => row.experience 
@@ -369,3 +369,15 @@ const AstrologerEnquiryClient = () => {
 };
 
 export default AstrologerEnquiryClient;
+
+// import React from 'react'
+
+// const page = () => {
+//   return (
+//     <div className='p-20'>
+//       Astrologer Enquiry under progress...........
+//     </div>
+//   )
+// }
+
+// export default page

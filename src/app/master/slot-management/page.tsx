@@ -244,3 +244,15 @@ const SlotManagement: React.FC = () => {
 };
 
 export default SlotManagement;
+
+// import React from 'react'
+
+// const page = () => {
+//   return (
+//     <div className='p-20'>
+//       Slot Management under progress...........
+//     </div>
+//   )
+// }
+
+// export default page

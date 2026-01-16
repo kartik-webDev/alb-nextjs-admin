@@ -14,13 +14,10 @@ import CloseIcon from "@mui/icons-material/Close";
 import { TableColumn } from "react-data-table-component";
 import Swal from "sweetalert2";
 import MainDatatable from "@/components/common/MainDatatable";
-import DatatableHeading from "@/components/datatable/DatatableHeading";
 import { base_url } from "@/lib/api-routes";
 import { DeleteSvg, EditSvg } from "@/components/svgs/page";
 
-// ---------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------
+
 interface BlogCategory {
   _id: string;
   blog_category: string;
@@ -47,14 +44,6 @@ interface TextModalState {
   text: string;
 }
 
-// ---------------------------------------------------------------------
-// Constants
-// ---------------------------------------------------------------------
-const IMG_URL = process.env.NEXT_PUBLIC_IMG_URL || "/uploads/";
-
-// ---------------------------------------------------------------------
-// Utility: Deep Search
-// ---------------------------------------------------------------------
 const deepSearch = <T,>(data: T[], searchText: string): T[] => {
   if (!searchText) return data;
   const lowerSearch = searchText.toLowerCase();
@@ -63,9 +52,7 @@ const deepSearch = <T,>(data: T[], searchText: string): T[] => {
   );
 };
 
-// ---------------------------------------------------------------------
-// Component
-// ---------------------------------------------------------------------
+
 const AstroblogPage: React.FC = () => {
   const router = useRouter();
 
@@ -95,7 +82,6 @@ const AstroblogPage: React.FC = () => {
     }
   };
 
-  // Delete Blog with SweetAlert
   const handleDelete = async (blogId: string, blogTitle: string) => {
     const result = await Swal.fire({
       title: 'Are you sure?',
@@ -111,7 +97,6 @@ const AstroblogPage: React.FC = () => {
     if (!result.isConfirmed) return;
 
     try {
-      // Show loading
       Swal.fire({
         title: 'Deleting...',
         text: 'Please wait',
@@ -195,7 +180,7 @@ const AstroblogPage: React.FC = () => {
       {
         name: "Title",
         selector: (row) => row?.title || "-",
-        width: "150px",
+        // width: "150px",
       },
       {
         name: "Category",
@@ -208,25 +193,25 @@ const AstroblogPage: React.FC = () => {
             <div
               onClick={() => openTextModal("Description", row.description)}
               dangerouslySetInnerHTML={{
-                __html: row.description.slice(0, 25) + "...",
+                __html: row.description.slice(0, 25) ,
               }}
-              style={{ cursor: "pointer", color: "#1976d2" }}
+        className="cursor-pointer text-[#1976d2] line-clamp-1"
             />
           ) : (
             <span>N/A</span>
           ),
-        width: "200px",
+        // width: "200px",
       },
       {
         name: "Created By",
         selector: (row) => row?.created_by || "-",
-        width: "150px",
+        // width: "150px",
       },
       {
         name: "Image",
         cell: (row) => (
           <Avatar
-            src={row?.image ? `${IMG_URL}${row.image}` : ""}
+            src={row?.image ? `${process.env.NEXT_PUBLIC_IMAGE_URL}uploads/${row.image}` : ""}
             alt="Blog"
             sx={{ width: 40, height: 40 }}
           />
@@ -236,13 +221,13 @@ const AstroblogPage: React.FC = () => {
       {
         name: "Date",
         selector: (row) => moment(row?.createdAt).format("DD/MM/YYYY"),
-        width: "150px",
+        // width: "150px",
       },
-      {
-        name: "View Count",
-        selector: (row) => row?.viewsCount || 0,
-        width: "110px",
-      },
+      // {
+      //   name: "View Count",
+      //   selector: (row) => row?.viewsCount || 0,
+      //   width: "110px",
+      // },
       {
         name: "Action",
         cell: (row) => (
@@ -307,3 +292,15 @@ const AstroblogPage: React.FC = () => {
 };
 
 export default AstroblogPage;
+
+// import React from 'react'
+
+// const page = () => {
+//   return (
+//     <div className='p-20'>
+//       Blog under progress...........
+//     </div>
+//   )
+// }
+
+// export default page

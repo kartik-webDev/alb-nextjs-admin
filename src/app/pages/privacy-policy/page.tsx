@@ -1,7 +1,6 @@
-// pages/admin/privacy-policy.tsx
 'use client'
 import React, { useState, useEffect } from 'react';
-import StaticPageEditor from '@/components/StaticPageEditor';
+import StaticPageEditor from '@/components/common/Addblogeditor';
 import { base_url } from '@/lib/api-routes';
 
 const PrivacyPolicyPage: React.FC = () => {
@@ -34,13 +33,14 @@ const PrivacyPolicyPage: React.FC = () => {
         setContent('');
       } finally {
         setLoading(false);
-      }
+      } 
     };
 
     fetchData();
   }, []);
 
   return (
+  <div className='p-4'>
     <StaticPageEditor
       title="Privacy Policy"
       initialContent={content}
@@ -48,6 +48,7 @@ const PrivacyPolicyPage: React.FC = () => {
       hasTypeSelector={false}
       loading={loading}
     />
+    </div>
   );
 };
 

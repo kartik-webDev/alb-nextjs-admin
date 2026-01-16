@@ -152,7 +152,7 @@ const PlatformCharges: React.FC = () => {
       {
         name: 'Created At',
         selector: (row: PlatformCharge) =>
-          row?.createdAt ? moment(row.createdAt).format('DD/MM/YYYY @ hh:mm a') : '-',
+          row?.createdAt ? moment(row.createdAt).format('DD/MM/YYYY hh:mm a') : '-',
         sortable: true,
       },
       {
@@ -189,3 +189,15 @@ const PlatformCharges: React.FC = () => {
 };
 
 export default PlatformCharges;
+
+// import React from 'react'
+
+// const page = () => {
+//   return (
+//     <div className='p-20'>
+//       Work under progress...........
+//     </div>
+//   )
+// }
+
+// export default page

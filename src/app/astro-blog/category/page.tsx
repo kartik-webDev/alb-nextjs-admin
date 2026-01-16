@@ -134,7 +134,7 @@ const CategoryPage: React.FC = () => {
     return filteredData.map((category, index) => ({
       'S.No.': index + 1,
       'Title': category.blog_category,
-      'Created Date': moment(category.createdAt).format('DD MMM YYYY @ hh:mm a'),
+      'Created Date': moment(category.createdAt).format('DD MMM YYYY hh:mm a'),
     }));
   }, [filteredData]);
 
@@ -190,3 +190,15 @@ const CategoryPage: React.FC = () => {
 };
 
 export default CategoryPage;
+
+// import React from 'react'
+
+// const page = () => {
+//   return (
+//     <div className='p-20'>
+//       Blog category under progress...........
+//     </div>
+//   )
+// }
+
+// export default page

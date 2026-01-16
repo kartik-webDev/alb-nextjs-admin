@@ -168,3 +168,15 @@ const Category = () => {
 }
 
 export default Category;
+
+// import React from 'react'
+
+// const page = () => {
+//   return (
+//     <div className='p-20'>
+//       Astro category under progress...........
+//     </div>
+//   )
+// }
+
+// export default page

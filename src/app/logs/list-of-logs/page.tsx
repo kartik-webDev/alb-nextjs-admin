@@ -147,12 +147,11 @@ const ConsultationLogsPage = () => {
         const params = new URLSearchParams();
         params.set('startDate', startDate);
         
-        if (startDate !== endDate) {
-          const endDateObj = new Date(endDate);
-          endDateObj.setDate(endDateObj.getDate() + 1);
-          const endDatePlusOne = endDateObj.toISOString().split('T')[0];
-          params.set('endDate', endDatePlusOne);
-        }
+        // Always increment endDate by 1 day for the API query
+        const endDateObj = new Date(endDate);
+        endDateObj.setDate(endDateObj.getDate());
+        const endDatePlusOne = endDateObj.toISOString().split('T')[0];
+        params.set('endDate', endDatePlusOne);
         
         const url = `${process.env.NEXT_PUBLIC_API_URL}/api/customers/all_consultation_logs?${params.toString()}`;
         const response = await fetch(url);
@@ -552,7 +551,11 @@ const ConsultationLogsPage = () => {
       <div className="mx-auto">
         <MainDatatable
           data={filteredLogs}
-          columns={columns}
+          columns={columns.map((col) => ({
+            ...col,
+            minwidth: col.width,
+            width: undefined,
+          }))}
           title="Consultation Logs"
           isLoading={loading}
           showSearch={true}

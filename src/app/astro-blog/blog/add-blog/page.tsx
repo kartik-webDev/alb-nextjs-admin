@@ -48,6 +48,7 @@ interface ImageState {
 // ---------------------------------------------------------------------
 const IMG_URL = process.env.NEXT_PUBLIC_IMG_URL || '/uploads/';
 const Regex_Accept_Alpha = /^[a-zA-Z\s]+$/;
+const Regex_Accept_Alpha2 = /^[a-zA-Z0-9\s!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]+.{3,}$/;
 
 // ---------------------------------------------------------------------
 // Main Component
@@ -85,7 +86,7 @@ const AddEditBlogContent = () => {
         setDescription(blog.description || '');
         if (blog.image) {
           setImage({
-            file: `${IMG_URL}${blog.image}`,
+            file: blog.image,
             bytes: '',
           });
         }
@@ -181,6 +182,18 @@ const AddEditBlogContent = () => {
     handleInputFieldError('image', null);
   };
 
+  // Get image source URL
+  const getImageSrc = (): string => {
+    if (typeof image.bytes === 'object' && image.bytes instanceof File) {
+      return image.file;
+    }
+    if (image.file && !image.file.startsWith('blob:')) {
+      return `${process.env.NEXT_PUBLIC_IMAGE_URL}uploads/${image.file}`;
+
+    }
+    return image.file;
+  };
+
   // Handle Validation
   const handleValidation = (): boolean => {
     let isValid = true;
@@ -190,8 +203,8 @@ const AddEditBlogContent = () => {
     if (!title.trim()) {
       handleInputFieldError('title', 'Please Enter Title');
       isValid = false;
-    } else if (!Regex_Accept_Alpha.test(title)) {
-      handleInputFieldError('title', 'Please Enter Valid Title (letters and spaces only)');
+    } else if (!Regex_Accept_Alpha2.test(title)) {
+      handleInputFieldError('title', 'Please Enter Valid Title (At least 3 characters)');
       isValid = false;
     } else {
       handleInputFieldError('title', null);
@@ -316,34 +329,35 @@ const AddEditBlogContent = () => {
       <div className="space-y-6">
         {/* Image Upload */}
         <div>
-          <div className="border border-gray-300 rounded">
-            {image.file ? (
-              <label
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={handleDrop}
-                htmlFor="upload-image"
-                className="flex flex-col items-center p-5 cursor-pointer"
-              >
-                <img
-                  src={image.file}
-                  alt="Blog preview"
-                  className="h-[300px] w-[300px] object-cover"
-                />
-              </label>
-            ) : (
-              <label
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={handleDrop}
-                htmlFor="upload-image"
-                className="flex flex-col gap-5 items-center py-24 cursor-pointer"
-              >
-                <UploadImageSvg h="80" w="80" color="#C4C4C4" />
-                <div className="font-semibold text-lg">Choose Your Image to Upload</div>
-                <div className="font-medium text-base text-gray-500">
-                  Or Drop Your Image Here
+          <label className="block text-sm font-medium mb-2 text-gray-700">
+            Blog Image <span className="text-red-600">*</span>
+          </label>
+
+          <div className="flex items-start justify-start">
+            <label
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={handleDrop}
+              htmlFor="upload-image"
+              className="relative cursor-pointer group"
+            >
+              {image.file ? (
+                <div className="relative">
+                  <img
+                    src={getImageSrc()}
+                    alt="Blog preview"
+                    className="h-32 w-32 object-cover rounded-full shadow-md group-hover:opacity-80 transition-opacity border-4 border-white"
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black bg-opacity-40 rounded-full">
+                    <span className="text-white text-xs font-medium">Change</span>
+                  </div>
                 </div>
-              </label>
-            )}
+              ) : (
+                <div className="h-32 w-32 flex items-center justify-center rounded-full bg-gray-100 shadow-md cursor-pointer hover:bg-gray-200 transition-colors">
+                  <UploadImageSvg h="48" w="48" color="#9CA3AF" />
+                </div>
+              )}
+            </label>
+
             <input
               id="upload-image"
               onChange={handleImage}
@@ -352,8 +366,9 @@ const AddEditBlogContent = () => {
               type="file"
             />
           </div>
+
           {inputFieldError.image && (
-            <p className="text-red-600 text-xs mt-2 ml-3">{inputFieldError.image}</p>
+            <p className="text-red-600 text-xs mt-2">{inputFieldError.image}</p>
           )}
         </div>
 

@@ -58,7 +58,7 @@ function AddReviewContent() {
       if (editMode && reviewId) {
         try {
           setFetching(true);
-          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/reviews/${reviewId}`);
+          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/reviews?reviewId=${reviewId}`);
           const data = await response.json();
           
           if (data.success && data.data) {
@@ -204,14 +204,15 @@ function AddReviewContent() {
     try {
       console.log("📤 Updating review with payload:", reviewData);
       
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/reviews/${reviewData.reviewId}`, {
-        method: 'PUT',
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/update-review`, {
+        method: 'POST',
         headers: { 
           'Content-Type': 'application/json' 
         },
         body: JSON.stringify({
           ratings: reviewData.ratings, // ✅ Keep as string to match expected format
-          comments: reviewData.comments
+          comments: reviewData.comments,
+          reviewId: reviewData.reviewId
         }),
       });
 

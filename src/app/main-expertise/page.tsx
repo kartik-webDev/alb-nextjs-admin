@@ -175,3 +175,15 @@ const handleDeleteMainExpertise = (row: MainExpertise) => {
 };
 
 export default MainExpertise;
+
+// import React from 'react'
+
+// const page = () => {
+//   return (
+//     <div className='p-20'>
+//       Main experties under progress...........
+//     </div>
+//   )
+// }
+
+// export default page

@@ -259,3 +259,15 @@ const fetchLanguages = async () => {
 };
 
 export default Language;
+
+// import React from 'react'
+
+// const page = () => {
+//   return (
+//     <div className='p-20'>
+//       Work under progress...........
+//     </div>
+//   )
+// }
+
+// export default page
