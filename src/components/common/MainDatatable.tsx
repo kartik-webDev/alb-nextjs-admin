@@ -16,6 +16,7 @@ interface Column {
   export?: boolean;  // CSV mein include karna hai ya nahi
   omit?: boolean;    // UI se hide karna hai ya nahi
   format?: (row: any) => any;  // CSV ke liye custom formatting
+
 }
 
 interface MainDatatableProps {
@@ -29,6 +30,8 @@ interface MainDatatableProps {
   showSearch?: boolean;
   exportHeaders?: boolean;  // Custom headers ke saath export karna hai ya nahi
   fileName?: string;  // Custom filename for CSV
+      leftFilters?: React.ReactNode; // ✅ NEW
+
 }
 
 // Deep search function
@@ -70,7 +73,9 @@ const MainDatatable: React.FC<MainDatatableProps> = ({
   isLoading = false,
   showSearch = true,
   exportHeaders = false,  // Default: false (raw data export)
-  fileName = 'data'  // Default filename
+  fileName = 'data',  // Default filename
+    leftFilters, // ✅ NEW
+
 }) => {
   const router = useRouter();
   const [searchText, setSearchText] = useState('');
@@ -178,6 +183,11 @@ const MainDatatable: React.FC<MainDatatableProps> = ({
               </div>
    
               <div className="flex gap-3 items-center">
+                {leftFilters && (
+  <div className="flex items-center">
+    {leftFilters}
+  </div>
+)}
                 {showSearch && (
                   <div className="flex justify-end rounded-sm">
                     <input
