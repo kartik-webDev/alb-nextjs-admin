@@ -7,8 +7,8 @@ interface Props {
   onChange: (filters: Partial<Filters>) => void;
   onRefresh: () => void;
   onReset: () => void;
-  onProcessAll: () => void;
-  canProcessAll: boolean;
+  onProcessSelected: () => void;
+  selectedCount: number;
 }
 
 export const FilterBar: React.FC<Props> = ({ 
@@ -16,8 +16,8 @@ export const FilterBar: React.FC<Props> = ({
   onChange, 
   onRefresh, 
   onReset,
-  onProcessAll,
-  canProcessAll
+  onProcessSelected,
+  selectedCount
 }) => {
   const getTodayDate = () => moment().format("YYYY-MM-DD");
 
@@ -41,6 +41,7 @@ export const FilterBar: React.FC<Props> = ({
           onChange={(e) => onChange({ from: e.target.value })}
           max={getTodayDate()}
           className="px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500"
+          placeholder="From date"
         />
         <span className="text-gray-400">to</span>
         <input
@@ -49,7 +50,17 @@ export const FilterBar: React.FC<Props> = ({
           onChange={(e) => onChange({ to: e.target.value })}
           max={getTodayDate()}
           className="px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500"
+          placeholder="To date"
         />
+        {(filters.from || filters.to) && (
+          <button
+            onClick={() => onChange({ from: "", to: "" })}
+            className="text-red-500 hover:text-red-700 text-xs"
+            title="Clear dates"
+          >
+            ✕ Clear
+          </button>
+        )}
       </div>
 
       {/* Report Delivery Status */}
@@ -59,7 +70,6 @@ export const FilterBar: React.FC<Props> = ({
         className="px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 min-w-[140px]"
       >
         <option value="all">All Status</option>
-        {/* <option value="pending">Pending</option> */}
         <option value="delivered">Delivered</option>
         <option value="failed">Failed</option>
       </select>
@@ -75,11 +85,11 @@ export const FilterBar: React.FC<Props> = ({
         <option value="hindi">Hindi</option>
       </select>
 
-      {/* ✅ Select First N (Auto-filter non-delivered) */}
+      {/* ✅ Auto-Select First N */}
       <div className="relative">
         <input
           type="number"
-          placeholder="Show first N non-delivered..."
+          placeholder="Auto-select first N..."
           value={filters.selectFirstN || ""}
           onChange={(e) => {
             const value = e.target.value ? parseInt(e.target.value) : undefined;
@@ -87,8 +97,8 @@ export const FilterBar: React.FC<Props> = ({
           }}
           min="1"
           max="1000"
-          className="px-3 py-2 border-2 border-purple-500 rounded-md focus:ring-2 focus:ring-purple-600 min-w-[200px] bg-purple-50 font-semibold text-purple-800"
-          title="Shows first N orders excluding delivered ones"
+          className="px-3 py-2 border-2 border-purple-500 rounded-md focus:ring-2 focus:ring-purple-600 min-w-[180px] bg-purple-50 font-semibold text-purple-800"
+          title="Auto-select first N non-delivered reports"
         />
         {filters.selectFirstN && filters.selectFirstN > 0 && (
           <span className="absolute -top-2 -right-2 bg-purple-600 text-white text-xs px-2 py-0.5 rounded-full">
@@ -97,26 +107,14 @@ export const FilterBar: React.FC<Props> = ({
         )}
       </div>
 
-      {/* Sort Order */}
-      {/* <select
-        value={filters.sortOrder}
-        onChange={(e) => onChange({ sortOrder: e.target.value as "asc" | "desc" })}
-        className="px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500"
-        disabled={!!filters.selectFirstN}
-      >
-        <option value="desc">Newest First</option>
-        <option value="asc">Oldest First</option>
-      </select> */}
-
-      {/* ✅ Process All Button */}
-      {canProcessAll && (
+      {/* ✅ Process Selected Button */}
+      {selectedCount > 0 && (
         <button
-          onClick={onProcessAll}
+          onClick={onProcessSelected}
           className="px-4 py-2 text-white bg-gradient-to-r from-purple-600 to-indigo-600 rounded-md hover:from-purple-700 hover:to-indigo-700 transition-all flex items-center gap-2 font-medium shadow-md"
-          title="Process all pending and failed reports"
         >
           <span>⚡</span>
-          Process All Non-Delivered
+          Process {selectedCount} Report{selectedCount > 1 ? 's' : ''}
         </button>
       )}
 
@@ -126,23 +124,21 @@ export const FilterBar: React.FC<Props> = ({
           onClick={onRefresh}
           className="px-4 py-2 text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors flex items-center gap-2"
         >
-          
-          Refresh
+          🔄 Refresh
         </button>
         
         <button
           onClick={onReset}
           className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors flex items-center gap-2"
         >
-          <span>↺</span>
-          Reset
+          ↺ Reset
         </button>
       </div>
 
       {/* Info text */}
       {filters.selectFirstN && filters.selectFirstN > 0 && (
         <div className="text-xs text-purple-600 font-medium mt-1 w-full bg-purple-50 px-3 py-1 rounded">
-          ⓘ Showing first {filters.selectFirstN} orders (excluding delivered). Sort disabled.
+          ⓘ Auto-selected first {selectedCount} non-delivered reports
         </div>
       )}
     </div>

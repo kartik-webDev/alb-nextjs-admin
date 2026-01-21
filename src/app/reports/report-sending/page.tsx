@@ -20,11 +20,12 @@ const ReportOrders: React.FC = () => {
     reportDeliveryStatus: "all",
     sortBy: "createdAt",
     sortOrder: "desc",
-    limit: 100,
+    limit: 200,
     selectFirstN: undefined,
   });
 
   const [rows, setRows] = useState<Order[]>([]);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]); // ✅ Simple: Selected row IDs
   const [loading, setLoading] = useState(false);
   const [viewOpen, setViewOpen] = useState(false);
   const [activeRow, setActiveRow] = useState<Order | null>(null);
@@ -44,42 +45,51 @@ const ReportOrders: React.FC = () => {
     try {
       const qs = new URLSearchParams();
       
+      // ✅ FIXED: Simple query building - no complex logic
       const params: Record<string, string> = {
-        q: currentFilters.q,
-        language: currentFilters.language,
-        reportDeliveryStatus: currentFilters.reportDeliveryStatus,
-        sortBy: currentFilters.sortBy,
-        sortOrder: currentFilters.sortOrder,
         page: currentPage.toString(),
         limit: currentFilters.limit.toString(),
       };
 
-      if (currentFilters.from) {
+      // Add search query
+      if (currentFilters.q) {
+        params.q = currentFilters.q;
+      }
+
+      // Add language filter
+      if (currentFilters.language && currentFilters.language !== "all") {
+        params.language = currentFilters.language;
+      }
+
+      // Add report delivery status
+      if (currentFilters.reportDeliveryStatus && currentFilters.reportDeliveryStatus !== "all") {
+        params.reportDeliveryStatus = currentFilters.reportDeliveryStatus;
+      }
+
+      // Add sorting - ALWAYS use createdAt for consistency
+      params.sortBy = "createdAt";
+      params.sortOrder = currentFilters.sortOrder;
+
+      // ✅ Date filters - ALWAYS apply unless empty
+      if (currentFilters.from && currentFilters.to) {
+        // Date range
         params.from = currentFilters.from;
-      }
-      if (currentFilters.to) {
         params.to = currentFilters.to;
-      }
-      if (currentFilters.from && !currentFilters.to) {
+      } else if (currentFilters.from && !currentFilters.to) {
+        // Single date
         params.date = currentFilters.from;
-        delete params.from;
-        delete params.to;
       }
 
-      // ✅ selectFirstN: fetch all non-delivered
-      if (currentFilters.selectFirstN && currentFilters.selectFirstN > 0) {
-        params.sortBy = "createdAt";
-        params.sortOrder = "asc";
-      }
-
+      // Build query string
       Object.entries(params).forEach(([key, value]) => {
-        if (value && value !== "all") {
+        if (value) {
           qs.set(key, value);
         }
       });
 
       const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/admin/get-reports?${qs.toString()}`;
       console.log("🔍 Fetching from:", apiUrl);
+      console.log("📋 Query params:", Object.fromEntries(qs.entries()));
 
       const response = await fetch(apiUrl, { 
         headers: getAuthHeaders() 
@@ -98,19 +108,24 @@ const ReportOrders: React.FC = () => {
 
       const { items, pagination } = result.data;
       
-      // ✅ Filter & slice for selectFirstN
-      let filteredItems = items || [];
-      if (currentFilters.selectFirstN && currentFilters.selectFirstN > 0) {
-        const nonDeliveredItems = filteredItems.filter(
-          order => order.reportDeliveryStatus !== 'delivered'
-        );
-        filteredItems = nonDeliveredItems.slice(0, currentFilters.selectFirstN);
-      }
+      console.log("✅ Fetched items:", items?.length, "Total:", pagination?.total);
       
-      setRows(filteredItems);
+      setRows(items || []);
       setPage(pagination?.page || 1);
       setTotalPages(pagination?.pages || 1);
       setTotalItems(pagination?.total || 0);
+
+      // ✅ Auto-select first N non-delivered if selectFirstN is set
+      if (currentFilters.selectFirstN && currentFilters.selectFirstN > 0) {
+        const nonDelivered = (items || [])
+          .filter(order => order._id && order.reportDeliveryStatus !== 'delivered')
+          .slice(0, currentFilters.selectFirstN)
+          .map(order => order._id!);
+        console.log("🎯 Auto-selected IDs:", nonDelivered);
+        setSelectedIds(nonDelivered);
+      } else {
+        setSelectedIds([]);
+      }
       
     } catch (error) {
       console.error("❌ Fetch error:", error);
@@ -123,6 +138,7 @@ const ReportOrders: React.FC = () => {
       });
       setRows([]);
       setTotalItems(0);
+      setSelectedIds([]);
     } finally {
       setLoading(false);
     }
@@ -155,65 +171,83 @@ const ReportOrders: React.FC = () => {
       reportDeliveryStatus: "all",
       sortBy: "createdAt",
       sortOrder: "desc",
-      limit: 100,
+      limit: 200,
       selectFirstN: undefined,
     };
     setFilters(resetFilters);
     setPage(1);
+    setSelectedIds([]);
   };
 
-  // ReportOrders.tsx me yeh function add karo:
-const handleMarkAsDelivered = async (orderId: string) => {
-  console.log(orderId, "orderissssssssssssssssssssssssssssssssssssssssddddddddddd")
-  try {
-    const result = await Swal.fire({
-      title: 'Mark as Delivered?',
-      text: 'This will manually mark the failed report as delivered.',
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonColor: '#3085d6',
-      cancelButtonColor: '#d33',
-      confirmButtonText: 'Yes, mark as delivered!',
-      cancelButtonText: 'Cancel'
-    });
-
-    if (!result.isConfirmed) return;
-
-    const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/api/admin/update-status/${orderId}`,
-      {
-        method: 'PUT',
-        headers: getAuthHeaders()
-      }
+  // ✅ Toggle single checkbox
+  const handleToggleRow = (orderId: string) => {
+    setSelectedIds(prev => 
+      prev.includes(orderId) 
+        ? prev.filter(id => id !== orderId)
+        : [...prev, orderId]
     );
+  };
 
-    if (!response.ok) throw new Error('Failed to update');
-
-    const data = await response.json();
+  // ✅ Toggle all checkboxes (exclude delivered)
+  const handleToggleAll = () => {
+    const selectableRows = rows.filter(
+      row => row._id && row.reportDeliveryStatus !== 'delivered'
+    );
     
-    await Swal.fire({
-      icon: 'success',
-      title: '✅ Marked as Delivered!',
-      text: data.message,
-      timer: 2000,
-      showConfirmButton: false
-    });
+    if (selectedIds.length === selectableRows.length && selectableRows.length > 0) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(selectableRows.map(row => row._id!));
+    }
+  };
 
-    // Refresh orders
-    fetchOrders(filters, page);
+  const handleMarkAsDelivered = async (orderId: string) => {
+    try {
+      const result = await Swal.fire({
+        title: 'Mark as Delivered?',
+        text: 'This will manually mark the failed report as delivered.',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Yes, mark as delivered!',
+      });
 
-  } catch (error) {
-    console.error('Error marking as delivered:', error);
-    Swal.fire({
-      icon: 'error',
-      title: 'Failed',
-      text: 'Could not mark as delivered',
-      timer: 2000
-    });
-  }
-};
+      if (!result.isConfirmed) return;
 
-  // ✅ Process single report (for failed retry)
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/admin/update-status/${orderId}`,
+        {
+          method: 'PUT',
+          headers: getAuthHeaders()
+        }
+      );
+
+      if (!response.ok) throw new Error('Failed to update');
+
+      const data = await response.json();
+      
+      await Swal.fire({
+        icon: 'success',
+        title: '✅ Marked as Delivered!',
+        text: data.message,
+        timer: 2000,
+        showConfirmButton: false
+      });
+
+      fetchOrders(filters, page);
+
+    } catch (error) {
+      console.error('Error marking as delivered:', error);
+      Swal.fire({
+        icon: 'error',
+        title: 'Failed',
+        text: 'Could not mark as delivered',
+        timer: 2000
+      });
+    }
+  };
+
   const handleProcessSingle = async (reportId: string) => {
     try {
       const result = await Swal.fire({
@@ -257,17 +291,13 @@ const handleMarkAsDelivered = async (orderId: string) => {
     }
   };
 
-  // ✅ Process all non-delivered reports
-  const handleProcessAll = async () => {
-    const processableOrders = rows.filter(
-      row => row._id && row.reportDeliveryStatus !== 'delivered'
-    );
-
-    if (processableOrders.length === 0) {
+  // ✅ SIMPLE: Process selected IDs array
+  const handleProcessSelected = async () => {
+    if (selectedIds.length === 0) {
       Swal.fire({
-        icon: "info",
-        title: "No Reports to Process",
-        text: "All visible reports are already delivered.",
+        icon: "warning",
+        title: "No Reports Selected",
+        text: "Please select at least one report.",
         timer: 2000
       });
       return;
@@ -275,28 +305,23 @@ const handleMarkAsDelivered = async (orderId: string) => {
 
     try {
       const result = await Swal.fire({
-        title: `Process ${processableOrders.length} Reports?`,
-        html: `
-          <div class="text-left">
-            <p><strong>Pending:</strong> ${processableOrders.filter(r => r.reportDeliveryStatus === 'pending').length}</p>
-            <p><strong>Failed:</strong> ${processableOrders.filter(r => r.reportDeliveryStatus === 'failed').length}</p>
-          </div>
-        `,
+        title: `Process ${selectedIds.length} Reports?`,
+        text: "This will send selected report IDs for processing.",
         icon: "question",
         showCancelButton: true,
         confirmButtonColor: "#3085d6",
         cancelButtonColor: "#d33",
-        confirmButtonText: "Yes, Process All!",
+        confirmButtonText: "Yes, Process!",
       });
 
       if (!result.isConfirmed) return;
 
-      const reportIds = processableOrders.map(order => order._id!);
+      console.log("📤 Sending IDs:", selectedIds);
 
-      const response = await fetch(`https://alb.gennextit.com/api/life-journey-report/process-lcr-reports`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/life-journey-report/process-lcr-reports`, {
         method: "POST",
         headers: getAuthHeaders(),
-        body: JSON.stringify({ reportIds })
+        body: JSON.stringify({ reportIds: selectedIds })
       });
 
       if (!response.ok) throw new Error("Failed to process reports");
@@ -304,11 +329,12 @@ const handleMarkAsDelivered = async (orderId: string) => {
       await Swal.fire({
         icon: "success",
         title: "Processing Started!",
-        text: `${reportIds.length} reports queued for generation.`,
+        text: `${selectedIds.length} reports queued for generation.`,
         timer: 3000,
         showConfirmButton: false
       });
 
+      setSelectedIds([]);
       fetchOrders(filters, page);
 
     } catch (error) {
@@ -322,8 +348,6 @@ const handleMarkAsDelivered = async (orderId: string) => {
     }
   };
 
-  // ✅ Count stats
-  const pendingCount = rows.filter(r => r.reportDeliveryStatus === 'pending').length;
   const failedCount = rows.filter(r => r.reportDeliveryStatus === 'failed').length;
   const deliveredCount = rows.filter(r => r.reportDeliveryStatus === 'delivered').length;
 
@@ -340,20 +364,19 @@ const handleMarkAsDelivered = async (orderId: string) => {
                 Showing {rows.length} of {totalItems} orders
               </span>
               <div className="flex gap-3 text-sm">
-                
                 <span className="px-2 py-1 bg-red-100 text-red-700 rounded">
                   Failed: {failedCount}
                 </span>
                 <span className="px-2 py-1 bg-green-100 text-green-700 rounded">
                   Delivered: {deliveredCount}
                 </span>
+                {selectedIds.length > 0 && (
+                  <span className="px-2 py-1 bg-purple-100 text-purple-700 rounded font-semibold">
+                    ✓ Selected: {selectedIds.length}
+                  </span>
+                )}
               </div>
             </div>
-            {filters.selectFirstN && filters.selectFirstN > 0 && (
-              <div className="text-sm text-green-700 font-medium">
-                ⚡ First {rows.length} non-delivered reports
-              </div>
-            )}
           </div>
         </div>
       )}
@@ -363,8 +386,8 @@ const handleMarkAsDelivered = async (orderId: string) => {
         onChange={handleFilterChange}
         onRefresh={handleRefresh}
         onReset={handleReset}
-        onProcessAll={handleProcessAll}
-        canProcessAll={pendingCount + failedCount > 0}
+        onProcessSelected={handleProcessSelected}
+        selectedCount={selectedIds.length}
       />
 
       <OrdersTable
@@ -372,6 +395,9 @@ const handleMarkAsDelivered = async (orderId: string) => {
         loading={loading}
         page={page}
         limit={filters.limit}
+        selectedIds={selectedIds}
+        onToggleRow={handleToggleRow}
+        onToggleAll={handleToggleAll}
         onView={(row) => {
           setActiveRow(row);
           setViewOpen(true);
@@ -380,7 +406,7 @@ const handleMarkAsDelivered = async (orderId: string) => {
         onMarkAsDelivered={handleMarkAsDelivered}
       />
 
-      {!filters.selectFirstN && totalPages > 1 && (
+      {totalPages > 1 && (
         <Pagination
           currentPage={page}
           totalPages={totalPages}
