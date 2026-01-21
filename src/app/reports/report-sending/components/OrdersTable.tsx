@@ -97,7 +97,7 @@ export const OrdersTable: React.FC<Props> = ({
           }
           if (!deliveryStatus || deliveryStatus === 'processing') {
             return (
-              <span className="px-2 py-1 bg-yellow-100 text-red-700 rounded-full text-xs font-medium">
+              <span className="px-2 py-1 bg-blue-700 text-white rounded-full text-xs font-medium">
                 Processing
               </span>
             );
