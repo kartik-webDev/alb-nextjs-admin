@@ -1,6 +1,6 @@
 import React from "react";
 import { Filters } from "../types";
-import moment from "moment";
+import moment from "moment-timezone";
 
 interface Props {
   filters: Filters;
@@ -19,7 +19,7 @@ export const FilterBar: React.FC<Props> = ({
   onProcessSelected,
   selectedCount
 }) => {
-  const getTodayDate = () => moment().format("YYYY-MM-DD");
+  const getTodayDate = () => moment().tz("Asia/Kolkata").format("YYYY-MM-DD");
 
   return (
     <div className="flex flex-wrap items-center gap-3 mb-4 text-sm">
