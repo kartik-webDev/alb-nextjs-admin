@@ -59,6 +59,11 @@ export const RouteName = [
         name: "Report Order",
         icon: <OtherRouteSvg />,
       },
+      {
+        path: "/reports/report-sending",
+        name: "Report Automation",
+        icon: <OtherRouteSvg />,
+      },
     ],
   },
 
@@ -168,6 +173,11 @@ export const RouteName = [
       {
         path: "/first-consultation-price",
         name: "First Consultation Offer",
+        icon: <OtherRouteSvg />,
+      },
+      {
+        path: "/dubai-consultation",
+        name: "Dubai Consultation",
         icon: <OtherRouteSvg />,
       },
     ],
