@@ -44,7 +44,7 @@ export const FilterBar: React.FC<Props> = ({
           type="date"
           value={filters.from}
           onChange={(e) => onChange({ from: e.target.value })}
-          max={todayDate}
+          // max={todayDate}
           className="px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500"
           placeholder="From date"
         />
@@ -53,7 +53,7 @@ export const FilterBar: React.FC<Props> = ({
           type="date"
           value={filters.to}
           onChange={(e) => onChange({ to: e.target.value })}
-          max={todayDate}
+          // max={todayDate}
           className="px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500"
           placeholder="To date"
         />
