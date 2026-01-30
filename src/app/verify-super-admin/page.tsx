@@ -19,19 +19,11 @@ function VerificationContent() {
   useEffect(() => {
     const verifyToken = async () => {
       const token = searchParams.get('token');
-      
-      console.log('URL Search Params:', {
-        token,
-        fullURL: window.location.href,
-        search: window.location.search
-      });
-      
+  
       // Alternative way to get token from URL
       const urlParams = new URLSearchParams(window.location.search);
       const tokenFromURL = urlParams.get('token');
-      
-      console.log('Token from URLSearchParams:', tokenFromURL);
-      
+            
       const finalToken = token || tokenFromURL;
       
       if (!finalToken) {
@@ -50,11 +42,7 @@ function VerificationContent() {
         return;
       }
 
-      try {
-        console.log('Verifying token:', finalToken.substring(0, 20) + '...');
-        console.log('Full token length:', finalToken.length);
-        console.log('API URL:', `${API_URL}/api/admin/verify-super-admin`);
-        
+      try { 
         const response = await fetch(`${API_URL}/api/admin/verify-super-admin`, {
           method: 'POST',
           credentials: 'include',
@@ -65,7 +53,6 @@ function VerificationContent() {
         });
 
         const data = await response.json();
-        console.log('Verification response:', data);
 
         if (response.ok) {
           setStatus('success');
@@ -76,16 +63,7 @@ function VerificationContent() {
             title: 'Verified Successfully!',
             html: `
               <div style="text-align: left;">
-                <p>✅ Your Super Admin account is now active!</p>
-                <p style="margin-top: 10px;">You can now:</p>
-                <ol style="text-align: left; margin-left: 20px;">
-                  <li>Go to login page</li>
-                  <li>Use your credentials:</li>
-                  <ul style="margin-left: 20px;">
-                    <li><strong>Username:</strong> (जो आपने create किया था)</li>
-                    <li><strong>Password:</strong> (जो आपने set किया था)</li>
-                  </ul>
-                </ol>
+                <p>Your Super Admin account is now active!</p>
               </div>
             `,
             confirmButtonText: 'Go to Login',
@@ -128,7 +106,6 @@ function VerificationContent() {
           }, 1000);
         }
       } catch (error) {
-        console.error('Verification error:', error);
         setStatus('error');
         setMessage('Network error. Please try again.');
         

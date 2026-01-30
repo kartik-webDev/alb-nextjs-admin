@@ -6,14 +6,8 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4019';
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   
-  console.log('='.repeat(50));
-  console.log(`🛡️ MIDDLEWARE: ${pathname}`);
-  console.log(`🍪 COOKIES:`, request.cookies.getAll().map(c => ({
-    name: c.name,
-    value: c.value.substring(0, 10) + '...'
-  })));
 
-  // ✅ PUBLIC ROUTES
+  //PUBLIC ROUTES
   if (
     pathname === '/login' ||
     pathname === '/register' ||
@@ -64,15 +58,11 @@ export async function middleware(request: NextRequest) {
   // NO SESSION = REDIRECT TO LOGIN
   // ====================
   if (!sessionId) {
-    console.log(`🚫 NO SESSION: Redirecting to login`);
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
-  // ====================
-  // 🔥 REAL-TIME SESSION VALIDATION
-  // ====================
+  //REAL-TIME SESSION VALIDATION
   try {
-    console.log(`🔍 Validating session with /me endpoint...`);
     
     // Use existing /me endpoint for validation
     const response = await fetch(`${API_URL}/api/admin/me`, {
@@ -81,13 +71,11 @@ export async function middleware(request: NextRequest) {
         'Cookie': request.headers.get('cookie') || '',
         'Cache-Control': 'no-cache, no-store, must-revalidate'
       },
-      cache: 'no-store' // Important: Don't cache auth checks
+      cache: 'no-store' 
     });
 
-    console.log(`📊 Validation response: ${response.status}`);
     
     if (!response.ok) {
-      console.log(`❌ Session invalid (${response.status})`);
       
       // Clear all auth cookies
       const redirectResponse = NextResponse.redirect(new URL('/login?session=expired', request.url));
@@ -111,23 +99,15 @@ export async function middleware(request: NextRequest) {
     }
 
   } catch (error) {
-    console.error(`⚠️ Session validation failed:`, error);
+    console.error(`Session validation failed:`, error);
     // Allow access if validation fails (fail-open for availability)
-    console.log(`⚠️ Allowing access despite validation failure`);
+    console.log(`Allowing access despite validation failure`);
   }
 
-  // ====================
   // ROLE-BASED ACCESS
-  // ====================
   if (userType === 'ADMIN' && pathname.startsWith('/super-admin')) {
-    console.log(`🚫 ADMIN trying to access SUPER_ADMIN route`);
     return NextResponse.redirect(new URL('/admin-dashboard', request.url));
   }
-
-  // ====================
-  // ACCESS GRANTED
-  // ====================
-  console.log(`✅ ACCESS GRANTED: ${userType} → ${pathname}`);
   return NextResponse.next();
 }
 

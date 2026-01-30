@@ -23,7 +23,6 @@ export default function AuthPage() {
   useEffect(() => {
     const checkAuthStatus = async () => {
       try {
-        console.log('🔍 Checking auth status...');
         const response = await fetch(`${API_URL}/api/admin/me`, {
           method: 'GET',
           credentials: 'include'
@@ -31,24 +30,19 @@ export default function AuthPage() {
 
         if (response.ok) {
           const data = await response.json();
-          console.log('✅ Already logged in:', data);
           
           // Redirect based on user type
           if (data.userType === 'SUPER_ADMIN') {
-            console.log('👑 Redirecting SUPER_ADMIN to dashboard');
             router.push('/super-admin-dashboard');
           } else if (data.userType === 'ADMIN') {
-            console.log('👤 Redirecting ADMIN to dashboard');
             router.push('/admin-dashboard');
           } else {
-            console.log('👤 Redirecting USER to dashboard');
             router.push('/dashboard');
           }
         } else {
-          console.log('ℹ️ Not logged in');
         }
       } catch (error) {
-        console.log('❌ Auth check failed:', error);
+        console.log('Auth check failed:', error);
       }
     };
 
@@ -135,7 +129,6 @@ export default function AuthPage() {
     try {
       if (isLogin) {
         // Login request
-        console.log('🔐 Attempting login...');
         
         const response = await fetch(`${API_URL}/api/admin/login`, {
           method: 'POST',
@@ -150,13 +143,11 @@ export default function AuthPage() {
         });
 
         const data = await response.json();
-        console.log('📥 Login response:', data);
 
         if (!response.ok) {
           throw new Error(data.error || 'Login failed');
         }
 
-        console.log('✅ Login successful');
         setJustLoggedIn(true);
 
         await Swal.fire({
@@ -164,7 +155,7 @@ export default function AuthPage() {
           text: "Login Successfully!",
           html: `
             <div style="text-align: center;">
-              <p>✅ Login successful!</p>
+              <p>Login successful!</p>
               <p class="mt-2 text-sm text-gray-600">
                 Redirecting to dashboard...
               </p>
@@ -241,7 +232,6 @@ export default function AuthPage() {
       }
 
     } catch (error: any) {
-      console.error('❌ Error:', error);
       await Swal.fire({
         icon: "error",
         title: "Error",
@@ -298,13 +288,11 @@ export default function AuthPage() {
                 className="object-contain"
                 onError={(e) => {
                   console.log('Logo image failed, showing text fallback');
-                  // You can set a state here to show text fallback
                 }}
               />
             </div>
           </div>
 
-          {/* Registration Fields - Email (Only for Registration) */}
           {!isLogin && (
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
