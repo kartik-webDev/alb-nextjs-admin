@@ -18,10 +18,11 @@ import {
   FaLock,
   FaCheckCircle,
   FaTimesCircle,
-  FaEnvelope
+  FaEnvelope,
+  FaRoute
 } from 'react-icons/fa';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4019';
+import ManageRoutes from '@/components/admin/ManageRoutes';
+import AssignRoutes from '@/components/admin/AssignRoutes';
 
 interface Admin {
   _id: string;
@@ -35,7 +36,7 @@ interface Admin {
 
 export default function SuperAdminDashboard() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'admins' | 'changePassword'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'admins' | 'routes' | 'assignRoutes' | 'changePassword'>('dashboard');
   const [loading, setLoading] = useState(false);
   const [admins, setAdmins] = useState<Admin[]>([]);
   const [adminStats, setAdminStats] = useState({
@@ -496,7 +497,7 @@ export default function SuperAdminDashboard() {
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className=" mx-auto px-4 sm:px-6 lg:px-8 py-8">
       
 
         <div className="flex flex-col lg:flex-row gap-8">
@@ -543,6 +544,30 @@ export default function SuperAdminDashboard() {
                 >
                   <FaLock className="mr-3 h-5 w-5" />
                   Change Password
+                </button>
+
+                 <button
+                  onClick={() => setActiveTab('routes')}
+                  className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg transition ${
+                    activeTab === 'routes'
+                      ? 'bg-red-50 text-red-600 border border-red-100'
+                      : 'text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  <FaRoute className="mr-3 h-5 w-5" />
+                  Manage Routes
+                </button>
+                
+                <button
+                  onClick={() => setActiveTab('assignRoutes')}
+                  className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg transition ${
+                    activeTab === 'assignRoutes'
+                      ? 'bg-red-50 text-red-600 border border-red-100'
+                      : 'text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  <FaUserShield className="mr-3 h-5 w-5" />
+                  Assign Routes
                 </button>
               </nav>
             </div>
@@ -751,7 +776,7 @@ export default function SuperAdminDashboard() {
                 <div className="p-6">
                   <h2 className="text-2xl font-bold text-gray-900 mb-6">Change Your Password</h2>
                   
-                  <form onSubmit={handleChangePassword} className="max-w-lg space-y-6">
+                  <form onSubmit={handleChangePassword} className=" space-y-6">
                     {/* <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Current Password
@@ -847,6 +872,10 @@ export default function SuperAdminDashboard() {
                 </div>
               </div>
             )}
+
+            {activeTab === 'routes' && <ManageRoutes />}
+            
+            {activeTab === 'assignRoutes' && <AssignRoutes />}
           </div>
         </div>
       </div>
