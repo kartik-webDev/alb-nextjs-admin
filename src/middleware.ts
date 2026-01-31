@@ -20,15 +20,9 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // ✅ GET SESSION COOKIES
   const sessionId = request.cookies.get('sessionId')?.value;
   const userType = request.cookies.get('userType')?.value;
   
-  console.log(`🔐 AUTH CHECK:`, { hasSession: !!sessionId, userType });
-
-  // ====================
-  // HOME PAGE LOGIC
-  // ====================
   if (pathname === '/') {
     if (!sessionId) {
       return NextResponse.redirect(new URL('/login', request.url));
