@@ -212,7 +212,7 @@ export default function SuperAdminDashboard() {
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!currentPassword || !newPassword || !confirmPassword) {
+    if ( !newPassword || !confirmPassword) {
       Swal.fire('Error', 'Please fill all fields', 'error');
       return;
     }
@@ -222,10 +222,10 @@ export default function SuperAdminDashboard() {
       return;
     }
 
-    if (newPassword !== confirmPassword) {
-      Swal.fire('Error', 'Passwords do not match', 'error');
-      return;
-    }
+    // if (newPassword !== confirmPassword) {
+    //   Swal.fire('Error', 'Passwords do not match', 'error');
+    //   return;
+    // }
 
     try {
       setLoading(true);
@@ -752,7 +752,7 @@ export default function SuperAdminDashboard() {
                   <h2 className="text-2xl font-bold text-gray-900 mb-6">Change Your Password</h2>
                   
                   <form onSubmit={handleChangePassword} className="max-w-lg space-y-6">
-                    <div>
+                    {/* <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Current Password
                       </label>
@@ -773,7 +773,7 @@ export default function SuperAdminDashboard() {
                           {showCurrentPassword ? <FaEyeSlash /> : <FaEye />}
                         </button>
                       </div>
-                    </div>
+                    </div> */}
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
