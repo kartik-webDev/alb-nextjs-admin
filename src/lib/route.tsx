@@ -38,6 +38,11 @@ export const RouteName = [
         name: "Gemstone Consultation",
         icon: <CustomerRouteSvg />,
       },
+      {
+        path: "/gemstones-sync",
+        name: "Gemstone sync",
+        icon: <CustomerRouteSvg />,
+      },
     ],
   },
   {
