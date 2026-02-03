@@ -31,12 +31,13 @@ export async function GET(request: NextRequest) {
     }
 
     const data = await response.json();
+const products = data?.data?.products ?? [];
 
     return NextResponse.json({
-      products: data?.data?.products ?? [],
-      total_pages: data?.data?.total_pages ?? 0,
-      current_page: data?.data?.current_page ?? Number(page),
-    });
+  products: products.slice(0, 4), // 👈 sirf 4 products
+  total_pages: data?.data?.total_pages ?? 0,
+  current_page: data?.data?.current_page ?? Number(page),
+});
   } catch (error) {
     console.error("Error fetching BrahmaGems products:", error);
     return NextResponse.json(

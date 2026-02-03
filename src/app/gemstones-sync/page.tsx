@@ -60,7 +60,7 @@ export default function CompareProductsPage() {
 setProducts(
   (data.products ?? []).map((p: Product) => ({
     ...p,
-    sellingPrice: null,
+sellingPrice: p.sellingPrice ?? p.basePrice,
     isEdited: false,
   }))
 );
@@ -118,66 +118,116 @@ setProducts(
   /* ======================
      SYNC BUTTON
   ====================== */
-  async function handleSync() {
-    setSyncStatus("syncing");
-    setSyncProgress(0);
-    setErrorMessage("");
+//   async function handleSync() {
+//     setSyncStatus("syncing");
+//     setSyncProgress(0);
+//     setErrorMessage("");
 
-    try {
-      // 1️⃣ ADD ALL NEW PRODUCTS
-const newProducts = products.filter(
-  (p) => p.status === "NEW" && p.isEdited && p.sellingPrice !== null
-);
+//     try {
+//       // 1️⃣ ADD ALL NEW PRODUCTS
+// const newProducts = products.filter(
+//   (p) => p.status === "NEW" && p.isEdited && p.sellingPrice !== null
+// );
 
-      if (newProducts.length > 0) {
-        for (let i = 0; i < newProducts.length; i++) {
-          const p = newProducts[i];
+//       if (newProducts.length > 0) {
+//         for (let i = 0; i < newProducts.length; i++) {
+//           const p = newProducts[i];
 
-          const res = await fetch("/api/shopify/create-product", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              title: p.title,
-              price: p.sellingPrice,
-              compareAtPrice: p.basePrice,
-              images: p.images,
-              videos: p.videos,
-              certificateUrl: p.certificateUrl,
-            }),
-          });
+//           const res = await fetch("/api/shopify/create-product", {
+//             method: "POST",
+//             headers: { "Content-Type": "application/json" },
+//             body: JSON.stringify({
+//               title: p.title,
+//               price: p.sellingPrice,
+//               compareAtPrice: p.basePrice,
+//               images: p.images,
+//               videos: p.videos,
+//               certificateUrl: p.certificateUrl,
+//             }),
+//           });
 
-          if (!res.ok) {
-            const error = await res.json();
-            throw new Error(
-              `Failed to create "${p.title}": ${JSON.stringify(error)}`
-            );
-          }
+//           if (!res.ok) {
+//             const error = await res.json();
+//             throw new Error(
+//               `Failed to create "${p.title}": ${JSON.stringify(error)}`
+//             );
+//           }
 
-          setSyncProgress(((i + 1) / newProducts.length) * 100);
-        }
-      }
+//           setSyncProgress(((i + 1) / newProducts.length) * 100);
+//         }
+//       }
 
-      // 2️⃣ SHOW MODAL FOR EXISTING
-      const existingProducts = products.filter((p) => p.status === "EXISTS");
+//       // 2️⃣ SHOW MODAL FOR EXISTING
+//       const existingProducts = products.filter((p) => p.status === "EXISTS");
       
-      if (existingProducts.length > 0) {
-        setShowModal(true);
-        setSyncStatus("idle");
-      } else {
-        setSyncStatus("success");
-        setTimeout(() => {
-          setSyncStatus("idle");
-          loadProducts(); // Refresh data
-        }, 2000);
+//       if (existingProducts.length > 0) {
+//         setShowModal(true);
+//         setSyncStatus("idle");
+//       } else {
+//         setSyncStatus("success");
+//         setTimeout(() => {
+//           setSyncStatus("idle");
+//           loadProducts(); // Refresh data
+//         }, 2000);
+//       }
+//     } catch (error) {
+//       console.error("Sync error:", error);
+//       setErrorMessage(
+//         error instanceof Error ? error.message : "Sync failed"
+//       );
+//       setSyncStatus("error");
+//     }
+//   }
+async function handleSync() {
+  setSyncStatus("syncing");
+  setSyncProgress(0);
+  setErrorMessage("");
+
+  try {
+    const newProducts = products.filter(
+(p) => p.status === "NEW" && p.sellingPrice !== null
+    );
+
+    if (newProducts.length > 0) {
+      const res = await fetch("/api/shopify/bulk-create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          products: newProducts.map((p) => ({
+            title: p.title,
+            price: p.sellingPrice,
+            compareAtPrice: p.basePrice,
+            images: p.images,
+            videos: p.videos,
+            certificateUrl: p.certificateUrl,
+          })),
+        }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Bulk create failed");
       }
-    } catch (error) {
-      console.error("Sync error:", error);
-      setErrorMessage(
-        error instanceof Error ? error.message : "Sync failed"
-      );
-      setSyncStatus("error");
     }
+
+    // Existing products flow same
+    const existingProducts = products.filter((p) => p.status === "EXISTS");
+    if (existingProducts.length > 0) {
+      setShowModal(true);
+      setSyncStatus("idle");
+    } else {
+      setSyncStatus("success");
+      setTimeout(() => {
+        setSyncStatus("idle");
+        loadProducts();
+      }, 2000);
+    }
+  } catch (e: any) {
+    setErrorMessage(e.message);
+    setSyncStatus("error");
   }
+}
+
 
   /* ======================
      UPDATE EXISTING PRICES
