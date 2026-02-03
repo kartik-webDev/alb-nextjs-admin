@@ -77,6 +77,7 @@ interface ApiResponse {
   success: boolean;
   message?: string;
   bookings?: Consultation[];
+  totalRecords?: number;
   totalPages?: number;
   currentPage?: number;
 }
@@ -87,6 +88,7 @@ interface Filters {
   astrologerName: string;
   startDate: string;
   endDate: string;
+  dateFilterType: string; // New field for date filter type
 }
 
 // Deep search function for client-side filtering
@@ -132,6 +134,7 @@ export default function Consultation() {
     astrologerName: "",
     startDate: moment().format("YYYY-MM-DD"),
     endDate: moment().format("YYYY-MM-DD"),
+    dateFilterType: "createdAt", // Default to created date
   });
 
   const fetchConsultations = async () => {
@@ -140,20 +143,31 @@ export default function Consultation() {
 
       const queryParams: Record<string, string> = {
         page: "1",
-        limit: "1000",
+        limit: "10000",
       };
 
-      // Add filters based on createdAt (booking creation date)
+      // Add filters
       if (filters.status) queryParams.status = filters.status;
       if (filters.customerName) queryParams.customerName = filters.customerName;
       if (filters.astrologerName) queryParams.astrologerName = filters.astrologerName;
       
-      // Send startDate and endDate for createdAt filtering
-      if (filters.startDate) {
-        queryParams.startDate = moment(filters.startDate).startOf('day').toISOString();
-      }
-      if (filters.endDate) {
-        queryParams.endDate = moment(filters.endDate).endOf('day').toISOString();
+      // Send date parameters based on dateFilterType
+      if (filters.dateFilterType === 'createdAt') {
+        // Filter by booking created date
+        if (filters.startDate) {
+          queryParams.startDate = moment(filters.startDate).startOf('day').toISOString();
+        }
+        if (filters.endDate) {
+          queryParams.endDate = moment(filters.endDate).endOf('day').toISOString();
+        }
+      } else {
+        // Filter by consultation date
+        if (filters.startDate) {
+          queryParams.consultationStartDate = moment(filters.startDate).startOf('day').toISOString();
+        }
+        if (filters.endDate) {
+          queryParams.consultationEndDate = moment(filters.endDate).endOf('day').toISOString();
+        }
       }
 
       const query = new URLSearchParams(queryParams);
@@ -184,7 +198,7 @@ export default function Consultation() {
     }, 300); 
 
     return () => clearTimeout(timeoutId);
-  }, [filters.status, filters.customerName, filters.astrologerName, filters.startDate, filters.endDate]);
+  }, [filters.status, filters.customerName, filters.astrologerName, filters.startDate, filters.endDate, filters.dateFilterType]);
 
   const handleFilterChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -364,6 +378,7 @@ export default function Consultation() {
       astrologerName: "",
       startDate: "",
       endDate: "",
+      dateFilterType: "createdAt",
     });
     setSearchText("");
   };
@@ -449,13 +464,24 @@ export default function Consultation() {
             className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
           />
 
+          {/* New Date Filter Type Dropdown */}
+          <select
+            name="dateFilterType"
+            value={filters.dateFilterType}
+            onChange={handleFilterChange}
+            className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent bg-blue-50"
+          >
+            <option value="createdAt">Filter by Created Date</option>
+            <option value="consultationDate">Filter by Consultation Date</option>
+          </select>
+
           <input
             type="date"
             name="startDate"
             value={filters.startDate}
             onChange={handleFilterChange}
             max={filters.endDate || undefined}
-            placeholder="Created From"
+            placeholder={filters.dateFilterType === "createdAt" ? "Created From" : "Consultation From"}
             className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
           />
 
@@ -465,7 +491,7 @@ export default function Consultation() {
             value={filters.endDate}
             onChange={handleFilterChange}
             min={filters.startDate || undefined}
-            placeholder="Created To"
+            placeholder={filters.dateFilterType === "createdAt" ? "Created To" : "Consultation To"}
             className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
           />
 
