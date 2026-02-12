@@ -362,7 +362,7 @@ export default function ProfessionalInfo({ astrologerId, initialData, onUpdate }
               className="w-4 h-4 text-red-600 focus:ring-red-500 rounded flex-shrink-0"
             />
             <span className="text-sm font-medium text-gray-900">
-              Is Live
+              In House
             </span>
           </label>
         </div>

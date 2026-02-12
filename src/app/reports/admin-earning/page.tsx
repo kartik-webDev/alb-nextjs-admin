@@ -20,6 +20,7 @@ interface AstrologerDetails {
   _id: string;
   astrologerName: string;
   email?: string;
+  isLive?: boolean;
 }
 
 interface EarningBreakdown {
@@ -50,7 +51,8 @@ interface AdminEarningRow {
   transactionType: string;
   createdAt: string;
   updatedAt: string;
-  earningBreakdown?: EarningBreakdown; // Added earningBreakdown
+  earningBreakdown?: EarningBreakdown;
+  paymentStatus?: string;
 }
 
 // Utility functions
@@ -74,6 +76,16 @@ const getAstrologerName = (astrologerId: string | null | AstrologerDetails): str
   return 'N/A';
 };
 
+// Helper function to check if astrologer is in-house
+// FIXED: isLive = true means In-house, isLive = false means Outside
+const isInHouse = (astrologerId: string | null | AstrologerDetails): boolean => {
+  if (!astrologerId) return false;
+  if (typeof astrologerId === 'object' && astrologerId !== null) {
+    return !!(astrologerId as any).isLive; // In-house when isLive is TRUE
+  }
+  return false;
+};
+
 // Helper function to format type
 const formatType = (type: string): string => {
   const typeMap: Record<string, string> = {
@@ -89,19 +101,15 @@ const formatType = (type: string): string => {
 
 // Check if has earningBreakdown
 const hasEarningBreakdown = (row: AdminEarningRow): boolean => {
-  return !!row.earningBreakdown && 
-         Object.keys(row.earningBreakdown).length > 0 && 
-         typeof row.earningBreakdown === 'object';
+  return !!row.earningBreakdown && Object.keys(row.earningBreakdown).length > 0 && typeof row.earningBreakdown === 'object';
 };
 
-// ✅ NEW: Frontend Search Filter Function
+// Frontend Search Filter Function
 const searchFilterData = (data: AdminEarningRow[], searchText: string): AdminEarningRow[] => {
   if (!searchText.trim()) return data;
 
   const searchLower = searchText.toLowerCase();
-  
   return data.filter((item) => {
-    // Search across all relevant fields
     const astrologerName = getAstrologerName(item.astrologerId).toLowerCase();
     const customerName = item.customerId?.customerName?.toLowerCase() || '';
     const customerEmail = item.customerId?.email?.toLowerCase() || '';
@@ -111,7 +119,7 @@ const searchFilterData = (data: AdminEarningRow[], searchText: string): AdminEar
     const adminPrice = item.adminPrice;
     const partnerPrice = item.partnerPrice;
     const duration = item.duration.toString();
-    
+
     return (
       astrologerName.includes(searchLower) ||
       customerName.includes(searchLower) ||
@@ -128,55 +136,65 @@ const searchFilterData = (data: AdminEarningRow[], searchText: string): AdminEar
 
 const AdminEarning: React.FC = () => {
   const [allAdminEarningData, setAllAdminEarningData] = useState<AdminEarningRow[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  
+  const [isLoading, setIsLoading] = useState(true);
+
   // Filter states
   const [filters, setFilters] = useState({
-    type: 'all' as 'all' | 'Consultation' | 'puja' | 'chat' | 'call' | 'video_call',
+    type: 'all' as 'all' | 'Consultation' | 'puja',
     startDate: '',
     endDate: '',
+    location: 'all' as 'all' | 'in-house' | 'outside',
+    paymentStatus: 'all' as 'all' | 'paid' | 'unpaid',
   });
+
   const [searchText, setSearchText] = useState('');
 
-  // ✅ NEW: Filtered data with search
-  // const filteredData = useMemo(() => {
-  //   let filtered = [...allAdminEarningData];
-
-  //   // Apply type filter
-  //   if (filters.type !== 'all') {
-  //     filtered = filtered.filter(item => item.type === filters.type);
-  //   }
-
-  //   // Apply search filter
-  //   filtered = searchFilterData(filtered, searchText);
-
-  //   return filtered;
-  // }, [allAdminEarningData, filters.type, searchText]);
-  // ✅ NEW: Filtered data with search AND live astrologer filter
-const filteredData = useMemo(() => {
-  let filtered = [...allAdminEarningData];
-
-  // Apply type filter
-  if (filters.type !== 'all') {
-    filtered = filtered.filter(item => item.type === filters.type);
-  }
-
-  // ✅ Filter out live astrologers (isLive: true)
-  filtered = filtered.filter(item => {
-    const astrologer = item.astrologerId;
-    if (!astrologer) return true;
-    if (typeof astrologer === 'object') {
-      // Check if astrologer object has isLive property
-      return !(astrologer as any).isLive; // Hide if isLive is true
+  // Add dummy payment status to data
+  useEffect(() => {
+    if (allAdminEarningData.length > 0) {
+      setAllAdminEarningData(prev => prev.map(item => ({
+        ...item,
+        paymentStatus: Math.random() > 0.5 ? 'paid' : 'unpaid'
+      }))
+      );
     }
-    return true;
-  });
+  }, []);
 
-  // Apply search filter
-  filtered = searchFilterData(filtered, searchText);
+  // Filtered data with all filters
+  const filteredData = useMemo(() => {
+    let filtered = [...allAdminEarningData];
 
-  return filtered;
-}, [allAdminEarningData, filters.type, searchText]);
+    // FIXED: Type filter - Consultation shows all except puja, puja shows only puja
+    if (filters.type !== 'all') {
+      if (filters.type === 'puja') {
+        // Show only puja
+        filtered = filtered.filter(item => item.type.toLowerCase() === 'puja');
+      } else if (filters.type === 'Consultation') {
+        // Show everything except puja
+        filtered = filtered.filter(item => item.type.toLowerCase() !== 'puja');
+      }
+    }
+
+    // Apply location filter (In-house/Outside)
+    if (filters.location !== 'all') {
+      filtered = filtered.filter(item => {
+        const inHouse = isInHouse(item.astrologerId);
+        return filters.location === 'in-house' ? inHouse : !inHouse;
+      });
+    }
+
+    // Apply payment status filter
+    if (filters.paymentStatus !== 'all') {
+      filtered = filtered.filter(item =>
+        item.paymentStatus === filters.paymentStatus
+      );
+    }
+
+    // Apply search filter
+    filtered = searchFilterData(filtered, searchText);
+
+    return filtered;
+  }, [allAdminEarningData, filters.type, filters.location, filters.paymentStatus, searchText]);
 
   // Calculate totals
   const totals = useMemo(() => {
@@ -185,7 +203,7 @@ const filteredData = useMemo(() => {
       const total = parseFloat(item.totalPrice || '0');
       const admin = parseFloat(item.adminPrice || '0');
       const partner = parseFloat(item.partnerPrice || '0');
-      
+
       return {
         total: acc.total + total,
         admin: acc.admin + admin,
@@ -197,33 +215,31 @@ const filteredData = useMemo(() => {
     }, { total: 0, admin: 0, partner: 0, tds: 0, gst: 0, net: 0 });
   }, [filteredData]);
 
-  // CSV Data for ALL records export (uses filtered data)
+  // CSV Data for ALL records export
   const prepareCSVData = useMemo(() => {
     return filteredData.map((item, index) => {
       const breakdown = item.earningBreakdown;
       const hasBreakdown = hasEarningBreakdown(item);
-      
+
       return {
         "S.No.": index + 1,
+        "Date": item.createdAt ? moment(item.createdAt).format('DD/MM/YYYY') : 'N/A',
+        "Time": item.createdAt ? moment(item.createdAt).format('hh:mm A') : 'N/A',
         "Type": formatType(item.type),
         "Astrologer": getAstrologerName(item.astrologerId),
+        "Location": isInHouse(item.astrologerId) ? 'In-house' : 'Outside',
         "Customer Name": item.customerId?.customerName || 'N/A',
         "Customer Email": item.customerId?.email || 'N/A',
         "Total Amount": hasBreakdown ? breakdown?.totalPaidByUser || item.totalPrice : item.totalPrice,
         "GST Amount": hasBreakdown ? breakdown?.gstAmount || 0 : 0,
-        "Net Amount": hasBreakdown ? breakdown?.netAmount || 0 : item.totalPrice,
+        "Net Amount (After GST)": hasBreakdown ? breakdown?.netAmount || 0 : item.totalPrice,
         "Admin Share": hasBreakdown ? breakdown?.adminShare || item.adminPrice : item.adminPrice,
         "Astrologer Share": hasBreakdown ? breakdown?.astrologerShareBeforeTDS || item.partnerPrice : item.partnerPrice,
         "TDS (2%)": hasBreakdown ? breakdown?.tdsAmount || 0 : 0,
         "Astrologer Earning After TDS": hasBreakdown ? breakdown?.payableToAstrologer || item.partnerPrice : item.partnerPrice,
-        "Astrologer %": hasBreakdown ? `${breakdown?.astrologerEarningPercentage || 0}%` : 'N/A',
-        "Duration (min)": item.duration || 0,
-        "Date": item.createdAt ? moment(item.createdAt).format('DD/MM/YYYY') : 'N/A',
-        "Time": item.createdAt ? moment(item.createdAt).format('hh:mm A') : 'N/A',
-        "Astrologer ID": typeof item.astrologerId === 'object' ? item.astrologerId?._id : item.astrologerId || 'N/A',
-        "Customer ID": item.customerId?._id || 'N/A',
+        // "Payment Status": item.paymentStatus || 'unpaid',
+        // "Duration (min)": item.duration || 0,
         "Transaction ID": item.transactionId || 'N/A',
-        "Has Breakdown": hasBreakdown ? 'Yes' : 'No',
       };
     });
   }, [filteredData]);
@@ -233,27 +249,31 @@ const filteredData = useMemo(() => {
     try {
       setIsLoading(true);
       const params = new URLSearchParams();
-      
+
       if (filters.startDate) params.set('startDate', filters.startDate);
       if (filters.endDate) params.set('endDate', filters.endDate);
       if (filters.type !== 'all') params.set('type', filters.type);
 
       const url = `${process.env.NEXT_PUBLIC_API_URL}/api/admin/get_admin_earnig_history2?${params.toString()}`;
       const response = await fetch(url);
-      
+
       if (!response.ok) {
         throw new Error('Failed to fetch admin earnings');
       }
 
       const data = await response.json();
-      console.log('Admin Earnings API Response:', data); // Debug log
-      
       const sortedHistory = (data.history || []).sort(
-        (a: AdminEarningRow, b: AdminEarningRow) => 
+        (a: AdminEarningRow, b: AdminEarningRow) =>
           new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       );
-      
-      setAllAdminEarningData(sortedHistory);
+
+      // Add dummy payment status
+      const historyWithPaymentStatus = sortedHistory.map((item: AdminEarningRow) => ({
+        ...item,
+        paymentStatus: Math.random() > 0.5 ? 'paid' : 'unpaid'
+      }));
+
+      setAllAdminEarningData(historyWithPaymentStatus);
     } catch (error) {
       console.error('Error fetching admin earnings:', error);
       setAllAdminEarningData([]);
@@ -262,7 +282,7 @@ const filteredData = useMemo(() => {
     }
   };
 
-  // Fetch data on mount and filter changes (date/type only)
+  // Fetch data on mount and filter changes
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       fetchAdminEarnings();
@@ -272,9 +292,9 @@ const filteredData = useMemo(() => {
   }, [filters.startDate, filters.endDate, filters.type]);
 
   // Handle filter changes
-  const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleFilterChange = (e: React.ChangeEvent<HTMLSelectElement | HTMLInputElement>) => {
     const { name, value } = e.target;
-    
+
     // Date validation
     if (name === "startDate" && filters.endDate && value > filters.endDate) {
       alert("Start date cannot be after end date");
@@ -284,7 +304,7 @@ const filteredData = useMemo(() => {
       alert("End date cannot be before start date");
       return;
     }
-    
+
     setFilters(prev => ({ ...prev, [name]: value }));
   };
 
@@ -297,59 +317,102 @@ const filteredData = useMemo(() => {
       type: 'all',
       startDate: '',
       endDate: '',
+      location: 'all',
+      paymentStatus: 'all',
     });
     setSearchText('');
   };
 
-  // DataTable Columns - UPDATED for earningBreakdown
+  // DataTable Columns - UPDATED with removed icons from location
   const columns = useMemo(() => [
     {
       name: 'S.No.',
       selector: (row: AdminEarningRow, rowIndex?: number) => (rowIndex ?? 0) + 1,
-      width: '80px',
+      width: '70px',
+      cell: (row: AdminEarningRow, rowIndex?: number) => (
+        <div className="text-center font-medium text-gray-700">
+          {(rowIndex ?? 0) + 1}
+        </div>
+      ),
       sortable: false,
+    },
+    {
+      name: 'Date & Time',
+      selector: (row: AdminEarningRow) => row?.createdAt || '',
+      cell: (row: AdminEarningRow) => (
+        <div className="flex flex-col">
+          <span className="font-medium text-gray-800">
+            {row?.createdAt ? moment(row?.createdAt).format('DD/MM/YYYY') : 'N/A'}
+          </span>
+          <span className="text-xs text-gray-500">
+            {row?.createdAt ? moment(row?.createdAt).format('hh:mm A') : ''}
+          </span>
+        </div>
+      ),
+      width: '140px',
+      sortable: true,
     },
     {
       name: 'Type',
       selector: (row: AdminEarningRow) => formatType(row?.type),
       cell: (row: AdminEarningRow) => (
-        <div style={{ textTransform: 'capitalize', fontWeight: 500 }}>
+        <div className="px-2 py-1 bg-blue-50 text-blue-700 rounded-xl text-sm font-medium">
           {formatType(row?.type)}
         </div>
       ),
-      width: '120px',
+      width: '130px',
       sortable: true,
-      export: true,
     },
     {
-      name: 'Astrologers',
+      name: 'Location',
+      selector: (row: AdminEarningRow) => isInHouse(row.astrologerId) ? 'In-house' : 'Outside',
+      cell: (row: AdminEarningRow) => (
+        <div className="flex items-center gap-1">
+          {isInHouse(row.astrologerId) ? (
+            <span className="px-2 py-1 bg-purple-50 text-purple-700 rounded-xl text-sm font-medium">
+              In-house
+            </span>
+          ) : (
+            <span className="px-2 py-1 bg-orange-50 text-orange-700 rounded-xl text-sm font-medium">
+              Outside
+            </span>
+          )}
+        </div>
+      ),
+      width: '130px',
+      sortable: true,
+    },
+    {
+      name: 'Astrologer',
       selector: (row: AdminEarningRow) => getAstrologerName(row?.astrologerId),
       cell: (row: AdminEarningRow) => (
-        <span className="font-medium text-gray-900">{getAstrologerName(row?.astrologerId)}</span>
+        <span className="font-medium text-gray-800">
+          {getAstrologerName(row?.astrologerId)}
+        </span>
       ),
-      width: '180px',
+      width: '140px',
       sortable: true,
-      export: true,
     },
     {
       name: 'Customer',
       selector: (row: AdminEarningRow) => row?.customerId?.customerName || 'N/A',
       cell: (row: AdminEarningRow) => (
-        <div>
-          <div className="font-medium text-gray-900">{row?.customerId?.customerName || 'N/A'}</div>
+        <div className="flex flex-col">
+          <span className="font-medium text-gray-800">
+            {row?.customerId?.customerName || 'N/A'}
+          </span>
           {row?.customerId?.email && (
-            <div className="text-xs text-gray-500 truncate max-w-[180px]">
+            <span className="text-xs text-gray-500 truncate max-w-[150px]">
               {row.customerId.email}
-            </div>
+            </span>
           )}
         </div>
       ),
-      width: '220px',
+      width: '160px',
       sortable: true,
-      export: true,
     },
     {
-      name: 'Total Amount',
+      name: 'Gross Amount',
       selector: (row: AdminEarningRow) => {
         if (hasEarningBreakdown(row) && row.earningBreakdown?.totalPaidByUser) {
           return row.earningBreakdown.totalPaidByUser;
@@ -358,22 +421,83 @@ const filteredData = useMemo(() => {
       },
       cell: (row: AdminEarningRow) => {
         const hasBreakdown = hasEarningBreakdown(row);
-        const breakdown :any = row.earningBreakdown;
-        
+        const breakdown = row.earningBreakdown;
+
         return (
           <div className="font-semibold text-gray-900">
-            <div>{IndianRupee(hasBreakdown ? breakdown?.totalPaidByUser || row.totalPrice : row.totalPrice)}</div>
-            {hasBreakdown && breakdown?.gstAmount > 0 && (
-              <div className="text-xs text-gray-500">
-                (GST: {IndianRupee(breakdown.gstAmount)})
-              </div>
-            )}
+            {IndianRupee(hasBreakdown ? breakdown?.totalPaidByUser || row.totalPrice : row.totalPrice)}
           </div>
         );
       },
       width: '150px',
       sortable: true,
-      export: true,
+    },
+    {
+      name: 'GST (18%)',
+      selector: (row: AdminEarningRow) => {
+        if (hasEarningBreakdown(row)) {
+          return row.earningBreakdown?.gstAmount || 0;
+        }
+        return 0;
+      },
+      cell: (row: AdminEarningRow) => {
+        const inHouse = isInHouse(row.astrologerId);
+        
+        // For in-house astrologers, show dash
+        if (inHouse) {
+          return <span className="text-gray-400">-</span>;
+        }
+
+        const hasBreakdown = hasEarningBreakdown(row);
+        const breakdown = row.earningBreakdown;
+
+        if (!hasBreakdown || !breakdown?.gstAmount) {
+          return <span className="text-gray-400">-</span>;
+        }
+
+        return (
+          <div className="text-orange-600 font-medium">
+            {IndianRupee(breakdown.gstAmount)}
+          </div>
+        );
+      },
+      width: '130px',
+      sortable: true,
+    },
+    {
+      name: 'Taxable Amount',
+      selector: (row: AdminEarningRow) => {
+        if (hasEarningBreakdown(row) && row.earningBreakdown?.netAmount) {
+          return row.earningBreakdown.netAmount;
+        }
+        return parseFloat(row?.totalPrice || '0');
+      },
+      cell: (row: AdminEarningRow) => {
+        const inHouse = isInHouse(row.astrologerId);
+        
+        // For in-house astrologers, show dash
+        if (inHouse) {
+          return <span className="text-gray-400">-</span>;
+        }
+
+        const hasBreakdown = hasEarningBreakdown(row);
+        const breakdown: any = row.earningBreakdown;
+
+        return (
+          <div className="flex flex-col">
+            <span className="font-semibold text-gray-900">
+              {IndianRupee(hasBreakdown ? breakdown?.netAmount || row.totalPrice : row.totalPrice)}
+            </span>
+            {hasBreakdown && breakdown?.gstAmount > 0 && (
+              <span className="text-xs text-gray-500">
+                (After GST)
+              </span>
+            )}
+          </div>
+        );
+      },
+      width: '130px',
+      sortable: true,
     },
     {
       name: 'Admin Share',
@@ -384,23 +508,31 @@ const filteredData = useMemo(() => {
         return parseFloat(row?.adminPrice || '0');
       },
       cell: (row: AdminEarningRow) => {
+        const inHouse = isInHouse(row.astrologerId);
+        
+        // For in-house astrologers, show dash
+        if (inHouse) {
+          return <span className="text-gray-400">-</span>;
+        }
+
         const hasBreakdown = hasEarningBreakdown(row);
         const breakdown = row.earningBreakdown;
-        
+
         return (
-          <div className="font-bold text-green-600">
-            <div>{IndianRupee(hasBreakdown ? breakdown?.adminShare || row.adminPrice : row.adminPrice)}</div>
+          <div className="flex flex-col">
+            <span className="font-semibold text-blue-600">
+              {IndianRupee(hasBreakdown ? breakdown?.adminShare || row.adminPrice : row.adminPrice)}
+            </span>
             {hasBreakdown && (
-              <div className="text-xs text-gray-500">
+              <span className="text-xs text-gray-500">
                 ({100 - (breakdown?.astrologerEarningPercentage || 0)}%)
-              </div>
+              </span>
             )}
           </div>
         );
       },
-      width: '150px',
+      width: '138px',
       sortable: true,
-      export: true,
     },
     {
       name: 'Astro Share',
@@ -411,25 +543,31 @@ const filteredData = useMemo(() => {
         return parseFloat(row?.partnerPrice || '0');
       },
       cell: (row: AdminEarningRow) => {
+        const inHouse = isInHouse(row.astrologerId);
+        
+        // For in-house astrologers, show dash
+        if (inHouse) {
+          return <span className="text-gray-400">-</span>;
+        }
+
         const hasBreakdown = hasEarningBreakdown(row);
         const breakdown = row.earningBreakdown;
-        
+
         return (
-          <div>
-            <div className="font-medium text-blue-600">
+          <div className="flex flex-col">
+            <span className="font-semibold text-purple-600">
               {IndianRupee(hasBreakdown ? breakdown?.astrologerShareBeforeTDS || row.partnerPrice : row.partnerPrice)}
-            </div>
+            </span>
             {hasBreakdown && (
-              <div className="text-xs text-gray-500">
+              <span className="text-xs text-gray-500">
                 ({breakdown?.astrologerEarningPercentage || 0}%)
-              </div>
+              </span>
             )}
           </div>
         );
       },
-      width: '150px',
+      width: '130px',
       sortable: true,
-      export: true,
     },
     {
       name: 'TDS',
@@ -440,26 +578,32 @@ const filteredData = useMemo(() => {
         return 0;
       },
       cell: (row: AdminEarningRow) => {
+        const inHouse = isInHouse(row.astrologerId);
+        
+        // For in-house astrologers, show dash
+        if (inHouse) {
+          return <span className="text-gray-400">-</span>;
+        }
+
         const hasBreakdown = hasEarningBreakdown(row);
         const breakdown = row.earningBreakdown;
-        
+
         if (!hasBreakdown || !breakdown?.tdsAmount) {
           return <span className="text-gray-400">-</span>;
         }
-        
+
         return (
-          <div className="text-amber-600 font-medium">
-            <div>{IndianRupee(breakdown.tdsAmount)}</div>
-            <div className="text-xs text-gray-500">({breakdown.tdsPercentage}%)</div>
+          <div className="flex flex-col text-red-600">
+            <span className="font-medium">{IndianRupee(breakdown.tdsAmount)}</span>
+            <span className="text-xs">({breakdown.tdsPercentage}%)</span>
           </div>
         );
       },
-      width: '120px',
+      width: '80px',
       sortable: true,
-      export: true,
     },
     {
-      name: 'Net to Astro',
+      name: 'Astro Net',
       selector: (row: AdminEarningRow) => {
         if (hasEarningBreakdown(row) && row.earningBreakdown?.payableToAstrologer) {
           return row.earningBreakdown.payableToAstrologer;
@@ -467,273 +611,272 @@ const filteredData = useMemo(() => {
         return parseFloat(row?.partnerPrice || '0');
       },
       cell: (row: AdminEarningRow) => {
-        const hasBreakdown = hasEarningBreakdown(row);
-        const breakdown :any = row.earningBreakdown;
+        const inHouse = isInHouse(row.astrologerId);
         
-        return (
-          <div className="font-semibold">
-            <div className={`${hasBreakdown && breakdown?.tdsAmount > 0 ? 'text-green-700' : 'text-green-600'}`}>
-              {IndianRupee(hasBreakdown ? breakdown?.payableToAstrologer || row.partnerPrice : row.partnerPrice)}
-            </div>
-            {hasBreakdown && breakdown?.tdsAmount > 0 && (
-              <div className="text-xs text-gray-500">
-                After TDS
-              </div>
-            )}
-          </div>
-        );
-      },
-      width: '150px',
-      sortable: true,
-      export: true,
-    },
-    {
-      name: 'Duration',
-      selector: (row: AdminEarningRow) => row?.duration || 0,
-      cell: (row: AdminEarningRow) => (
-        <div className="flex items-center gap-1">
-          <span className="font-medium">{row?.duration || 0}</span>
-          <span className="text-xs text-gray-500">min</span>
-        </div>
-      ),
-      width: '100px',
-      sortable: true,
-      export: true,
-    },
-    {
-      name: 'Date & Time',
-      selector: (row: AdminEarningRow) => row?.createdAt || '',
-      cell: (row: AdminEarningRow) => (
-        <div className="text-sm">
-          <div>{row?.createdAt ? moment(row?.createdAt).format('DD/MM/YYYY') : 'N/A'}</div>
-          <div className="text-xs text-gray-500">
-            {row?.createdAt ? moment(row?.createdAt).format('hh:mm A') : ''}
-          </div>
-        </div>
-      ),
-      width: '140px',
-      sortable: true,
-      export: true,
-    },
-    {
-      name: 'Details',
-      cell: (row: AdminEarningRow) => {
-        const hasBreakdown = hasEarningBreakdown(row);
-        
-        if (!hasBreakdown) {
+        // For in-house astrologers, show dash
+        if (inHouse) {
           return <span className="text-gray-400">-</span>;
         }
-        
+
+        const hasBreakdown = hasEarningBreakdown(row);
+        const breakdown: any = row.earningBreakdown;
+
         return (
-          <Tooltip 
-            title={
-              <div className="p-2 text-sm">
-                <div className="font-semibold mb-2">Breakdown Details</div>
-                <div className="space-y-1">
-                  <div className="flex justify-between">
-                    <span>Total Paid:</span>
-                    <span>{IndianRupee(row.earningBreakdown?.totalPaidByUser || 0)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>GST:</span>
-                    <span className="text-red-500">{IndianRupee(row.earningBreakdown?.gstAmount || 0)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Net Amount:</span>
-                    <span>{IndianRupee(row.earningBreakdown?.netAmount || 0)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Astro Share:</span>
-                    <span>{row.earningBreakdown?.astrologerEarningPercentage || 0}%</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>TDS:</span>
-                    <span className="text-amber-600">{row.earningBreakdown?.tdsPercentage || 0}%</span>
-                  </div>
-                </div>
-              </div>
-            }
-            arrow
-            placement="left"
-          >
-            <button className="p-1 text-blue-600 hover:text-blue-800">
-              <Info className="w-4 h-4" />
-            </button>
-          </Tooltip>
+          <div className={`font-semibold ${breakdown?.tdsAmount > 0 ? 'text-green-700' : 'text-green-600'}`}>
+            {IndianRupee(hasBreakdown ? breakdown?.payableToAstrologer || row.partnerPrice : row.partnerPrice)}
+          </div>
         );
       },
-      width: '80px',
-      sortable: false,
-      export: false,
+      width: '130px',
+      sortable: true,
     },
+    // {
+    //   name: 'Duration',
+    //   selector: (row: AdminEarningRow) => row?.duration || 0,
+    //   cell: (row: AdminEarningRow) => (
+    //     <div className="text-gray-700">
+    //       <span className="font-medium">{row?.duration || 0}</span> min
+    //     </div>
+    //   ),
+    //   width: '120px',
+    //   sortable: true,
+    // },
+    // {
+    //   name: 'Payment Status',
+    //   selector: (row: AdminEarningRow) => row.paymentStatus || 'unpaid',
+    //   cell: (row: AdminEarningRow) => (
+    //     <div className="flex items-center gap-1">
+    //       {row.paymentStatus === 'paid' ? (
+    //         <span className="px-2 py-1 bg-green-50 text-green-700 rounded-md text-sm font-medium">
+    //           Paid
+    //         </span>
+    //       ) : (
+    //         <span className="px-2 py-1 bg-red-50 text-red-700 rounded-md text-sm font-medium">
+    //           Unpaid
+    //         </span>
+    //       )}
+    //     </div>
+    //   ),
+    //   width: '150px',
+    //   sortable: true,
+    // },
   ], []);
 
-  const hasActiveFilters = filters.type !== 'all' || filters.startDate || filters.endDate || searchText;
+  const hasActiveFilters = filters.type !== 'all' || filters.startDate || filters.endDate || searchText || filters.location !== 'all' || filters.paymentStatus !== 'all';
 
   return (
-    <div className="p-6 bg-white rounded-lg shadow-sm border border-gray-200">
+    <div className="p-6 bg-gray-50 min-h-screen">
       {/* Header */}
-      <div className="flex justify-between items-center mb-6">
+      <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Admin Earnings</h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <h1 className="text-3xl font-bold text-gray-800">Admin Earnings</h1>
+          <p className="text-sm text-gray-600 mt-1">
             Showing {filteredData.length} of {allAdminEarningData.length} records
-            {filteredData.length > 0 && ` • ${filteredData.filter(hasEarningBreakdown).length} with detailed breakdown`}
           </p>
         </div>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
-        <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-          <div className="text-sm text-blue-700 font-medium">Total Amount</div>
-          <div className="text-xl font-bold text-blue-900 mt-1">{IndianRupee(totals.total)}</div>
-        </div>
-        <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-          <div className="text-sm text-green-700 font-medium">Admin Earnings</div>
-          <div className="text-xl font-bold text-green-900 mt-1">{IndianRupee(totals.admin)}</div>
-        </div>
-        <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
-          <div className="text-sm text-purple-700 font-medium">Astro Earnings</div>
-          <div className="text-xl font-bold text-purple-900 mt-1">{IndianRupee(totals.partner)}</div>
-        </div>
-        <div className="bg-amber-50 p-4 rounded-lg border border-amber-200">
-          <div className="text-sm text-amber-700 font-medium">TDS Collected</div>
-          <div className="text-xl font-bold text-amber-900 mt-1">{IndianRupee(totals.tds)}</div>
-        </div>
-        <div className="bg-red-50 p-4 rounded-lg border border-red-200">
-          <div className="text-sm text-red-700 font-medium">GST Collected</div>
-          <div className="text-xl font-bold text-red-900 mt-1">{IndianRupee(totals.gst)}</div>
-        </div>
-        <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-          <div className="text-sm text-gray-700 font-medium">Net Amount</div>
-          <div className="text-xl font-bold text-gray-900 mt-1">{IndianRupee(totals.net)}</div>
-        </div>
-      </div>
-
-      {/* Filters */}
-      <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 mb-6">
-        <div className="flex flex-wrap gap-4 items-end">
+      {/* Filters Section */}
+      <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-8 gap-4 items-end">
           {/* Type Filter */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Type</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              <Filter className="inline w-4 h-4 mr-1" />
+              Type
+            </label>
             <select
               name="type"
               value={filters.type}
               onChange={handleFilterChange}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="all">All Types</option>
-              <option value="consultation">Consultation</option>
+              <option value="Consultation">Consultation</option>
               <option value="puja">Puja</option>
-              <option value="chat">Chat</option>
-              <option value="call">Call</option>
-              <option value="video_call">Video Call</option>
+            </select>
+          </div>
+
+          {/* Location Filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Location
+            </label>
+            <select
+              name="location"
+              value={filters.location}
+              onChange={handleFilterChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="all">All Locations</option>
+              <option value="in-house">In-house</option>
+              <option value="outside">Outside</option>
+            </select>
+          </div>
+
+          {/* Payment Status Filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Payment Status
+            </label>
+            <select
+              name="paymentStatus"
+              value={filters.paymentStatus}
+              onChange={handleFilterChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="all">All Status</option>
+              <option value="paid">Paid</option>
+              <option value="unpaid">Unpaid</option>
             </select>
           </div>
 
           {/* Date Filters */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">From Date</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              <Calendar className="inline w-4 h-4 mr-1" />
+              From Date
+            </label>
             <input
               type="date"
               name="startDate"
               value={filters.startDate}
               onChange={handleFilterChange}
-              max={filters.endDate || undefined}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+              className="w-full px-3 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">To Date</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              <Calendar className="inline w-4 h-4 mr-1" />
+              To Date
+            </label>
             <input
               type="date"
               name="endDate"
               value={filters.endDate}
               onChange={handleFilterChange}
-              min={filters.startDate || undefined}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+              className="w-full px-3 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
-          {/* ✅ Search */}
-          <div className="flex-1 min-w-[300px]">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
+          {/* Search */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Search
+            </label>
             <input
               type="text"
-              placeholder="Search astrologer, customer, email, transaction ID..."
+              placeholder="Search..."
               value={searchText}
               onChange={handleSearch}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+              className="w-full px-3 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
-          {/* Download All Records Button */}
-          {filteredData.length > 0 && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Export</label>
+          {/* Export Button */}
+          <div>
+            {filteredData.length > 0 && (
               <CSVLink
                 data={prepareCSVData}
-                filename={`Admin_Earnings_Detailed_${moment().format('YYYY-MM-DD_HH-mm-ss')}.csv`}
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2 shadow-sm whitespace-nowrap"
+                filename={`Admin_Earnings_${moment().format('YYYY-MM-DD_HH-mm-ss')}.csv`}
+                className="w-full px-4 py-2 bg-red-600 text-white rounded-md hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
               >
                 <Download className="w-4 h-4" />
-                Download ({filteredData.length})
+                ({filteredData.length})
               </CSVLink>
-            </div>
-          )}
+            )}
+          </div>
 
-          {/* Clear Filters */}
-          {hasActiveFilters && (
-            <button
-              onClick={handleClearFilters}
-              className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
-            >
-              <Filter className="w-4 h-4" />
-              Clear Filters
-            </button>
-          )}
+          {/* Clear Button */}
+          <div>
+            {hasActiveFilters && (
+              <button
+                onClick={handleClearFilters}
+                className="w-full px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
+              >
+                Clear
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* ✅ DataTable - Uses filteredData */}
+      {/* Summary Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-2 mb-6">
+        <div className="bg-white rounded-lg shadow-sm p-4">
+          <p className="text-xs text-gray-600 mb-1">Gross Amount</p>
+          <p className="text-lg font-bold text-gray-900">{IndianRupee(totals.total)}</p>
+        </div>
+        <div className="bg-white rounded-lg shadow-sm p-4">
+          <p className="text-xs text-gray-600 mb-1">GST</p>
+          <p className="text-lg font-bold text-orange-600">{IndianRupee(totals.gst)}</p>
+        </div>
+        <div className="bg-white rounded-lg shadow-sm p-4">
+          <p className="text-xs text-gray-600 mb-1">Taxable Amount</p>
+          <p className="text-lg font-bold text-gray-900">{IndianRupee(totals.net)}</p>
+        </div>
+        <div className="bg-white rounded-lg shadow-sm p-4">
+          <p className="text-xs text-gray-600 mb-1">Admin Share</p>
+          <p className="text-lg font-bold text-blue-600">{IndianRupee(totals.admin)}</p>
+        </div>
+        <div className="bg-white rounded-lg shadow-sm p-4">
+          <p className="text-xs text-gray-600 mb-1">Astro Share</p>
+          <p className="text-lg font-bold text-purple-600">{IndianRupee(totals.partner)}</p>
+        </div>
+        <div className="bg-white rounded-lg shadow-sm p-4">
+          <p className="text-xs text-gray-600 mb-1">TDS</p>
+          <p className="text-lg font-bold text-red-600">{IndianRupee(totals.tds)}</p>
+        </div>
+        <div className="bg-white rounded-lg shadow-sm p-4">
+          <p className="text-xs text-gray-600 mb-1">Records</p>
+          <p className="text-lg font-bold text-gray-900">{filteredData.length}</p>
+        </div>
+      </div>
+
+      {/* DataTable */}
       <MainDatatable
         data={filteredData}
-        columns={columns.map(col => ({
+        columns={columns.map((col) => ({
           ...col,
           minwidth: col.width,
-          width: undefined,
+          width: col.width,
         }))}
-        title="Admin Earnings Report"
+        title=""
         isLoading={isLoading}
-        exportHeaders={true}
-        fileName={`Admin_Earnings_Detailed_${moment().format('YYYY-MM-DD_HH-mm-ss')}`}
+        exportHeaders={false}
+        fileName={`Admin_Earnings_${moment().format('YYYY-MM-DD_HH-mm-ss')}`}
         showSearch={false}
       />
 
-      {/* Legend for Breakdown */}
-      <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200 text-sm">
-        <div className="flex items-center gap-2 mb-2">
-          <Info className="w-4 h-4 text-blue-600" />
-          <span className="font-medium text-gray-700">Legend:</span>
-        </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      {/* Legend */}
+      <div className="mt-6 bg-white rounded-lg shadow-sm p-4">
+        <p className="text-sm font-medium text-gray-700 mb-3">Legend:</p>
+        <div className="flex flex-wrap gap-4 text-sm">
           <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-blue-100 border border-blue-300 rounded"></div>
-            <span>Astro Share: Earnings before TDS</span>
+            <span className="px-2 py-1 bg-purple-50 text-purple-700 rounded-md text-xs font-medium">
+              In-house
+            </span>
+            <span className="text-gray-600">(isLive: true)</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-green-100 border border-green-300 rounded"></div>
-            <span>Net to Astro: After TDS deduction</span>
+            <span className="px-2 py-1 bg-orange-50 text-orange-700 rounded-md text-xs font-medium">
+              Outside
+            </span>
+            <span className="text-gray-600">(isLive: false)</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-amber-100 border border-amber-300 rounded"></div>
-            <span>TDS: 2% tax deducted at source</span>
+            <span className="px-2 py-1 bg-green-50 text-green-700 rounded-md text-xs font-medium">
+              Paid
+            </span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-red-100 border border-red-300 rounded"></div>
-            <span>GST: 18% GST included in total</span>
+            <span className="px-2 py-1 bg-red-50 text-red-700 rounded-md text-xs font-medium">
+              Unpaid
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-gray-600">TDS: 2%</span>
           </div>
         </div>
       </div>
