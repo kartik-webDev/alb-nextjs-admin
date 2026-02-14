@@ -175,11 +175,11 @@ export const RouteName = [
         name: "First Consultation Offer",
         icon: <OtherRouteSvg />,
       },
-      {
-        path: "/dubai-consultation",
-        name: "Dubai Consultation",
-        icon: <OtherRouteSvg />,
-      },
+      // {
+      //   path: "/dubai-consultation",
+      //   name: "Dubai Consultation",
+      //   icon: <OtherRouteSvg />,
+      // },
     ],
   },
 
