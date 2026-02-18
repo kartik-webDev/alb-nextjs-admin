@@ -886,6 +886,7 @@ const showShareModal = async (paymentLink: string, consultationLogId: string) =>
           headers: {
             'Content-Type': 'application/json',
           },
+           credentials: 'include', 
           body: JSON.stringify(orderPayload)
         }
       );
