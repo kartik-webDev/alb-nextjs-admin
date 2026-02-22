@@ -16,9 +16,6 @@ import { AstrologerData, User as UserType } from '../types';
 import DatePicker from './DatePicker';
 import DatePickerSpecial from './DatePickerSpecial';
 
-// ─────────────────────────────────────────────
-// Types
-// ─────────────────────────────────────────────
 
 interface ConsultationPrice {
   price: number;
@@ -80,11 +77,6 @@ interface BookingSectionProps {
   consultationPrices: ConsultationPrice[];
 }
 
-type PaymentMethod = 'razorpay' | 'stripe';
-
-// ─────────────────────────────────────────────
-// Helpers
-// ─────────────────────────────────────────────
 
 const getAvailableSessionTypes = (astrologerData: AstrologerData): SessionType[] => {
   const all: SessionType[] = [
@@ -104,21 +96,17 @@ const formatTime = (time: string): string => {
   return `${hr % 12 || 12}:${m} ${hr >= 12 ? 'PM' : 'AM'}`;
 };
 
-// ─────────────────────────────────────────────
-// Component
-// ─────────────────────────────────────────────
 
 const BookingSection: React.FC<BookingSectionProps> = ({
   astrologerId,
   astrologerData,
-  onLoginRequired,
   consultationPrices,
-}): React.ReactElement => {                          // ✅ explicit return type
+}): React.ReactElement => {    
 
   const router = useRouter();
   const { error: razorpayError, Razorpay } = useRazorpay();
 
-  const isSpecialAstrologer                           = astrologerData?.hasSpecialPricing === true;
+  const isSpecialAstrologer = astrologerData?.hasSpecialPricing === true;
   const SPECIAL_PRICING_CONFIG: Record<string, number> = astrologerData?.specialPricingRates ?? {};
 
   const getSpecialPrice = (dur: number): number | null =>
@@ -128,23 +116,23 @@ const BookingSection: React.FC<BookingSectionProps> = ({
   const [customerSession, setCustomerSession] = useState<CustomerSession | null>(null);
 
   // ── State ─────────────────────────────────────────────────────
-  const [isUrgentBooking,       setIsUrgentBooking]       = useState(false);
-  const [isNewCustomer,         setIsNewCustomer]         = useState(false);
-  const [globalOfferPrice,      setGlobalOfferPrice]      = useState<number | null>(null);
-  const [checkingNewCustomer,   setCheckingNewCustomer]   = useState(false);
-  const [slotsData,             setSlotsData]             = useState<SlotsApiResponse | null>(null);
-  const [loadingSlots,          setLoadingSlots]          = useState(false);
-  const [slotsError,            setSlotsError]            = useState<string | null>(null);
-  const [isBooking,             setIsBooking]             = useState(false);
-  const [hasFutureSlots,        setHasFutureSlots]        = useState<boolean | null>(null);
-  const [showConsultationForm,  setShowConsultationForm]  = useState(false);
-  const [consultationFormData,  setConsultationFormData]  = useState<FormOutput | null>(null);
-  const [isFormValid,           setIsFormValid]           = useState(false);
-  const [showAllSlots,          setShowAllSlots]          = useState(false);
-  const [availableDurations,    setAvailableDurations]    = useState<number[]>([]);
-  const [loadingDurations,      setLoadingDurations]      = useState(false);
-  const [durationCounts,        setDurationCounts]        = useState<DurationCount[]>([]);
-  const [paymentLinkStatus,     setPaymentLinkStatus]     = useState<{
+  const [isUrgentBooking, setIsUrgentBooking]       = useState(false);
+  const [isNewCustomer, setIsNewCustomer]         = useState(false);
+  const [globalOfferPrice, setGlobalOfferPrice]      = useState<number | null>(null);
+  const [checkingNewCustomer, setCheckingNewCustomer]   = useState(false);
+  const [slotsData, setSlotsData]             = useState<SlotsApiResponse | null>(null);
+  const [loadingSlots, setLoadingSlots]          = useState(false);
+  const [slotsError, setSlotsError]            = useState<string | null>(null);
+  const [isBooking, setIsBooking]             = useState(false);
+  const [hasFutureSlots, setHasFutureSlots]        = useState<boolean | null>(null);
+  const [showConsultationForm, setShowConsultationForm]  = useState(false);
+  const [consultationFormData, setConsultationFormData]  = useState<FormOutput | null>(null);
+  const [isFormValid,setIsFormValid]           = useState(false);
+  const [showAllSlots,setShowAllSlots]          = useState(false);
+  const [availableDurations,setAvailableDurations]    = useState<number[]>([]);
+  const [loadingDurations, setLoadingDurations] = useState(false);
+  const [durationCounts,setDurationCounts]= useState<DurationCount[]>([]);
+  const [paymentLinkStatus,setPaymentLinkStatus]= useState<{
     consultationLogId: string;
     status: 'pending' | 'paid' | 'failed';
   } | null>(null);
@@ -453,7 +441,7 @@ const BookingSection: React.FC<BookingSectionProps> = ({
   };
 
   // ── Create Payment Link ───────────────────────────────────────
-  const handleCreatePaymentLink = async () => {
+const handleCreatePaymentLink = async () => {
     if (!modalData.selectedSlot) { toaster.info({ text: 'Please select a slot first' }); return; }
     if (!customerSession)        { toaster.error({ text: 'Please login with customer phone number first' }); return; }
     if (!isFormValid)            { toaster.error({ text: 'Please fill all required customer details' }); return; }
@@ -469,30 +457,50 @@ const BookingSection: React.FC<BookingSectionProps> = ({
       const dur        = parseInt(modalData.duration_minutes.replace('min', ''));
       const finalPrice = getCorrectPrice(dur);
 
+      // ── Get current admin ID ──────────────────────────────────
+      let adminId: string | null = null;
+      try {
+        const adminRes = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/admin/me`,
+          { method: 'GET', credentials: 'include' }   
+        );
+        if (adminRes.ok) {
+          const adminData = await adminRes.json();
+          adminId = adminData?.userId ?? null;
+          console.log('Admin fetched:', adminData?.username, '| ID:', adminId);
+        } else {
+          console.warn('Could not fetch admin info, proceeding without adminId');
+        }
+      } catch (e) {
+        console.warn('Admin fetch failed:', e);
+      }
+      // ─────────────────────────────────────────────────────────
+
       const payload = {
         amount:            finalPrice,
         astrologerId,
-        slotId:            modalData.selectedSlot._id,
-        consultationType:  modalData.consultation_type,
-        duration:          modalData.selectedSlot.duration,
-        customerName:      consultationFormData?.fullName      ?? customerSession.customerName,
-        customerPhone:     consultationFormData?.mobileNumber  ?? customerSession.phoneNumber,
-        customerEmail:     consultationFormData?.email         ?? customerSession.email ?? '',
-        gender:            consultationFormData?.gender        ?? '',
-        dateOfBirth:       consultationFormData?.dateOfBirth   ?? '',
-        timeOfBirth:       consultationFormData?.timeOfBirth   ?? '',
-        placeOfBirth:      consultationFormData?.placeOfBirth  ?? '',
-        latitude:          consultationFormData?.latitude      ?? 0,
-        longitude:         consultationFormData?.longitude     ?? 0,
+        slotId: modalData.selectedSlot._id,
+        consultationType: modalData.consultation_type,
+        duration: modalData.selectedSlot.duration,
+        customerName: consultationFormData?.fullName ?? customerSession.customerName,
+        customerPhone: consultationFormData?.mobileNumber  ?? customerSession.phoneNumber,
+        customerEmail: consultationFormData?.email         ?? customerSession.email ?? '',
+        gender: consultationFormData?.gender        ?? '',
+        dateOfBirth: consultationFormData?.dateOfBirth   ?? '',
+        timeOfBirth: consultationFormData?.timeOfBirth   ?? '',
+        placeOfBirth: consultationFormData?.placeOfBirth  ?? '',
+        latitude: consultationFormData?.latitude      ?? 0,
+        longitude: consultationFormData?.longitude     ?? 0,
         dontKnowBirthDate: consultationFormData?.dontKnowDOB  ?? false,
         dontKnowBirthTime: consultationFormData?.dontKnowTOB  ?? false,
         consultationTopic: consultationFormData?.consultationTopic ?? 'Astrology Consultation',
-        createdBy:         { userId: customerSession.customerId, userType: 'customer' },
+        createdBy: { userId: customerSession.customerId, userType: 'customer' },
+        createdByAdminId: adminId,
       };
 
       const res  = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/api/customers/payment-link/create`,
-        { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }
+        { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(payload) }
       );
       const data = await res.json();
       Swal.close();
@@ -553,9 +561,6 @@ const BookingSection: React.FC<BookingSectionProps> = ({
     return data;
   };
 
-  // ─────────────────────────────────────────────────────────────
-  // Derived values
-  // ─────────────────────────────────────────────────────────────
 
   const getFilteredPrices = (): ConsultationPrice[] => {
     const sorted = [...consultationPrices].sort((a, b) => a.price - b.price);
@@ -571,17 +576,15 @@ const BookingSection: React.FC<BookingSectionProps> = ({
     return showAllSlots ? all : all.slice(0, 8);
   };
 
-  const hasValidCustomer     = !!customerSession?.customerId;
-  const isLinkDisabled       = !modalData.selectedSlot || !isFormValid || !hasValidCustomer;
-  const displaySlots         = getDisplaySlots();
-  const allAvailableSlots    = getAvailableSlots().filter((s) => s.status === 'available');
-  const hasMoreSlots         = allAvailableSlots.length > 8;
-  const filteredPrices       = getFilteredPrices();
-  const web_urls             = process.env.NEXT_PUBLIC_IMAGE_URL ?? 'https://api.acharyalavbhushan.com/';
+  const hasValidCustomer = !!customerSession?.customerId;
+  const isLinkDisabled = !modalData.selectedSlot || !isFormValid || !hasValidCustomer;
+  const displaySlots = getDisplaySlots();
+  const allAvailableSlots = getAvailableSlots().filter((s) => s.status === 'available');
+  const hasMoreSlots = allAvailableSlots.length > 8;
+  const filteredPrices = getFilteredPrices();
+  const web_urls = process.env.NEXT_PUBLIC_IMAGE_URL
 
-  // ─────────────────────────────────────────────────────────────
-  // Early returns
-  // ─────────────────────────────────────────────────────────────
+
 
   if (loadingDurations) {
     return (
@@ -621,10 +624,6 @@ const BookingSection: React.FC<BookingSectionProps> = ({
       </div>
     );
   }
-
-  // ─────────────────────────────────────────────────────────────
-  // Main render
-  // ─────────────────────────────────────────────────────────────
 
   return (
     <div className="lg:border rounded-xl lg:p-6 bg-white shadow-sm min-h-[600px]">
