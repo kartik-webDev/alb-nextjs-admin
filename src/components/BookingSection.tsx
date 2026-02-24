@@ -896,13 +896,13 @@ const handleCreatePaymentLink = async () => {
         )}
 
         {/* Hint messages */}
-        {isLinkDisabled && showConsultationForm && (
+        {/* {isLinkDisabled && showConsultationForm && (
           <div className="text-xs text-gray-500 text-center space-y-0.5">
             {!hasValidCustomer && <div>→ Login with customer phone number first</div>}
             {!modalData.selectedSlot && <div>→ Select a date and time slot</div>}
             {!isFormValid && hasValidCustomer && <div>→ Fill all required fields in the form</div>}
           </div>
-        )}
+        )} */}
 
         {razorpayError && (
           <p className="text-xs text-red-500 text-center">Payment gateway error: {razorpayError}</p>

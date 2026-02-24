@@ -195,13 +195,28 @@ const MyBooking = () => {
 };
 
   const fetchConsultations = async () => {
+    let adminId: string | null = null;
+    try {
+      const adminRes = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/admin/me`,
+        { method: 'GET', credentials: 'include' }   
+      );
+      if (adminRes.ok) {
+        const adminData = await adminRes.json();
+        adminId = adminData?.userId ?? null;
+      } else {
+        console.warn('Could not fetch admin info, proceeding without adminId');
+      }
+    } catch (e) {
+      console.warn('Admin fetch failed:', e);
+    }
     try {
       setLoading(true);
       const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
       const today = moment().tz('Asia/Kolkata').format('YYYY-MM-DD');
       const currentTime = moment().tz('Asia/Kolkata').format('HH:mm');
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/customers/get_consultations/all?customerId=${customerId}&currentDate=${today}&currentTime=${currentTime}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/api/customers/get_consultations_by_adminId/all?createdByAdminId=${adminId}&currentDate=${today}&currentTime=${currentTime}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -521,7 +536,7 @@ const MyBooking = () => {
 
           {type === 'upcoming' && (
             <div className="flex items-center justify-end gap-3">
-              <button
+              {/* <button
                 onClick={() => handleJoinConsultation(data)}
                 disabled={!canJoin || isJoining}
                 className={`px-6 py-3 rounded-xl flex items-center gap-2 shadow-md text-sm font-semibold transition-all duration-300 transform hover:scale-105 ${canJoin && !isJoining
@@ -542,7 +557,7 @@ const MyBooking = () => {
                     Join Now
                   </>
                 )}
-              </button>
+              </button> */}
 
               {/* ✅ FIXED: Pass date and toTime */}
               <button
@@ -573,12 +588,12 @@ const MyBooking = () => {
 
           {type === 'completed' && (
             <div className="flex gap-3 justify-end">
-              <button
+              {/* <button
                 onClick={() => handleModalOpen({ type: 'Rating', data: data })}
                 className="px-6 py-3 rounded-xl flex items-center gap-2 shadow-md text-sm font-semibold transition-all duration-300 transform hover:scale-105 bg-gradient-to-r from-red-500 to-red-700 hover:from-red-600 hover:to-red-800 text-white cursor-pointer"
               >
                 <Star size={18} /> Add Review
-              </button>
+              </button> */}
             </div>
           )}
 
@@ -587,6 +602,36 @@ const MyBooking = () => {
               <span className="bg-red-100 text-red-600 px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 shadow-sm">
                 <Ban size={16} /> Cancelled
               </span>
+            </div>
+          )}
+
+              {type === 'expired' && (
+            <div className="flex gap-3 justify-end">
+              <span className="bg-gray-200 text-gray-500 px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 shadow-sm">
+                <Clock size={16} /> Expired
+              </span>
+              <button
+                disabled={!canReschedule}
+                onClick={() =>
+                  handleModalOpen({
+                    type: 'Consultation',
+                    data: {
+                      bookingId: data?._id,
+                      duration_minutes: data?.slotId?.duration,
+                      consultation_type: data?.consultationType,
+                      astrologerId: data?.astrologerId?._id,
+                      date: data?.date,
+                      toTime: data?.fromTime,
+                    },
+                  })
+                }
+                className={`px-6 py-3 rounded-xl flex items-center gap-2 shadow-md text-sm font-semibold transition-all duration-300 transform hover:scale-105 ${canReschedule
+                    ? 'bg-gradient-to-r from-amber-500 to-amber-700 hover:from-amber-600 hover:to-amber-800 text-white cursor-pointer'
+                    : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                  }`}
+              >
+                <CalendarClock size={18} /> Reschedule
+              </button>
             </div>
           )}
         </div>
@@ -640,12 +685,12 @@ const MyBooking = () => {
                 <p className="text-sm text-gray-500 mt-1">Your {activeTab} consultations will appear here</p>
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center text-gray-400 py-20 bg-white rounded-2xl shadow-sm">
-                <div className="p-6 bg-gradient-to-br from-red-100 to-pink-100/50 rounded-full mb-4">
-                  <UserCircle2 size={48} className="text-red-500" />
+                 <div className="flex flex-col items-center justify-center text-gray-400 py-20 bg-white rounded-2xl shadow-sm">
+                <div className="p-6 bg-gradient-to-br from-gray-100 to-red-100/50 rounded-full mb-4">
+                  <Video size={48} className="text-gray-400" />
                 </div>
-                <p className="mt-2 text-xl font-semibold text-gray-700">Sign in to view your bookings</p>
-                <p className="text-sm text-gray-500 mt-1">Please log in to see your consultation history</p>
+                <p className="mt-2 text-lg font-medium">No {activeTab} appointments found</p>
+                <p className="text-sm text-gray-500 mt-1">Your {activeTab} consultations will appear here</p>
               </div>
             )
             }
