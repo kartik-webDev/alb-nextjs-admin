@@ -162,7 +162,7 @@ const ConsultationModal = ({
       const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
       
       const response = await fetch(
-        `/customers/reschedule-booking`,
+        `${process.env.NEXT_PUBLIC_API_URL}/api/customers/reschedule-booking`,
         {
           method: 'POST',
           headers: {

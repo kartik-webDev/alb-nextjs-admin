@@ -474,6 +474,13 @@ const handleCreatePaymentLink = async () => {
       } catch (e) {
         console.warn('Admin fetch failed:', e);
       }
+      
+      let startTime = null;
+      if (modalData.selectedSlot && modalData.selectedDate) {
+        const fromTime12hr = moment(modalData.selectedSlot.fromTime, 'HH:mm').format('hh:mm A');
+        startTime = `${modalData.selectedDate} ${fromTime12hr}`;
+        console.log('📅 Generated startTime (12hr format):', startTime);
+      }
       // ─────────────────────────────────────────────────────────
 
       const payload = {
@@ -496,7 +503,19 @@ const handleCreatePaymentLink = async () => {
         consultationTopic: consultationFormData?.consultationTopic ?? 'Astrology Consultation',
         createdBy: { userId: customerSession.customerId, userType: 'customer' },
         createdByAdminId: adminId,
+        startTime: startTime,
       };
+
+      // Debug: Check if startTime is present for video calls
+      if (modalData.consultation_type === 'videocall') {
+        console.log('🎥 Video call payload:', {
+          consultationType: payload.consultationType,
+          startTime: payload.startTime,
+          slotFromTime: modalData.selectedSlot.fromTime,
+          fromTime12hr: moment(modalData.selectedSlot.fromTime, 'HH:mm').format('hh:mm A'),
+          selectedDate: modalData.selectedDate
+        });
+      }
 
       const res  = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/api/customers/payment-link/create`,

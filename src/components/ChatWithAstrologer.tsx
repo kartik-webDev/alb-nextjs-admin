@@ -595,7 +595,7 @@ const PriceDisplay = ({ astrologer }: { astrologer: AstrologerData }) => {
                     <div className="relative w-32 h-32">
                       <div className="w-full h-full rounded-full overflow-hidden bg-white">
                         <img
-                          src={`${process.env.NEXT_PUBLIC_PREFIX_IMAGE_URL}${astrologer.profileImage}`}
+                          src={`${process.env.NEXT_PUBLIC_IMAGE_URL}${astrologer.profileImage}`}
                           alt={astrologer.astrologerName}
                           className="w-full h-full object-cover object-top hover:scale-105 transition-transform duration-300"
                           onError={(e) => {
