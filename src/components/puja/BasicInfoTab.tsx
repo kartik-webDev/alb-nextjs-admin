@@ -36,8 +36,6 @@ const BasicInfoTab: React.FC<Props> = ({
   const mainImageInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
 
-  // No helper needed - parent component already handles full URLs
-
   return (
     <div className="space-y-8">
       {/* Images Section */}
@@ -53,7 +51,6 @@ const BasicInfoTab: React.FC<Props> = ({
             Main Image <span className="text-red-500">*</span>
           </label>
           <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
-            {/* Upload Area */}
             <div className="flex-1">
               <div 
                 className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-all hover:border-red-500 hover:bg-red-50/30 ${
@@ -213,7 +210,7 @@ const BasicInfoTab: React.FC<Props> = ({
             )}
           </div>
 
-          {/* Admin Commission - Fixed: Only whole numbers */}
+          {/* Admin Commission */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Admin Commission (%) <span className="text-red-500">*</span>
@@ -257,6 +254,46 @@ const BasicInfoTab: React.FC<Props> = ({
             )}
           </div>
 
+          {/* Purpose */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Purpose <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              name="purpose"
+              value={inputFieldDetail.purpose || ''}
+              onChange={handleInputChange}
+              className={`w-full h-10 px-3 text-sm border rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all ${
+                fieldErrors['purpose'] ? 'border-red-500' : 'border-gray-300'
+              }`}
+              placeholder="e.g., To seek divine blessings for protection and strength"
+            />
+            {fieldErrors['purpose'] && (
+              <p className="text-red-500 text-xs mt-1.5">{fieldErrors['purpose']}</p>
+            )}
+          </div>
+
+          {/* Mode */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Mode <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              name="mode"
+              value={inputFieldDetail.mode || ''}
+              onChange={handleInputChange}
+              className={`w-full h-10 px-3 text-sm border rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all ${
+                fieldErrors['mode'] ? 'border-red-500' : 'border-gray-300'
+              }`}
+              placeholder="e.g., Online with Personalized Sankalp and Prasad Delivery"
+            />
+            {fieldErrors['mode'] && (
+              <p className="text-red-500 text-xs mt-1.5">{fieldErrors['mode']}</p>
+            )}
+          </div>
+
           {/* Overview - Full Width */}
           <div className="md:col-span-2">
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -275,6 +312,26 @@ const BasicInfoTab: React.FC<Props> = ({
             />
             {fieldErrors['overview'] && (
               <p className="text-red-500 text-xs mt-1.5">{fieldErrors['overview']}</p>
+            )}
+          </div>
+
+          {/* inclusion - Full Width */}
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Inclusion <span className="text-red-500">*</span>
+            </label>
+            <textarea
+              name="inclusion"
+              value={inputFieldDetail.inclusion || ''}
+              onChange={handleInputChange}
+              rows={3}
+              className={`w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all resize-none ${
+                fieldErrors['inclusion'] ? 'border-red-500' : 'border-gray-300'
+              }`}
+              placeholder="e.g., Complete rituals, Vedic Mantra Chanting, Havan, Sankalp, Energized Prasad Potli, and Puja Recording"
+            />
+            {fieldErrors['inclusion'] && (
+              <p className="text-red-500 text-xs mt-1.5">{fieldErrors['inclusion']}</p>
             )}
           </div>
         </div>

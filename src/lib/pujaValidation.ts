@@ -16,6 +16,9 @@ export const basicInfoSchema = z.object({
     }),
   overview: z.string().min(10, 'Overview must be at least 10 characters'),
   duration: z.string().optional(),
+  purpose: z.string().min(1, 'Purpose is required'),
+  mode: z.string().min(1, 'Mode is required'),
+  inclusion: z.string().min(1, 'Inclusion is required'),
 });
 
 // Images Validation (part of Tab 0 in UI)
@@ -135,6 +138,9 @@ export const validateTab = (tabIndex: number, data: any) => {
           adminCommission: data.adminCommission || '',
           overview: data.overview || '',
           duration: data.duration || '',
+          purpose: data.purpose || '',
+          mode: data.mode || '',
+          inclusion: data.inclusion || '',
         };
         basicInfoSchema.parse(basicData);
         

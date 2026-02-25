@@ -38,6 +38,9 @@ interface InputFieldDetail {
   whyPerform: string;
   pujaDetails: string;
   duration: string;
+  inclusion?: string;
+  mode: string;
+  purpose: String;
 }
 
 interface ImageState {
@@ -151,6 +154,9 @@ const AddPujaContent = () => {
     whyPerform: '',
     pujaDetails: '',
     duration: '',
+    mode: '',
+    inclusion: '',
+    purpose: '',
   });
 
   const [image, setImage] = useState<ImageState>({ 
@@ -343,6 +349,9 @@ const AddPujaContent = () => {
             whyPerform: pujaData.whyPerform || '',
             pujaDetails: pujaData.pujaDetails || '',
             duration: pujaData.duration || '',
+            mode: pujaData.mode || '',
+            inclusion: pujaData.inclusion || '',  
+            purpose: pujaData.purpose || '',
           });
 
           if ( pujaData.mainImage) {
