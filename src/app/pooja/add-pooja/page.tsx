@@ -458,6 +458,17 @@ const AddPujaContent = () => {
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
+
+      // 3 MB size validation
+      if (file.size > 3 * 1024 * 1024) {
+        setFieldErrors(prev => ({ ...prev, mainImage: 'Image size must be less than 3MB' }));
+        e.target.value = '';
+        return;
+      }
+
+      // Clear error if valid
+      setFieldErrors(prev => ({ ...prev, mainImage: '' }));
+
       const previewUrl = URL.createObjectURL(file);
       setImage({
         file: file.name,
