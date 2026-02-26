@@ -535,7 +535,7 @@ const MyBooking = () => {
 
   return (
     <>
-      <section className="px-5 py-6 pt-28 bg-gradient-to-br from-gray-50 to-red-50/30 min-h-screen">
+      <section className="px-5 py-6 pt-20 bg-gradient-to-br from-gray-50 to-red-50/30 min-h-screen">
         <article className="max-w-7xl mx-auto space-y-8">
           <div className="flex justify-center gap-3 flex-wrap">
             {['upcoming', 'completed', 'cancelled', 'expired'].map((tab) => {
