@@ -96,10 +96,10 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = ({
                     alt={review.customerName}
                     src={`${web_urls}uploads/${review.customerImage}`}
                     className="w-12 h-12 rounded-full object-cover border"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.src = '/default-avatar.jpg';
-                    }}
+                    // onError={(e) => {
+                    //   const target = e.target as HTMLImageElement;
+                    //   target.src = '/default-avatar.jpg';
+                    // }}
                   />
                 ) : (
                   <div className="w-12 h-12 rounded-full border flex items-center justify-center bg-gradient-to-br from-blue-500 via-blue-600 to-purple-500 text-white font-semibold text-lg">

@@ -162,7 +162,7 @@ const ConsultationModal = ({
       const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
       
       const response = await fetch(
-        `/customers/reschedule-booking`,
+        `${process.env.NEXT_PUBLIC_API_URL}/api/customers/reschedule-booking`,
         {
           method: 'POST',
           headers: {
@@ -213,10 +213,10 @@ const ConsultationModal = ({
         content: {
           position: 'relative',
           top: 'auto',
-          left: 'auto',
+          left: '120px',
           right: 'auto',
           bottom: 'auto',
-          maxWidth: '98vw',
+          maxWidth: '75vw',
           maxHeight: '95vh',
           width: '98vw',
           height: '95vh',
@@ -227,7 +227,7 @@ const ConsultationModal = ({
           overflow: 'hidden',
         },
         overlay: {
-          backgroundColor: 'rgba(0, 0, 0, 0.75)',
+          backgroundColor: 'white',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',

@@ -157,7 +157,7 @@ const ConsultationPage: React.FC = () => {
 
   return (
     <>
-      <TopHeaderSection />
+      {/* <TopHeaderSection /> */}
 
       <section className="bg-white py-2 space-y-6">
         <div className="px-4 sm:px-6 pt-4 sm:pt-6 pb-4 sm:pb-6 max-w-7xl mx-auto">
@@ -167,17 +167,17 @@ const ConsultationPage: React.FC = () => {
             <div className="flex flex-col gap-3 sm:gap-4 mb-4">
               <div className="flex flex-col lg:flex-row gap-3 sm:gap-4 items-start lg:items-center justify-between">
                 {/* Title */}
-                <div className="flex-shrink-0">
+                {/* <div className="flex-shrink-0">
                   <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
                     Find Your Perfect Consultant
                   </h2>
-                </div>
-                     <button
+                </div> */}
+                     {/* <button
                   onClick={handleLogout}
                   className="flex items-center border-b py-4 px-1 hover:text-red-600 text-left font-semibold"
                 >
                   Logout
-                </button>
+                </button> */}
 
                 {/* Desktop Search */}
                 <div className="hidden lg:block w-full lg:w-96">
@@ -224,54 +224,6 @@ const ConsultationPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Filter Section */}
-            <div className={`${
-              isFilterOpen ? 'block' : 'hidden lg:block'
-            } space-y-3 sm:space-y-4 pt-3 sm:pt-4 border-t border-orange-200`}>
-              {/* Filter Header */}
-              <div className="flex items-center justify-between">
-                <h3 className="text-xs sm:text-sm font-semibold text-gray-700">
-                  Filter by Category
-                </h3>
-                {hasActiveFilters && (
-                  <button
-                    onClick={clearFilters}
-                    className="text-xs sm:text-sm text-[#980d0d] hover:text-[#790808] font-medium flex items-center gap-1 transition-colors"
-                  >
-                    <X className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-                    Clear
-                  </button>
-                )}
-              </div>
-              
-              {/* Category Pills */}
-              <div className="flex flex-wrap gap-2">
-                {displayedCategories.map((category) => (
-                  <button
-                    key={category}
-                    onClick={() => handleCategorySelect(category)}
-                    className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-medium transition-all ${
-                      selectedCategory === category
-                        ? 'bg-[#980d0d] text-white shadow-md'
-                        : 'bg-white text-gray-600 hover:bg-white border border-orange-200 hover:border-orange-300'
-                    }`}
-                  >
-                    {category}
-                  </button>
-                ))}
-                
-                {/* Show More/Less Button */}
-                {/* {categories.length > 6 && (
-                  <button
-                    onClick={() => setShowAllCategories(!showAllCategories)}
-                    className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-medium bg-orange-100 text-orange-700 hover:bg-orange-200 border border-orange-300 flex items-center gap-1 transition-all"
-                  >
-                    <span>{showAllCategories ? 'Less' : `+${categories.length - 6} More`}</span>
-                    <ChevronDown className={`w-3 h-3 sm:w-4 sm:h-4 transition-transform ${showAllCategories ? 'rotate-180' : ''}`} />
-                  </button>
-                )} */}
-              </div>
-            </div>
           </div>
         </div>
 

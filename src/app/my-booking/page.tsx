@@ -107,7 +107,7 @@ const MyBooking = () => {
     isOpen: false,
     data: null as Consultation | null,
     isConsultationModalOpen: false,
-    isRatingModalOpen: false, // ✅ ADD THIS
+    isRatingModalOpen: false,
     duration_minutes: null as number | null,
     consultation_type: null as string | null,
     astrologerId: null as string | null,
@@ -138,17 +138,16 @@ const MyBooking = () => {
         setIsLoginOpen(true);
       }
     }
-  }, []); // Empty dependency array means this runs once on mount
-
+  }, []);
 
   const handleLoginSuccess = () => {
     setIsLoginOpen(false);
     window.location.reload();
   };
+  
   const handleLoginClose = () => {
     setIsLoginOpen(false);
   };
-
 
   const filterConsultationsByDate = (consultations: Consultation[]) => {
     const now = IST();  
@@ -184,24 +183,38 @@ const MyBooking = () => {
       }
     });
 
-    // 
     filtered.upcoming.sort((a, b) => {
-    const dateTimeA = moment(`${a.date} ${a.fromTime}`, 'YYYY-MM-DD hh:mm A').tz('Asia/Kolkata');  
-    const dateTimeB = moment(`${b.date} ${b.fromTime}`, 'YYYY-MM-DD hh:mm A').tz('Asia/Kolkata');  
-    return dateTimeA.diff(dateTimeB);
-  });
+      const dateTimeA = moment(`${a.date} ${a.fromTime}`, 'YYYY-MM-DD hh:mm A').tz('Asia/Kolkata');  
+      const dateTimeB = moment(`${b.date} ${b.fromTime}`, 'YYYY-MM-DD hh:mm A').tz('Asia/Kolkata');  
+      return dateTimeA.diff(dateTimeB);
+    });
 
-  return filtered;
-};
+    return filtered;
+  };
 
   const fetchConsultations = async () => {
+    let adminId: string | null = null;
+    try {
+      const adminRes = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/admin/me`,
+        { method: 'GET', credentials: 'include' }   
+      );
+      if (adminRes.ok) {
+        const adminData = await adminRes.json();
+        adminId = adminData?.userId ?? null;
+      } else {
+        console.warn('Could not fetch admin info, proceeding without adminId');
+      }
+    } catch (e) {
+      console.warn('Admin fetch failed:', e);
+    }
     try {
       setLoading(true);
       const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
       const today = moment().tz('Asia/Kolkata').format('YYYY-MM-DD');
       const currentTime = moment().tz('Asia/Kolkata').format('HH:mm');
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/customers/get_consultations/all?customerId=${customerId}&currentDate=${today}&currentTime=${currentTime}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/api/customers/get_consultations_by_adminId/all?createdByAdminId=${adminId}&currentDate=${today}&currentTime=${currentTime}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -212,17 +225,14 @@ const MyBooking = () => {
 
       if (data.success) {
         if (Array.isArray(data.consultations)) {
-          // API returns array format
           const filteredData = filterConsultationsByDate(data.consultations);
           setConsultationHistory(filteredData);
         } else {
-          // ✅ API returns object format - sort the upcoming array
           const sortedUpcoming = [...(data.consultations.upcoming || [])].sort((a, b) => {
             const dateTimeA = moment(`${a.date} ${a.fromTime}`, 'YYYY-MM-DD hh:mm A').tz('Asia/Kolkata');  
             const dateTimeB = moment(`${b.date} ${b.fromTime}`, 'YYYY-MM-DD hh:mm A').tz('Asia/Kolkata');  
             return dateTimeA.diff(dateTimeB);
           });
-
 
           setConsultationHistory({
             ...data.consultations,
@@ -237,7 +247,6 @@ const MyBooking = () => {
     }
   };
 
-
   const handleModalOpen = ({ type, data }: { type: string; data: any }) => {
     switch (type) {
       case 'Rating':
@@ -245,7 +254,7 @@ const MyBooking = () => {
           isOpen: false,
           data: data,
           isConsultationModalOpen: false,
-          isRatingModalOpen: true, // ✅ CHANGE THIS
+          isRatingModalOpen: true,
           duration_minutes: null,
           consultation_type: null,
           astrologerId: null,
@@ -260,7 +269,7 @@ const MyBooking = () => {
           isOpen: false,
           data: data,
           isConsultationModalOpen: true,
-          isRatingModalOpen: false, // ✅ ADD THIS
+          isRatingModalOpen: false,
           duration_minutes: data?.duration_minutes,
           consultation_type: data?.consultation_type,
           astrologerId: data?.astrologerId,
@@ -275,7 +284,7 @@ const MyBooking = () => {
           isOpen: false,
           data: null,
           isConsultationModalOpen: false,
-          isRatingModalOpen: false, // ✅ ADD THIS
+          isRatingModalOpen: false,
           duration_minutes: null,
           consultation_type: null,
           astrologerId: null,
@@ -292,7 +301,7 @@ const MyBooking = () => {
       isOpen: false,
       data: null,
       isConsultationModalOpen: false,
-      isRatingModalOpen: false, // ✅ ADD THIS
+      isRatingModalOpen: false,
       duration_minutes: null,
       consultation_type: null,
       astrologerId: null,
@@ -313,72 +322,8 @@ const MyBooking = () => {
     } else if (consultationType === 'videocall') {
       if (meetingId) {
         setJoiningMeeting(_id);
-
         try {
-          // const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
-
-          // const now = moment();
-          // const slotStartTime = moment(`${date} ${fromTime}`, 'YYYY-MM-DD hh:mm A');
-
-          // // Calculate time difference in seconds, then convert to minutes
-          // const secondsFromStart = now.diff(slotStartTime, 'seconds');
-          // const minutesFromStart = Math.floor(secondsFromStart / 60);
-
-          // let adjustedDuration: number;
-
-          // if (secondsFromStart < 0) {
-          //   // User joined early - add extra minutes to duration + 1 min leverage
-          //   adjustedDuration = (slotId?.duration || 15) + Math.abs(minutesFromStart) + 1;
-          // } else if (secondsFromStart > 0) {
-          //   // User joined late - subtract elapsed minutes from duration + 1 min leverage
-          //   adjustedDuration = (slotId?.duration || 15) - minutesFromStart + 1;
-
-          //   // Ensure duration doesn't go negative
-          //   if (adjustedDuration <= 0) {
-          //     adjustedDuration = 1; 
-          //   }
-          // } else {
-          //   // User joined exactly on time
-          //   adjustedDuration = slotId?.duration || 15;
-          // }
-
-          // const timerResponse = await fetch(
-          //   `${process.env.NEXT_PUBLIC_API_URL}/api/zoom/startMeetingTimer`,
-          //   {
-          //     method: 'POST',
-          //     headers: {
-          //       'Content-Type': 'application/json',
-          //       'Authorization': `Bearer ${token}`,
-          //     },
-          //     body: JSON.stringify({
-          //       consultationId: _id,
-          //       meetingId: meetingId,
-          //       durationMinutes: adjustedDuration, 
-          //     }),
-          //   }
-          // );
-
-          // const timerData = await timerResponse.json();
-
-          // if (timerData.success) {
-          //   const endTime = new Date(timerData.data.endTime).toLocaleString('en-IN', {
-          //     timeZone: 'Asia/Kolkata',
-          //     hour: '2-digit',
-          //     minute: '2-digit'
-          //   });
-
-          //   toaster.success({
-          //     text: `Call will auto-end in ${adjustedDuration} minutes (at ${endTime})`
-          //   });
-
-          // } else {
-          //   toaster.warning({
-          //     text: 'Timer could not be started, but you can still join the meeting.'
-          //   });
-          // }
-
-          const zoomUrl = `https://zoom.us/wc/join/${meetingId}${meetingPassword ? `?pwd=${meetingPassword}` : ''
-            }`;
+          const zoomUrl = `https://zoom.us/wc/join/${meetingId}${meetingPassword ? `?pwd=${meetingPassword}` : ''}`;
 
           const windowFeatures = 'width=1280,height=720,menubar=no,toolbar=no,location=no,status=no,scrollbars=yes,resizable=yes';
           const meetingWindow = window.open(zoomUrl, 'ZoomMeeting', windowFeatures);
@@ -391,7 +336,6 @@ const MyBooking = () => {
           }
 
           toaster.success({ text: 'Meeting opened successfully' });
-
         } catch (error) {
           console.error('❌ Error joining meeting:', error);
           toaster.error({ text: 'Failed to join meeting. Please try again.' });
@@ -408,7 +352,6 @@ const MyBooking = () => {
         const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
         const now = IST();
         
-        // ✅ FIXED: ISO date + 24hr format parsing
         const dateStr = moment(date).tz('Asia/Kolkata').format('YYYY-MM-DD');
         const slotStartTime = moment.tz(`${dateStr} ${fromTime}`, 'YYYY-MM-DD HH:mm', 'Asia/Kolkata');
         const slotEndTime = moment.tz(`${dateStr} ${toTime}`, 'YYYY-MM-DD HH:mm', 'Asia/Kolkata');
@@ -451,14 +394,17 @@ const MyBooking = () => {
     }
   };
 
-
   const renderAppointmentCard = (data: Consultation, type: string) => {
-    const startTime = moment(`${data?.date} ${data?.fromTime}`, 'YYYY-MM-DD hh:mm A').tz('Asia/Kolkata');  // ✅ ADDED
-    const canJoin = IST().isAfter(startTime.clone().subtract(5, 'minutes'));  // ✅ CHANGED: IST()
-    const bookingDate = moment(data.date).format('YYYY-MM-DD');  // ✅ unchanged (formatting)
+    const startTime = moment(`${data?.date} ${data?.fromTime}`, 'YYYY-MM-DD hh:mm A').tz('Asia/Kolkata');
+    const canJoin = IST().isAfter(startTime.clone().subtract(5, 'minutes'));
+    const bookingDate = moment(data.date).format('YYYY-MM-DD');
     const bookingStart = new Date(`${bookingDate}T${data.fromTime}:00`);
-    const minAllowed = new Date(IST().toDate().getTime() + 24 * 60 * 60 * 1000);  // ✅ CHANGED: IST()
-    const canReschedule = bookingStart.getTime() > minAllowed.getTime();
+    const minAllowed = new Date(IST().toDate().getTime() + 24 * 60 * 60 * 1000);
+    
+    const canReschedule = type === 'expired' 
+      ? true // Expired appointments can always be rescheduled
+      : bookingStart.getTime() > minAllowed.getTime(); // Upcoming appointments need 24hrs notice
+    
     const isJoining = joiningMeeting === data._id;
 
     return (
@@ -477,10 +423,6 @@ const MyBooking = () => {
                 </div>
                 <div>
                   <h3 className="text-gray-900 font-bold text-xl">{data?.fullName}</h3>
-                  {/* <div className="flex items-center gap-2 text-sm text-gray-600 mt-1">
-                    <Phone size={14} />
-                    <span>{data?.mobileNumber}</span>
-                  </div> */}
                 </div>
               </div>
               <div className="flex items-center gap-2 ml-6 text-sm">
@@ -522,30 +464,6 @@ const MyBooking = () => {
           {type === 'upcoming' && (
             <div className="flex items-center justify-end gap-3">
               <button
-                onClick={() => handleJoinConsultation(data)}
-                disabled={!canJoin || isJoining}
-                className={`px-6 py-3 rounded-xl flex items-center gap-2 shadow-md text-sm font-semibold transition-all duration-300 transform hover:scale-105 ${canJoin && !isJoining
-                    ? 'bg-gradient-to-r from-red-500 to-red-700 hover:from-red-600 hover:to-red-800 text-white cursor-pointer'
-                    : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                  }`}
-              >
-                {isJoining ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                    Joining...
-                  </>
-                ) : (
-                  <>
-                    {data?.consultationType === 'call' && <Phone size={18} />}
-                    {data?.consultationType === 'chat' && <MessageSquare size={18} />}
-                    {data?.consultationType === 'videocall' && <Video size={18} />}
-                    Join Now
-                  </>
-                )}
-              </button>
-
-              {/* ✅ FIXED: Pass date and toTime */}
-              <button
                 disabled={!canReschedule}
                 onClick={() =>
                   handleModalOpen({
@@ -556,29 +474,50 @@ const MyBooking = () => {
                       consultation_type: data?.consultationType,
                       astrologerId: data?.astrologerId?._id,
                       date: data?.date,
-                      toTime: data?.fromTime,
+                      toTime: data?.toTime, 
                     },
                   })
                 }
-                className={`px-6 py-3 rounded-xl flex items-center gap-2 shadow-md text-sm font-semibold transition-all duration-300 transform hover:scale-105 ${canReschedule
+                className={`px-6 py-3 rounded-xl flex items-center gap-2 shadow-md text-sm font-semibold transition-all duration-300 transform hover:scale-105 ${
+                  canReschedule
                     ? 'bg-gradient-to-r from-amber-500 to-amber-700 hover:from-amber-600 hover:to-amber-800 text-white cursor-pointer'
                     : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                  }`}
+                }`}
               >
                 <CalendarClock size={18} /> Reschedule
               </button>
             </div>
           )}
 
+          {type === 'expired' && (
+            <div className="flex gap-3 justify-end">
+              <span className="bg-gray-200 text-gray-500 px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 shadow-sm">
+                <Clock size={16} /> Expired
+              </span>
+              <button
+                onClick={() =>
+                  handleModalOpen({
+                    type: 'Consultation',
+                    data: {
+                      bookingId: data?._id,
+                      duration_minutes: data?.slotId?.duration,
+                      consultation_type: data?.consultationType,
+                      astrologerId: data?.astrologerId?._id,
+                      date: data?.date,
+                      toTime: data?.toTime,
+                    },
+                  })
+                }
+                className="px-6 py-3 rounded-xl flex items-center gap-2 shadow-md text-sm font-semibold transition-all duration-300 transform hover:scale-105 bg-gradient-to-r from-amber-500 to-amber-700 hover:from-amber-600 hover:to-amber-800 text-white cursor-pointer"
+              >
+                <CalendarClock size={18} /> Reschedule
+              </button>
+            </div>
+          )}
 
           {type === 'completed' && (
             <div className="flex gap-3 justify-end">
-              <button
-                onClick={() => handleModalOpen({ type: 'Rating', data: data })}
-                className="px-6 py-3 rounded-xl flex items-center gap-2 shadow-md text-sm font-semibold transition-all duration-300 transform hover:scale-105 bg-gradient-to-r from-red-500 to-red-700 hover:from-red-600 hover:to-red-800 text-white cursor-pointer"
-              >
-                <Star size={18} /> Add Review
-              </button>
+              {/* Completed card content */}
             </div>
           )}
 
@@ -596,8 +535,7 @@ const MyBooking = () => {
 
   return (
     <>
-      {/* <Header/> */}
-      <section className="px-5 py-6 pt-28 bg-gradient-to-br from-gray-50 to-red-50/30 min-h-screen">
+      <section className="px-5 py-6 pt-20 bg-gradient-to-br from-gray-50 to-red-50/30 min-h-screen">
         <article className="max-w-7xl mx-auto space-y-8">
           <div className="flex justify-center gap-3 flex-wrap">
             {['upcoming', 'completed', 'cancelled', 'expired'].map((tab) => {
@@ -608,10 +546,11 @@ const MyBooking = () => {
                   onClick={() => {
                     router.push(`?active=${tab}`);
                   }}
-                  className={`px-6 py-3 rounded-xl transition-all duration-300 text-sm font-bold capitalize shadow-md transform hover:scale-105 ${isActive
-                    ? 'bg-gradient-to-r from-red-500 to-red-700 text-white shadow-lg'
-                    : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
-                    }`}
+                  className={`px-6 py-3 rounded-xl transition-all duration-300 text-sm font-bold capitalize shadow-md transform hover:scale-105 ${
+                    isActive
+                      ? 'bg-gradient-to-r from-red-500 to-red-700 text-white shadow-lg'
+                      : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
+                  }`}
                 >
                   {tab}
                 </button>
@@ -631,7 +570,7 @@ const MyBooking = () => {
               consultationHistory[activeTab as keyof ConsultationHistory]?.map((appt) =>
                 renderAppointmentCard(appt, activeTab)
               )
-            ) : customerId ? (
+            ) : (
               <div className="flex flex-col items-center justify-center text-gray-400 py-20 bg-white rounded-2xl shadow-sm">
                 <div className="p-6 bg-gradient-to-br from-gray-100 to-red-100/50 rounded-full mb-4">
                   <Video size={48} className="text-gray-400" />
@@ -639,16 +578,7 @@ const MyBooking = () => {
                 <p className="mt-2 text-lg font-medium">No {activeTab} appointments found</p>
                 <p className="text-sm text-gray-500 mt-1">Your {activeTab} consultations will appear here</p>
               </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center text-gray-400 py-20 bg-white rounded-2xl shadow-sm">
-                <div className="p-6 bg-gradient-to-br from-red-100 to-pink-100/50 rounded-full mb-4">
-                  <UserCircle2 size={48} className="text-red-500" />
-                </div>
-                <p className="mt-2 text-xl font-semibold text-gray-700">Sign in to view your bookings</p>
-                <p className="text-sm text-gray-500 mt-1">Please log in to see your consultation history</p>
-              </div>
-            )
-            }
+            )}
           </div>
         </article>
       </section>
@@ -669,12 +599,6 @@ const MyBooking = () => {
         onClose={handleModalClose}
         consultation={modalData.data}
       />
-
-      {/* <CustomerLoginSheet
-        isOpen={isLoginOpen}
-        onClose={handleLoginClose}
-        onLoginSuccess={handleLoginSuccess}
-      /> */}
     </>
   );
 };
