@@ -196,6 +196,7 @@ const BasicInfoTab: React.FC<Props> = ({
               type="number"
               name="price"
               value={inputFieldDetail.price}
+              onWheel={(e) => (e.currentTarget as HTMLInputElement).blur()}
               onChange={handleInputChange}
               className={`w-full h-10 px-3 text-sm border rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all ${
                 fieldErrors['price'] ? 'border-red-500' : 'border-gray-300'
@@ -212,24 +213,46 @@ const BasicInfoTab: React.FC<Props> = ({
           {/* Discounted Price */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Discounted Price (₹) 
+              Original Price (₹) 
             </label>
             <input
               type="number"
               name="discountedPrice"
               value={inputFieldDetail.discountedPrice || ''}
-
+              onWheel={(e) => (e.currentTarget as HTMLInputElement).blur()}
               onChange={handleInputChange}
               className={`w-full h-10 px-3 text-sm border rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all ${
                 fieldErrors['discountedPrice'] ? 'border-red-500' : 'border-gray-300'
               }`}
               placeholder="Enter discounted price"
               required
-              min="0"
-              step="0.01"
+             
             />
             {fieldErrors['discountedPrice'] && (
               <p className="text-red-500 text-xs mt-1.5">{fieldErrors['discountedPrice']}</p>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Subtitle (Puja)
+            </label>
+            <input
+              type="text"
+              name="subTitle"
+              value={inputFieldDetail.subTitle || ''}
+
+              onChange={handleInputChange}
+              className={`w-full h-10 px-3 text-sm border rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all ${
+                fieldErrors['subTitle'] ? 'border-red-500' : 'border-gray-300'
+              }`}
+              placeholder="Enter Subtitle"
+              required
+              min="0"
+              step="0.01"
+            />
+            {fieldErrors['subTitle'] && (
+              <p className="text-red-500 text-xs mt-1.5">{fieldErrors['subTitle']}</p>
             )}
           </div>
 
@@ -242,6 +265,7 @@ const BasicInfoTab: React.FC<Props> = ({
               type="number"
               name="adminCommission"
               value={inputFieldDetail.adminCommission}
+              onWheel={(e) => (e.currentTarget as HTMLInputElement).blur()}
               onChange={handleInputChange}
               className={`w-full h-10 px-3 text-sm border rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all ${
                 fieldErrors['adminCommission'] ? 'border-red-500' : 'border-gray-300'
