@@ -197,6 +197,7 @@ const BasicInfoTab: React.FC<Props> = ({
             <input
               type="number"
               name="price"
+              onWheel={(e) => (e.currentTarget as HTMLInputElement).blur()}
               value={inputFieldDetail.price}
               onChange={handleInputChange}
               className={`w-full h-10 px-3 text-sm border rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all ${
@@ -265,6 +266,7 @@ const BasicInfoTab: React.FC<Props> = ({
             <input
               type="number"
               name="adminCommission"
+              onWheel={(e) => (e.currentTarget as HTMLInputElement).blur()}
               value={inputFieldDetail.adminCommission}
               onChange={handleInputChange}
               className={`w-full h-10 px-3 text-sm border rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all ${
