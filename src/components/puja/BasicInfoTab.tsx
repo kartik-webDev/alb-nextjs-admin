@@ -36,6 +36,10 @@ const BasicInfoTab: React.FC<Props> = ({
   const mainImageInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
 
+  const previewSrc = image.bytes
+    ? imagePreview
+    : `${process.env.NEXT_PUBLIC_IMAGE_URL3}${image.file}`;
+
   return (
     <div className="space-y-8">
       {/* Images Section */}
@@ -60,13 +64,11 @@ const BasicInfoTab: React.FC<Props> = ({
               >
                 {imagePreview ? (
                   <div className="space-y-3">
-                    <div className="relative mx-auto w-40 h-40 rounded-lg overflow-hidden border-2 border-gray-200 shadow-sm">
-                      <Image
-                        src={`${process.env.NEXT_PUBLIC_IMAGE_URL3}${image.file}`}
+                    <div className="mx-auto w-40 h-40 rounded-lg overflow-hidden border-2 border-gray-200 shadow-sm">
+                      <img
+                        src={previewSrc}
                         alt="Main preview"
-                        fill
-                        sizes="160px"
-                        className="object-cover"
+                        className="w-full h-full object-cover"
                       />
                     </div>
                     <p className="text-sm text-gray-600">Click to change image</p>
