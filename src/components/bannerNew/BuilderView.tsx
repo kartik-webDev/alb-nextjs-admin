@@ -15,6 +15,7 @@ import {
   ArrowLeft,
   ChevronDown,
   ChevronUp,
+  Crop,
   Eye,
   EyeOff,
   ImageIcon,
@@ -36,10 +37,9 @@ import React, { useEffect, useRef, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { BannerCanvas } from "./BannerCanvas";
 import { ButtonPanel } from "./ButtonPanel";
-import { defaultBanner, Field, Inp, MobilePanel, SCREEN_PRESETS, Sel, STATUS_COLORS, toSlug } from "./Helper";
+import { CropRegion, defaultBanner, Field, Inp, MobilePanel, SCREEN_MIN_SIZES, SCREEN_PRESETS, Sel, STATUS_COLORS, toSlug } from "./Helper";
 import { TextPanel } from "./TextPanel";
 
-// ✅ Same resolve function as BannerListView — keeps image URL handling consistent
 const resolveBannerImageUrl = (path: string | null | undefined): string => {
   if (!path) return '';
   if (path.startsWith('blob:')) return path;
@@ -49,7 +49,6 @@ const resolveBannerImageUrl = (path: string | null | undefined): string => {
   return `${base}${cleanPath}`;
 };
 
-// ── Builder View ──────────────────────────────────────────────────────────────
 export function BuilderView({
   initialBanner,
   onBack,
@@ -59,19 +58,13 @@ export function BuilderView({
   onBack: () => void;
   addToast: (type: "success" | "error", msg: string) => void;
 }) {
-
   const isEdit = !!(initialBanner && '_id' in initialBanner && initialBanner._id);
 
   const getBannerForState = (): CreateBannerInput => {
     if (!initialBanner) return defaultBanner();
-
     if ('_id' in initialBanner) {
       const { _id, __v, createdAt, updatedAt, createdBy, updatedBy, ...rest } = initialBanner as Banner;
-      return {
-        ...rest,
-        // ✅ Resolve stored S3 path so canvas shows the image on edit
-        backgroundImageUrl: resolveBannerImageUrl(rest.backgroundImageUrl),
-      } as CreateBannerInput;
+      return { ...rest, backgroundImageUrl: resolveBannerImageUrl(rest.backgroundImageUrl) } as CreateBannerInput;
     }
     return initialBanner as CreateBannerInput;
   };
@@ -83,6 +76,7 @@ export function BuilderView({
   const [bgUploading, setBgUploading] = useState(false);
   const [selectedBackgroundFile, setSelectedBackgroundFile] = useState<File | null>(null);
   const [mobilePanel, setMobilePanel] = useState<MobilePanel | null>(null);
+  const [cropMode, setCropMode] = useState(false);
 
   const initialRef = useRef(JSON.stringify(getBannerForState()));
   const isDirty = JSON.stringify(banner) !== initialRef.current;
@@ -94,14 +88,37 @@ export function BuilderView({
 
   const slugEditedRef = useRef(false);
   const handleNameChange = (name: string) =>
-    setBanner((b) => ({
-      ...b,
-      name,
-      ...(slugEditedRef.current ? {} : { slug: toSlug(name) }),
-    }));
+    setBanner((b) => ({ ...b, name, ...(slugEditedRef.current ? {} : { slug: toSlug(name) }) }));
   const handleSlugChange = (slug: string) => {
     slugEditedRef.current = true;
     setBanner((b) => ({ ...b, slug: toSlug(slug) }));
+  };
+
+  // ── Size validation ────────────────────────────────────────────────────────
+  const minSizes = SCREEN_MIN_SIZES[banner.screenType];
+  const widthTooSmall = banner.width < minSizes.width;
+  const heightTooSmall = banner.height < minSizes.height;
+  const widthTooLarge = banner.width > minSizes.width;
+  const heightTooLarge = banner.height > minSizes.height;
+  const sizeInvalid = widthTooSmall || heightTooSmall;
+  const needsCrop = widthTooLarge || heightTooLarge;
+
+  const handleWidthChange = (val: number) => {
+    if (val < minSizes.width) {
+      addToast("error", `Min width for ${banner.screenType} is ${minSizes.width}px`);
+      setBanner((b) => ({ ...b, width: minSizes.width }));
+      return;
+    }
+    setBanner((b) => ({ ...b, width: val }));
+  };
+
+  const handleHeightChange = (val: number) => {
+    if (val < minSizes.height) {
+      addToast("error", `Min height for ${banner.screenType} is ${minSizes.height}px`);
+      setBanner((b) => ({ ...b, height: minSizes.height }));
+      return;
+    }
+    setBanner((b) => ({ ...b, height: val }));
   };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -109,10 +126,36 @@ export function BuilderView({
     if (!file) return;
     setBgUploading(true);
     try {
+      // Check image dimensions before accepting
+      const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+        const image = new Image();
+        const url = URL.createObjectURL(file);
+        image.onload = () => { resolve(image); };
+        image.onerror = reject;
+        image.src = url;
+      });
+
+      if (img.width < minSizes.width || img.height < minSizes.height) {
+        URL.revokeObjectURL(img.src);
+        addToast("error", `Image too small! Minimum ${minSizes.width}×${minSizes.height}px required. Got ${img.width}×${img.height}px.`);
+        return;
+      }
+
       setSelectedBackgroundFile(file);
       const previewUrl = URL.createObjectURL(file);
-      setBanner((b) => ({ ...b, backgroundImageUrl: previewUrl }));
-      addToast("success", "Background image selected");
+      // Update banner size to image size if image is larger
+      setBanner((b) => ({
+        ...b,
+        backgroundImageUrl: previewUrl,
+        width: img.width,
+        height: img.height,
+      }));
+
+      if (img.width > minSizes.width || img.height > minSizes.height) {
+        addToast("success", `Image selected (${img.width}×${img.height}px). Use the Crop tool to trim to ideal size.`);
+      } else {
+        addToast("success", "Background image selected");
+      }
     } catch (err: unknown) {
       addToast("error", (err as Error).message ?? "Failed to select file");
     } finally {
@@ -121,15 +164,27 @@ export function BuilderView({
     }
   };
 
+  const handleCropDone = (crop: CropRegion) => {
+    setCropMode(false);
+    // Apply crop: update background position/size to simulate crop
+    // We store crop region as CSS background-position offset
+    const posX = -Math.round(crop.x);
+    const posY = -Math.round(crop.y);
+    setBanner((b) => ({
+      ...b,
+      width: Math.round(crop.w),
+      height: Math.round(crop.h),
+      backgroundPosition: `${posX}px ${posY}px`,
+      backgroundSize: "auto",
+      // Store crop meta in description for reference (optional)
+    }));
+    addToast("success", `Cropped to ${Math.round(crop.w)}×${Math.round(crop.h)}px`);
+  };
+
   const addText = () => {
     const el: TextElement = {
-      id: uuidv4(),
-      type: "TEXT",
-      zIndex: banner.elements.length,
-      content: "New Text",
-      positionX: 5,
-      positionY: 5,
-      isVisible: true,
+      id: uuidv4(), type: "TEXT", zIndex: banner.elements.length,
+      content: "New Text", positionX: 5, positionY: 5, isVisible: true,
       style: { fontSize: 32, fontWeight: "700", color: "#1e293b" },
     };
     setBanner((b) => ({ ...b, elements: [...b.elements, el] }));
@@ -140,27 +195,10 @@ export function BuilderView({
 
   const addButton = () => {
     const el: ButtonElement = {
-      id: uuidv4(),
-      type: "BUTTON",
-      zIndex: banner.elements.length,
-      label: "Click Here",
-      href: "#",
-      isExternal: false,
-      positionX: 5,
-      positionY: 55,
-      isVisible: true,
-      style: {
-        backgroundColor: "#4f46e5",
-        textColor: "#ffffff",
-        fontSize: 16,
-        fontWeight: "600",
-        borderRadius: 10,
-        paddingTop: 12,
-        paddingRight: 28,
-        paddingBottom: 12,
-        paddingLeft: 28,
-        height: 48,
-      },
+      id: uuidv4(), type: "BUTTON", zIndex: banner.elements.length,
+      label: "Click Here", href: "#", isExternal: false,
+      positionX: 5, positionY: 55, isVisible: true,
+      style: { backgroundColor: "#4f46e5", textColor: "#ffffff", fontSize: 16, fontWeight: "600", borderRadius: 10, paddingTop: 12, paddingRight: 28, paddingBottom: 12, paddingLeft: 28, height: 48 },
     };
     setBanner((b) => ({ ...b, elements: [...b.elements, el] }));
     setSelectedId(el.id);
@@ -169,10 +207,7 @@ export function BuilderView({
   };
 
   const updateElement = (updated: BannerElement) =>
-    setBanner((b) => ({
-      ...b,
-      elements: b.elements.map((e) => (e.id === updated.id ? updated : e)),
-    }));
+    setBanner((b) => ({ ...b, elements: b.elements.map((e) => (e.id === updated.id ? updated : e)) }));
 
   const deleteElement = (id: string) => {
     setBanner((b) => ({ ...b, elements: b.elements.filter((e) => e.id !== id) }));
@@ -180,16 +215,11 @@ export function BuilderView({
   };
 
   const handlePositionChange = (id: string, x: number, y: number) =>
-    setBanner((b) => ({
-      ...b,
-      elements: b.elements.map((e) => e.id === id ? { ...e, positionX: x, positionY: y } : e),
-    }));
+    setBanner((b) => ({ ...b, elements: b.elements.map((e) => e.id === id ? { ...e, positionX: x, positionY: y } : e) }));
 
   const handleScreenChange = (screen: ScreenType) => {
     const preset = SCREEN_PRESETS[screen];
-    const hasCustom =
-      banner.width !== SCREEN_PRESETS[banner.screenType].width ||
-      banner.height !== SCREEN_PRESETS[banner.screenType].height;
+    const hasCustom = banner.width !== SCREEN_PRESETS[banner.screenType].width || banner.height !== SCREEN_PRESETS[banner.screenType].height;
     if (hasCustom && !confirm(`Switch to ${screen}? Resets to ${preset.width}×${preset.height}px.`)) return;
     setBanner((b) => ({ ...b, screenType: screen, ...preset }));
   };
@@ -197,15 +227,15 @@ export function BuilderView({
   const handleSave = async () => {
     if (!banner.name.trim()) { addToast("error", "Banner name is required"); setMobilePanel("config"); return; }
     if (!banner.slug.trim()) { addToast("error", "Slug is required"); setMobilePanel("config"); return; }
+    if (sizeInvalid) {
+      addToast("error", `Size too small! Minimum ${minSizes.width}×${minSizes.height}px for ${banner.screenType}.`);
+      setMobilePanel("config");
+      return;
+    }
 
     setSaving(true);
     try {
-      // ✅ Always strip backgroundImageUrl before sending to backend:
-      //    - blob: URLs are client-only previews
-      //    - resolved http(s): URLs are display-only — backend stores raw S3 paths
-      //    Backend keeps the existing image unless a new File is uploaded
       const { backgroundImageUrl: _stripped, ...bannerData } = banner;
-
       if (isEdit && initialBanner && '_id' in initialBanner) {
         const bannerId = (initialBanner as Banner)._id;
         await BannerAPI.update(bannerId, bannerData, selectedBackgroundFile);
@@ -243,18 +273,13 @@ export function BuilderView({
 
   const selectedElement = banner.elements.find((e) => e.id === selectedId) ?? null;
   const sortedLayers = [...banner.elements].sort((a, b) => b.zIndex - a.zIndex);
-  const isReady = banner.name.trim() && banner.slug.trim();
+  const isReady = banner.name.trim() && banner.slug.trim() && !sizeInvalid;
 
-  // Clean up blob URLs on unmount
   useEffect(() => {
     return () => {
-      if (banner.backgroundImageUrl?.startsWith('blob:')) {
-        URL.revokeObjectURL(banner.backgroundImageUrl);
-      }
+      if (banner.backgroundImageUrl?.startsWith('blob:')) URL.revokeObjectURL(banner.backgroundImageUrl);
     };
   }, [banner.backgroundImageUrl]);
-
-  // ── Panel content ─────────────────────────────────────────────────────────
 
   const ConfigContent = (
     <div className="space-y-3 p-3">
@@ -282,12 +307,36 @@ export function BuilderView({
       <Field label="Ends At">
         <Inp type="datetime-local" value={formatForDateTimeInput(banner.endsAt)} onChange={(e) => setBanner((b) => ({ ...b, endsAt: formatDateTimeForAPI(e.target.value) }))} />
       </Field>
-      <Field label="Width (px)">
-        <Inp type="number" value={banner.width} onChange={(e) => setBanner((b) => ({ ...b, width: +e.target.value }))} />
+      <Field label={`Width (px) — min ${minSizes.width}`}>
+        <Inp
+          type="number"
+          value={banner.width}
+          min={minSizes.width}
+          onChange={(e) => handleWidthChange(+e.target.value)}
+          className={widthTooSmall ? "border-red-400 focus:ring-red-400 bg-red-50" : widthTooLarge ? "border-amber-300 focus:ring-amber-400" : ""}
+        />
+        {widthTooSmall && <p className="text-[10px] text-red-500 mt-0.5 font-semibold">Too small! Min {minSizes.width}px</p>}
+        {widthTooLarge && <p className="text-[10px] text-amber-500 mt-0.5">Larger than ideal — crop recommended</p>}
       </Field>
-      <Field label="Height (px)">
-        <Inp type="number" value={banner.height} onChange={(e) => setBanner((b) => ({ ...b, height: +e.target.value }))} />
+      <Field label={`Height (px) — min ${minSizes.height}`}>
+        <Inp
+          type="number"
+          value={banner.height}
+          min={minSizes.height}
+          onChange={(e) => handleHeightChange(+e.target.value)}
+          className={heightTooSmall ? "border-red-400 focus:ring-red-400 bg-red-50" : heightTooLarge ? "border-amber-300 focus:ring-amber-400" : ""}
+        />
+        {heightTooSmall && <p className="text-[10px] text-red-500 mt-0.5 font-semibold">Too small! Min {minSizes.height}px</p>}
+        {heightTooLarge && <p className="text-[10px] text-amber-500 mt-0.5">Larger than ideal — crop recommended</p>}
       </Field>
+      {needsCrop && (
+        <button
+          onClick={() => setCropMode(true)}
+          className="w-full flex items-center justify-center gap-2 py-2 rounded-xl bg-amber-50 border border-amber-200 text-amber-700 text-xs font-bold hover:bg-amber-100 transition-all"
+        >
+          <Crop className="h-3.5 w-3.5" /> Crop to Ideal Size
+        </button>
+      )}
       <Field label="Description">
         <textarea className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-violet-400 resize-y min-h-[50px]" value={banner.description ?? ""} onChange={(e) => setBanner((b) => ({ ...b, description: e.target.value }))} />
       </Field>
@@ -364,7 +413,7 @@ export function BuilderView({
       {!compact && <div className="h-4 w-px bg-slate-200 flex-shrink-0" />}
       <label className={`flex items-center gap-1.5 border border-slate-200 rounded-xl text-xs font-semibold cursor-pointer hover:bg-slate-50 text-slate-600 flex-shrink-0 ${compact ? "px-2 py-1" : "px-3 py-1.5"} ${bgUploading ? "opacity-60 pointer-events-none" : ""}`}>
         {bgUploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ImageIcon className="h-3.5 w-3.5" />}
-        {bgUploading ? "Uploading…" : compact ? "BG" : "BG Image"}
+        {bgUploading ? "Checking…" : compact ? "BG" : "BG Image"}
         <input type="file" accept="image/*" className="hidden" disabled={bgUploading} onChange={handleFileChange} />
       </label>
       {banner.backgroundImageUrl && (
@@ -374,10 +423,22 @@ export function BuilderView({
               {["cover", "contain", "auto", "100% 100%"].map((s) => <option key={s}>{s}</option>)}
             </Sel>
           )}
+          {needsCrop && !cropMode && (
+            <button
+              onClick={() => setCropMode(true)}
+              className={`flex items-center gap-1 border border-amber-300 rounded-xl text-xs font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 transition-all flex-shrink-0 ${compact ? "px-2 py-1" : "px-3 py-1.5"}`}
+            >
+              <Crop className="h-3.5 w-3.5" />{compact ? "" : "Crop"}
+            </button>
+          )}
+          {cropMode && (
+            <span className="text-xs font-bold text-violet-600 animate-pulse flex-shrink-0">✂ Crop mode active…</span>
+          )}
           <button onClick={() => {
             if (banner.backgroundImageUrl?.startsWith('blob:')) URL.revokeObjectURL(banner.backgroundImageUrl);
-            setBanner((b) => ({ ...b, backgroundImageUrl: "" }));
+            setBanner((b) => ({ ...b, backgroundImageUrl: "", width: minSizes.width, height: minSizes.height }));
             setSelectedBackgroundFile(null);
+            setCropMode(false);
           }} className="p-1.5 text-slate-400 hover:text-red-500 transition-colors flex-shrink-0">
             <X className="h-3.5 w-3.5" />
           </button>
@@ -385,15 +446,29 @@ export function BuilderView({
       )}
       {!compact && (
         <div className="ml-auto hidden xl:flex items-center gap-3 text-xs text-slate-400 font-medium">
-          <span className="flex items-center gap-1"><Move className="h-3 w-3" /> Drag</span>
-          <span className="opacity-40">·</span>
-          <span>Dbl-click to edit</span>
-          <span className="opacity-40">·</span>
-          <span>⌟ resize</span>
+          {!cropMode ? (
+            <>
+              <span className="flex items-center gap-1"><Move className="h-3 w-3" /> Drag</span>
+              <span className="opacity-40">·</span>
+              <span>Dbl-click to edit</span>
+              <span className="opacity-40">·</span>
+              <span>⌟ resize</span>
+            </>
+          ) : (
+            <span className="text-violet-600 font-semibold">Drag handles to set crop region · min {minSizes.width}×{minSizes.height}px</span>
+          )}
         </div>
       )}
     </div>
   );
+
+  // Crop mode — show size warning banner at top of screen
+  const CropBanner = cropMode ? (
+    <div className="bg-violet-600 text-white text-xs font-semibold px-4 py-1.5 flex items-center justify-between flex-shrink-0">
+      <span>✂ Crop Mode — drag the handles to select the region to keep. Min: {minSizes.width}×{minSizes.height}px</span>
+      <button onClick={() => setCropMode(false)} className="ml-4 underline hover:no-underline">Cancel</button>
+    </div>
+  ) : null;
 
   return (
     <div className="flex flex-col relative" style={{ height: "calc(100vh - 56px)" }}>
@@ -431,11 +506,13 @@ export function BuilderView({
             {(["DRAFT", "ACTIVE", "INACTIVE", "SCHEDULED"] as BannerStatus[]).map((s) => <option key={s} value={s}>{s}</option>)}
           </select>
         </div>
-        <button onClick={handleSave} disabled={saving} className={`flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-all flex-shrink-0 ${isReady ? "bg-violet-600 hover:bg-violet-700 text-white shadow-sm shadow-violet-200" : "bg-slate-100 text-slate-400 cursor-not-allowed"} disabled:opacity-60`}>
+        <button onClick={handleSave} disabled={saving || sizeInvalid} title={sizeInvalid ? `Min size: ${minSizes.width}×${minSizes.height}px` : ""} className={`flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-all flex-shrink-0 ${isReady ? "bg-violet-600 hover:bg-violet-700 text-white shadow-sm shadow-violet-200" : "bg-slate-100 text-slate-400 cursor-not-allowed"} disabled:opacity-60`}>
           {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
           <span className="hidden sm:inline">{saving ? "Saving…" : isEdit ? "Update" : "Publish"}</span>
         </button>
       </div>
+
+      {CropBanner}
 
       {/* Desktop: 3-panel */}
       <div className="hidden lg:flex flex-1 overflow-hidden min-h-0">
@@ -449,7 +526,16 @@ export function BuilderView({
         </div>
         <div className="flex flex-col flex-1 overflow-hidden min-w-0">
           <BgToolbar />
-          <BannerCanvas banner={banner} selectedId={selectedId} onSelect={(id) => { setSelectedId(id); if (id) setLeftTab("layers"); }} onPositionChange={handlePositionChange} onElementChange={updateElement} />
+          <BannerCanvas
+            banner={banner}
+            selectedId={selectedId}
+            onSelect={(id) => { if (!cropMode) { setSelectedId(id); if (id) setLeftTab("layers"); } }}
+            onPositionChange={handlePositionChange}
+            onElementChange={updateElement}
+            cropMode={cropMode}
+            onCropDone={handleCropDone}
+            onCropCancel={() => setCropMode(false)}
+          />
         </div>
         <div className="w-64 flex-shrink-0 bg-white border-l border-slate-100 flex flex-col">
           <div className="px-4 py-3 border-b border-slate-100">
@@ -463,7 +549,16 @@ export function BuilderView({
       <div className="lg:hidden flex flex-col flex-1 overflow-hidden min-h-0">
         <BgToolbar compact />
         <div className="flex-1 overflow-hidden min-h-0">
-          <BannerCanvas banner={banner} selectedId={selectedId} onSelect={(id) => { setSelectedId(id); if (id) setMobilePanel("properties"); }} onPositionChange={handlePositionChange} onElementChange={updateElement} />
+          <BannerCanvas
+            banner={banner}
+            selectedId={selectedId}
+            onSelect={(id) => { if (!cropMode) { setSelectedId(id); if (id) setMobilePanel("properties"); } }}
+            onPositionChange={handlePositionChange}
+            onElementChange={updateElement}
+            cropMode={cropMode}
+            onCropDone={handleCropDone}
+            onCropCancel={() => setCropMode(false)}
+          />
         </div>
         <div className="bg-white border-t border-slate-100 flex items-center flex-shrink-0 z-10">
           {([{ id: "layers" as MobilePanel, label: "Layers", icon: Layers }, { id: "config" as MobilePanel, label: "Config", icon: SlidersHorizontal }, { id: "properties" as MobilePanel, label: "Properties", icon: PanelLeft }]).map(({ id, label, icon: Icon }) => {
@@ -479,7 +574,7 @@ export function BuilderView({
       </div>
 
       {/* Bottom sheet */}
-      {mobilePanel !== null && (
+      {mobilePanel !== null && !cropMode && (
         <>
           <div className="lg:hidden fixed inset-0 z-20 bg-black/25" onClick={() => setMobilePanel(null)} />
           <div className="lg:hidden fixed inset-x-0 bottom-0 z-30 bg-white rounded-t-2xl shadow-2xl flex flex-col" style={{ maxHeight: "65vh" }}>
