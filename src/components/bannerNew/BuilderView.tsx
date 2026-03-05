@@ -394,7 +394,7 @@ export function BuilderView({
   const LayersContent = (
     <div className="p-3 space-y-2">
       <div className="flex gap-2">
-        <button onClick={addText} className="flex-1 flex flex-col items-center gap-1.5 border-2 border-dashed border-slate-200 rounded-xl py-3 text-xs font-semibold text-slate-400 hover:border-violet-400 hover:text-violet-600 hover:bg-violet-50/50 transition-all">
+        <button onClick={addText} className="flex-1 flex flex-col items-center gap-1.5 border-2 border-dashed border-slate-200 rounded-xl py-3 text-xs font-semibold text-slate-400 hover:border-red-400 hover:text-red-600 hover:bg-red-50/50 transition-all">
           <Type className="h-4 w-4" /> Text
         </button>
         <button onClick={addButton} className="flex-1 flex flex-col items-center gap-1.5 border-2 border-dashed border-slate-200 rounded-xl py-3 text-xs font-semibold text-slate-400 hover:border-sky-400 hover:text-sky-600 hover:bg-sky-50/50 transition-all">
@@ -416,11 +416,11 @@ export function BuilderView({
             <div
               key={el.id}
               onClick={() => { if (!dragBgMode) { setSelectedId(el.id === selectedId ? null : el.id); if (el.id !== selectedId) setSideTab("properties"); } }}
-              className={`flex items-center gap-2 px-2.5 py-2 rounded-lg cursor-pointer text-xs transition-all group ${el.id === selectedId ? "bg-violet-50 text-violet-700 ring-1 ring-violet-200" : "hover:bg-slate-50 text-slate-500"}`}
+              className={`flex items-center gap-2 px-2.5 py-2 rounded-lg cursor-pointer text-xs transition-all group ${el.id === selectedId ? "bg-red-50 text-red-700 ring-1 ring-red-200" : "hover:bg-slate-50 text-slate-500"}`}
             >
               {el.type === "TEXT" ? (
-                <div className="h-5 w-5 bg-violet-100 rounded flex items-center justify-center flex-shrink-0">
-                  <Type className="h-2.5 w-2.5 text-violet-600" />
+                <div className="h-5 w-5 bg-red-100 rounded flex items-center justify-center flex-shrink-0">
+                  <Type className="h-2.5 w-2.5 text-red-600" />
                 </div>
               ) : (
                 <div className="h-5 w-5 bg-sky-100 rounded flex items-center justify-center flex-shrink-0">
@@ -431,10 +431,10 @@ export function BuilderView({
                 {el.type === "TEXT" ? (el as TextElement).content?.slice(0, 16) || "Text" : (el as ButtonElement).label || "Button"}
               </span>
               <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button onClick={(e) => { e.stopPropagation(); if (!dragBgMode) updateElement({ ...el, zIndex: el.zIndex + 1 }); }} className="p-0.5 rounded hover:bg-slate-200 hover:text-violet-600 transition-colors" title="Up">
+                <button onClick={(e) => { e.stopPropagation(); if (!dragBgMode) updateElement({ ...el, zIndex: el.zIndex + 1 }); }} className="p-0.5 rounded hover:bg-slate-200 hover:text-red-600 transition-colors" title="Up">
                   <ChevronUp className="h-3 w-3" />
                 </button>
-                <button onClick={(e) => { e.stopPropagation(); if (!dragBgMode) updateElement({ ...el, zIndex: Math.max(0, el.zIndex - 1) }); }} className="p-0.5 rounded hover:bg-slate-200 hover:text-violet-600 transition-colors" title="Down">
+                <button onClick={(e) => { e.stopPropagation(); if (!dragBgMode) updateElement({ ...el, zIndex: Math.max(0, el.zIndex - 1) }); }} className="p-0.5 rounded hover:bg-slate-200 hover:text-red-600 transition-colors" title="Down">
                   <ChevronDown className="h-3 w-3" />
                 </button>
                 <button onClick={(e) => { e.stopPropagation(); if (!dragBgMode) updateElement({ ...el, isVisible: !el.isVisible }); }} className="p-0.5 rounded hover:bg-slate-200 transition-colors">
@@ -477,14 +477,14 @@ export function BuilderView({
       <Field label="Name *">
         <Inp value={banner.name} onChange={(e) => handleNameChange(e.target.value)} placeholder="Summer Sale Banner" className={!banner.name.trim() ? "border-red-300 focus:ring-red-400" : ""} />
       </Field>
-      <Field label="Slug *">
+      {/* <Field label="Slug *">
         <Inp value={banner.slug} onChange={(e) => handleSlugChange(e.target.value)} placeholder="summer-sale-banner" className={`font-mono ${!banner.slug.trim() ? "border-red-300 focus:ring-red-400" : ""}`} />
         <p className="text-[10px] text-slate-400 mt-0.5">Auto-generated · editable</p>
-      </Field>
-      <Field label="Page Route">
+      </Field> */}
+      {/* <Field label="Page Route">
         <Inp value={banner.page} onChange={(e) => setBanner((b) => ({ ...b, page: e.target.value }))} placeholder="/home" />
-      </Field>
-      <div className="grid grid-cols-2 gap-2">
+      </Field> */}
+      {/* <div className="grid grid-cols-2 gap-2">
         <Field label="Slot">
           <Sel value={banner.position} onChange={(e) => setBanner((b) => ({ ...b, position: e.target.value }))}>
             {["top", "hero", "sidebar", "footer", "popup"].map((p) => <option key={p}>{p}</option>)}
@@ -493,7 +493,7 @@ export function BuilderView({
         <Field label="Priority">
           <Inp type="number" value={banner.priority} onChange={(e) => setBanner((b) => ({ ...b, priority: +e.target.value }))} />
         </Field>
-      </div>
+      </div> */}
       <Field label="Starts At">
         <Inp type="datetime-local" value={formatForDateTimeInput(banner.startsAt)} onChange={(e) => setBanner((b) => ({ ...b, startsAt: formatDateTimeForAPI(e.target.value) }))} />
       </Field>
@@ -516,7 +516,7 @@ export function BuilderView({
       </div>
 
       <Field label="Description">
-        <textarea className="w-full bg-white border border-slate-200 rounded-md px-2.5 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-violet-400 resize-y min-h-[52px]" value={banner.description ?? ""} onChange={(e) => setBanner((b) => ({ ...b, description: e.target.value }))} />
+        <textarea className="w-full bg-white border border-slate-200 rounded-md px-2.5 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-red-400 resize-y min-h-[52px]" value={banner.description ?? ""} onChange={(e) => setBanner((b) => ({ ...b, description: e.target.value }))} />
       </Field>
     </div>
   );
@@ -548,7 +548,7 @@ export function BuilderView({
             {/* Reposition = crop UI dobara khulta hai */}
             <button
               onClick={handleRepositionClick}
-              className="flex items-center gap-1.5 border border-slate-200 bg-white rounded-lg text-xs font-semibold px-2.5 py-1.5 hover:bg-violet-50 hover:border-violet-300 hover:text-violet-700 text-slate-600 transition-all flex-shrink-0"
+              className="flex items-center gap-1.5 border border-slate-200 bg-white rounded-lg text-xs font-semibold px-2.5 py-1.5 hover:bg-red-50 hover:border-red-300 hover:text-red-700 text-slate-600 transition-all flex-shrink-0"
             >
               <Move className="h-3.5 w-3.5" />
               Reposition
@@ -583,8 +583,8 @@ export function BuilderView({
                 <div
                   className={`rounded-lg overflow-hidden transition-all duration-200 ${
                     isActive
-                      ? "ring-2 ring-violet-500 ring-offset-2 shadow-lg"
-                      : "ring-1 ring-slate-200 hover:ring-violet-300 opacity-50 hover:opacity-90"
+                      ? "ring-2 ring-red-500 ring-offset-2 shadow-lg"
+                      : "ring-1 ring-slate-200 hover:ring-red-300 opacity-50 hover:opacity-90"
                   }`}
                   style={{
                     width: isActive ? 180 : 72,
@@ -597,7 +597,7 @@ export function BuilderView({
                     transition: "all 0.2s ease",
                   }}
                 />
-                <span className={`text-[10px] font-bold transition-colors ${isActive ? "text-violet-600" : "text-slate-400 group-hover:text-slate-600"}`}>
+                <span className={`text-[10px] font-bold transition-colors ${isActive ? "text-red-600" : "text-slate-400 group-hover:text-slate-600"}`}>
                   {s === "100% 100%" ? "stretch" : s}
                 </span>
               </button>
@@ -622,7 +622,7 @@ export function BuilderView({
           {(["layers", "properties", "config"] as SideTab[]).map((tab) => {
             const Icon = tab === "layers" ? Layers : tab === "properties" ? SlidersHorizontal : Settings2;
             return (
-              <button key={tab} onClick={() => { setSideTab(tab); setSidebarCollapsed(false); }} className={`p-2 rounded-lg transition-colors ${sideTab === tab ? "bg-violet-100 text-violet-600" : "text-slate-400 hover:bg-slate-100"}`} title={tab}>
+              <button key={tab} onClick={() => { setSideTab(tab); setSidebarCollapsed(false); }} className={`p-2 rounded-lg transition-colors ${sideTab === tab ? "bg-red-100 text-red-600" : "text-slate-400 hover:bg-slate-100"}`} title={tab}>
                 <Icon className="h-4 w-4" />
               </button>
             );
@@ -635,7 +635,7 @@ export function BuilderView({
               {(["layers", "properties", "config"] as SideTab[]).map((tab) => {
                 const Icon = tab === "layers" ? Layers : tab === "properties" ? SlidersHorizontal : Settings2;
                 return (
-                  <button key={tab} onClick={() => setSideTab(tab)} className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-bold uppercase tracking-wider transition-colors border-b-2 ${sideTab === tab ? "text-violet-600 border-violet-500 bg-violet-50/50" : "text-slate-400 border-transparent hover:text-slate-600 hover:bg-slate-50"}`}>
+                  <button key={tab} onClick={() => setSideTab(tab)} className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-bold uppercase tracking-wider transition-colors border-b-2 ${sideTab === tab ? "text-red-600 border-red-500 bg-red-50/50" : "text-slate-400 border-transparent hover:text-slate-600 hover:bg-slate-50"}`}>
                     <Icon className="h-3.5 w-3.5" />
                     {tab === "properties" ? "Props" : tab.charAt(0).toUpperCase() + tab.slice(1)}
                   </button>
@@ -680,7 +680,7 @@ export function BuilderView({
           {(["DESKTOP", "TABLET", "MOBILE"] as ScreenType[]).map((s) => {
             const Icon = s === "DESKTOP" ? Monitor : s === "TABLET" ? Tablet : Smartphone;
             return (
-              <button key={s} onClick={() => handleScreenChange(s)} title={s} className={`p-1.5 rounded-md transition-all ${banner.screenType === s ? "bg-white text-violet-700 shadow-sm" : "text-slate-400 hover:text-slate-600"}`}>
+              <button key={s} onClick={() => handleScreenChange(s)} title={s} className={`p-1.5 rounded-md transition-all ${banner.screenType === s ? "bg-white text-red-700 shadow-sm" : "text-slate-400 hover:text-slate-600"}`}>
                 <Icon className="h-3.5 w-3.5" />
               </button>
             );
@@ -690,13 +690,13 @@ export function BuilderView({
         {/* Status pills */}
         <div className="hidden sm:flex items-center gap-1 flex-shrink-0">
           {(["DRAFT", "ACTIVE", "INACTIVE", "SCHEDULED"] as BannerStatus[]).map((s) => (
-            <button key={s} onClick={() => setBanner((b) => ({ ...b, status: s }))} className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-all ${banner.status === s ? STATUS_COLORS[s] + " ring-1 ring-inset ring-current" : "text-slate-400 hover:bg-slate-100"}`}>
+            <button key={s} onClick={() => setBanner((b) => ({ ...b, status: s }))} className={`px-2 py-1 rounded-xl text-[12px] font-bold transition-all ${banner.status === s ? STATUS_COLORS[s] + " ring-1 ring-inset ring-current rounded-xl" : "text-slate-400 hover:bg-slate-100"}`}>
               {s === "SCHEDULED" ? "SCHED" : s}
             </button>
           ))}
         </div>
         <div className="sm:hidden flex-shrink-0">
-          <select value={banner.status || "DRAFT"} onChange={(e) => setBanner((b) => ({ ...b, status: e.target.value as BannerStatus }))} className={`text-xs font-bold rounded-lg px-2 py-1 border-0 focus:outline-none focus:ring-1 focus:ring-violet-400 ${STATUS_COLORS[banner.status || "DRAFT"]}`}>
+          <select value={banner.status || "DRAFT"} onChange={(e) => setBanner((b) => ({ ...b, status: e.target.value as BannerStatus }))} className={`text-xs font-bold rounded-lg px-2 py-1 border-0 focus:outline-none focus:ring-1 focus:ring-red-400 ${STATUS_COLORS[banner.status || "DRAFT"]}`}>
             {(["DRAFT", "ACTIVE", "INACTIVE", "SCHEDULED"] as BannerStatus[]).map((s) => <option key={s} value={s}>{s}</option>)}
           </select>
         </div>
@@ -704,7 +704,7 @@ export function BuilderView({
         {/* Preview button */}
         <button
           onClick={() => setShowPreview(true)}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border border-slate-200 hover:bg-slate-50 text-slate-600 transition-all flex-shrink-0"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border border-slate-200 hover:bg-slate-50 text-slate-600 transition-all flex-shrink-0"
           title="Preview how it looks on user panel"
         >
           <Eye className="h-3.5 w-3.5" />
@@ -715,7 +715,7 @@ export function BuilderView({
         <button
           onClick={handleSave}
           disabled={saving || sizeInvalid}
-          className={`flex items-center gap-1.5 px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-all flex-shrink-0 ${isReady ? "bg-violet-600 hover:bg-violet-700 text-white shadow-sm shadow-violet-200" : "bg-slate-100 text-slate-400 cursor-not-allowed"} disabled:opacity-60`}
+          className={`flex items-center gap-1.5 px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-all flex-shrink-0 ${isReady ? "bg-red-600 hover:bg-red-700 text-white shadow-sm shadow-red-200" : "bg-slate-100 text-slate-400 cursor-not-allowed"} disabled:opacity-60`}
         >
           {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
           <span className="hidden sm:inline">{saving ? "Saving…" : isEdit ? "Update" : "Publish"}</span>
@@ -724,9 +724,9 @@ export function BuilderView({
 
       {/* Drag mode banner */}
       {dragBgMode && !cropMode && (
-        <div className="bg-violet-600 text-white text-xs font-semibold px-4 py-2 flex items-center justify-between flex-shrink-0">
+        <div className="bg-red-600 text-white text-xs font-semibold px-4 py-2 flex items-center justify-between flex-shrink-0">
           <span>👆 Drag mode — fine-tune background position</span>
-          <button onClick={handleBgDragClose} className="ml-4 px-3 py-1 bg-white text-violet-700 rounded-lg text-xs font-bold">Done ✓</button>
+          <button onClick={handleBgDragClose} className="ml-4 px-3 py-1 bg-white text-red-700 rounded-lg text-xs font-bold">Done ✓</button>
         </div>
       )}
 
@@ -783,10 +783,10 @@ export function BuilderView({
             {([{ id: "layers" as MobilePanel, label: "Layers", icon: Layers }, { id: "config" as MobilePanel, label: "Config", icon: Settings2 }, { id: "properties" as MobilePanel, label: "Props", icon: SlidersHorizontal }] as { id: MobilePanel; label: string; icon: any }[]).map(({ id, label, icon: Icon }) => {
               const active = mobilePanel === id;
               return (
-                <button key={id} onClick={() => setMobilePanel(active ? null : id)} className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-bold uppercase tracking-wide transition-colors ${active ? "text-violet-600" : "text-slate-400"}`}>
+                <button key={id} onClick={() => setMobilePanel(active ? null : id)} className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-bold uppercase tracking-wide transition-colors ${active ? "text-red-600" : "text-slate-400"}`}>
                   <Icon className="h-4 w-4" />
                   {label}
-                  {active && <div className="w-4 h-0.5 rounded-full bg-violet-500 mt-0.5" />}
+                  {active && <div className="w-4 h-0.5 rounded-full bg-red-500 mt-0.5" />}
                 </button>
               );
             })}

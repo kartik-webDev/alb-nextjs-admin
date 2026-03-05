@@ -154,11 +154,10 @@ export function BannerListView({
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">Banners</h2>
-          <p className="text-slate-500 text-sm mt-0.5 hidden sm:block">Manage promotional banners</p>
         </div>
         <button
           onClick={onCreateNew}
-          className="flex items-center gap-2 bg-violet-600 hover:bg-violet-700 text-white px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl text-sm font-semibold transition-all shadow-sm shadow-violet-200"
+          className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl text-sm font-semibold transition-all shadow-sm shadow-violet-200"
         >
           <Plus className="h-4 w-4" />
           <span className="hidden sm:inline">New Banner</span>
@@ -207,7 +206,7 @@ export function BannerListView({
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-slate-100 bg-slate-50/60">
-                    {["Name", "Screen", "Page", "Status", "Elements", "Priority", ""].map((h) => (
+                    {["Name", "Screen",  "Status", "Elements",""].map((h) => (
                       <th key={h} className="text-left text-[11px] font-bold text-slate-400 uppercase tracking-widest px-5 py-3">{h}</th>
                     ))}
                   </tr>
@@ -231,12 +230,12 @@ export function BannerListView({
                       <td className="px-5 py-4">
                         <span className="text-xs font-semibold bg-slate-100 text-slate-600 px-2 py-1 rounded-lg">{b.screenType}</span>
                       </td>
-                      <td className="px-5 py-4 text-xs text-slate-500 font-mono">{b.page}</td>
+                      {/* <td className="px-5 py-4 text-xs text-slate-500 font-mono">{b.page}</td> */}
                       <td className="px-5 py-4">
                         <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${STATUS_COLORS[b.status]}`}>{b.status}</span>
                       </td>
                       <td className="px-5 py-4 text-sm text-slate-600">{b.elements.length}</td>
-                      <td className="px-5 py-4 text-sm text-slate-600">{b.priority}</td>
+                      {/* <td className="px-5 py-4 text-sm text-slate-600">{b.priority}</td> */}
                       <td className="px-5 py-4">
                         <div className="flex items-center gap-0.5 justify-end">
                           {actionId === b._id ? (
