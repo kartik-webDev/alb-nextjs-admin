@@ -468,7 +468,7 @@ const ConsultationForm: React.FC<ConsultationFormProps> = ({
         {/* Email */}
         <div>
           <label className="text-sm font-medium text-gray-700 block mb-1">
-            Email (optional)
+            Email <span className="text-red-500">*</span>
           </label>
           <input
             type="email"
