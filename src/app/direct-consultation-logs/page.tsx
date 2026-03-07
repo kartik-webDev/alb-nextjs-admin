@@ -154,7 +154,7 @@ const ConsultationLogsPage = () => {
         const endDatePlusOne = endDateObj.toISOString().split('T')[0];
         params.set('endDate', endDatePlusOne);
         
-        const url = `${process.env.NEXT_PUBLIC_API_URL}/api/customers/all_consultation_logs?${params.toString()}`;
+        const url = `${process.env.NEXT_PUBLIC_API_URL}/api/customers/all_consultation_logs?${params.toString()}&createdByAdmin=true`;
         const response = await fetch(url);
         
         if (!response.ok) {
