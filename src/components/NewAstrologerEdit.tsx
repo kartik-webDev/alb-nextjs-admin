@@ -13,6 +13,7 @@ import Consultations from '@/components/astrologer/Consultations';
 import ReportsAndAvailability from '@/components/astrologer/AstrologerUnavailibilty';
 import FirstTimeOfferManagement from './astrologer/FirstTimeOfferManagement';
 import { Mail, Phone, Briefcase } from 'lucide-react';
+import BulkSlotDiscountManagement from './astrologer/Bulkslotdiscountmanagement';
 
 export default function EditAstrologer() {
   const params = useParams();
@@ -32,7 +33,8 @@ export default function EditAstrologer() {
     'Skills & Expertise',
     'Consultations',
     'First Time Customer Offer',
-    'Reports & Unavailability'
+    'Reports & Unavailability',
+    'Discount Management'
   ];
 
   useEffect(() => {
@@ -189,6 +191,12 @@ export default function EditAstrologer() {
               astrologerId={astrologerId || ''} 
               initialData={astrologer}
               onUpdate={fetchAstrologer}
+            />
+          )}
+          {activeTab === 8 && (
+            <BulkSlotDiscountManagement
+                astrologerId={astrologer._id}
+                onUpdate={() => fetchAstrologer()}
             />
           )}
         </div>
