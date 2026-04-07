@@ -206,7 +206,7 @@ export function BannerListView({
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-slate-100 bg-slate-50/60">
-                    {["Name", "Screen",  "Status", "Elements",""].map((h) => (
+                    {["Name", "Screen",  "Status","Page", "Elements",""].map((h) => (
                       <th key={h} className="text-left text-[11px] font-bold text-slate-400 uppercase tracking-widest px-5 py-3">{h}</th>
                     ))}
                   </tr>
@@ -230,10 +230,11 @@ export function BannerListView({
                       <td className="px-5 py-4">
                         <span className="text-xs font-semibold bg-slate-100 text-slate-600 px-2 py-1 rounded-lg">{b.screenType}</span>
                       </td>
-                      {/* <td className="px-5 py-4 text-xs text-slate-500 font-mono">{b.page}</td> */}
                       <td className="px-5 py-4">
                         <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${STATUS_COLORS[b.status]}`}>{b.status}</span>
                       </td>
+                      <td className="px-5 py-4 text-xs text-slate-500 font-mono">{b.page}</td>
+
                       <td className="px-5 py-4 text-sm text-slate-600">{b.elements.length}</td>
                       {/* <td className="px-5 py-4 text-sm text-slate-600">{b.priority}</td> */}
                       <td className="px-5 py-4">

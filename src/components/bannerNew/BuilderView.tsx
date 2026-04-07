@@ -481,9 +481,9 @@ export function BuilderView({
         <Inp value={banner.slug} onChange={(e) => handleSlugChange(e.target.value)} placeholder="summer-sale-banner" className={`font-mono ${!banner.slug.trim() ? "border-red-300 focus:ring-red-400" : ""}`} />
         <p className="text-[10px] text-slate-400 mt-0.5">Auto-generated · editable</p>
       </Field> */}
-      {/* <Field label="Page Route">
+      <Field label="Page Route">
         <Inp value={banner.page} onChange={(e) => setBanner((b) => ({ ...b, page: e.target.value }))} placeholder="/home" />
-      </Field> */}
+      </Field>
       {/* <div className="grid grid-cols-2 gap-2">
         <Field label="Slot">
           <Sel value={banner.position} onChange={(e) => setBanner((b) => ({ ...b, position: e.target.value }))}>
