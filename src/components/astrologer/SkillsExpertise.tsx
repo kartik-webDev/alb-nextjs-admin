@@ -20,6 +20,11 @@ interface Remedy {
   title: string;
 }
 
+interface Category {
+  _id: string;
+  categories: string;
+}
+
 interface SkillsExpertiseProps {
   astrologerId: string;
   initialData: any;
@@ -30,58 +35,97 @@ export default function SkillsExpertise({ astrologerId, initialData, onUpdate }:
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
   const [selectedExpertise, setSelectedExpertise] = useState<string[]>([]);
   const [selectedRemedies, setSelectedRemedies] = useState<string[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
 
   const [originalSkills, setOriginalSkills] = useState<string[]>([]);
   const [originalExpertise, setOriginalExpertise] = useState<string[]>([]);
   const [originalRemedies, setOriginalRemedies] = useState<string[]>([]);
+  const [originalCategories, setOriginalCategories] = useState<string[]>([]);
 
   const [allSkills, setAllSkills] = useState<Skill[]>([]);
   const [allExpertise, setAllExpertise] = useState<Expertise[]>([]);
   const [allRemedies, setAllRemedies] = useState<Remedy[]>([]);
+  const [allCategories, setAllCategories] = useState<Category[]>([]);
 
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
+  // Safe function to extract IDs
+  const safeExtractIds = (items: any[] | undefined | null): string[] => {
+    if (!items || !Array.isArray(items)) return [];
+    return items
+      .filter(item => item && typeof item === 'object' && item._id)
+      .map(item => item._id);
+  };
+
+  // Fetch all lists
   useEffect(() => {
     fetchData();
   }, []);
 
+  // Set selected values when initialData arrives
+  useEffect(() => {
+    
+    if (initialData && allExpertise.length > 0) {
+      
+      const initialSkills = safeExtractIds(initialData?.skill);
+      const initialExpertise = safeExtractIds(initialData?.mainExpertise);
+      const initialRemedies = safeExtractIds(initialData?.remedies);
+      const initialCategories = safeExtractIds(initialData?.categories);
+            
+      setSelectedSkills(initialSkills);
+      setSelectedExpertise(initialExpertise);
+      setSelectedRemedies(initialRemedies);
+      setSelectedCategories(initialCategories);
+      
+      setOriginalSkills(initialSkills);
+      setOriginalExpertise(initialExpertise);
+      setOriginalRemedies(initialRemedies);
+      setOriginalCategories(initialCategories);
+    }
+  }, [initialData, allExpertise.length]);
+
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [skillsRes, expertiseRes, remediesRes] = await Promise.all([
+      const [skillsRes, expertiseRes, remediesRes, categoriesRes] = await Promise.all([
         fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/get-skill`),
         fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/get-all-main-expertise`),
-        fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/view-remedy`)
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/view-remedy`),
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/view-categories`)
       ]);
 
-      const [skillsData, expertiseData, remediesData] = await Promise.all([
+      const [skillsData, expertiseData, remediesData, categoriesData] = await Promise.all([
         skillsRes.json(),
         expertiseRes.json(),
-        remediesRes.json()
+        remediesRes.json(),
+        categoriesRes.json()
       ]);
 
       if (skillsData.success) setAllSkills(skillsData.skills || []);
       if (expertiseData.success) setAllExpertise(expertiseData.mainExpertise || []);
       if (remediesData.success) setAllRemedies(remediesData.remedies || []);
+      if (categoriesData.success) setAllCategories(categoriesData.categories || []);
 
-      const initialSkills = initialData?.skill?.map((s: any) => s._id) || [];
-      const initialExpertise = initialData?.mainExpertise?.map((e: any) => e._id) || [];
-      const initialRemedies = initialData?.remedies?.map((r: any) => r._id) || [];
-
-      setSelectedSkills(initialSkills);
-      setSelectedExpertise(initialExpertise);
-      setSelectedRemedies(initialRemedies);
-
-      setOriginalSkills(initialSkills);
-      setOriginalExpertise(initialExpertise);
-      setOriginalRemedies(initialRemedies);
     } catch (error) {
       console.error('Error fetching data:', error);
       toast.error('Failed to load data');
     } finally {
       setLoading(false);
     }
+  };
+
+  const toggleCategory = (categoryId: string) => {    
+    setSelectedCategories(prev => {
+      const isSelected = prev.includes(categoryId);
+      let newSelected;
+      if (isSelected) {
+        newSelected = prev.filter(id => id !== categoryId);
+      } else {
+        newSelected = [...prev, categoryId];
+      }
+      return newSelected;
+    });
   };
 
   const toggleSkill = (skillId: string) => {
@@ -109,11 +153,12 @@ export default function SkillsExpertise({ astrologerId, initialData, onUpdate }:
   };
 
   const hasChanges = () => {
-    return (
-      JSON.stringify(selectedSkills.sort()) !== JSON.stringify(originalSkills.sort()) ||
-      JSON.stringify(selectedExpertise.sort()) !== JSON.stringify(originalExpertise.sort()) ||
-      JSON.stringify(selectedRemedies.sort()) !== JSON.stringify(originalRemedies.sort())
-    );
+    const skillsChanged = JSON.stringify([...selectedSkills].sort()) !== JSON.stringify([...originalSkills].sort());
+    const expertiseChanged = JSON.stringify([...selectedExpertise].sort()) !== JSON.stringify([...originalExpertise].sort());
+    const remediesChanged = JSON.stringify([...selectedRemedies].sort()) !== JSON.stringify([...originalRemedies].sort());
+    const categoriesChanged = JSON.stringify([...selectedCategories].sort()) !== JSON.stringify([...originalCategories].sort());
+    
+    return skillsChanged || expertiseChanged || remediesChanged || categoriesChanged;
   };
 
   const handleSubmit = async () => {
@@ -163,10 +208,10 @@ export default function SkillsExpertise({ astrologerId, initialData, onUpdate }:
         language: initialData?.language || [],
         workingOnOtherApps: initialData?.workingOnOtherApps || 'No',
         
-        // Updated skills, expertise, and remedies
         skill: selectedSkills,
         mainExpertise: selectedExpertise,
         remedies: selectedRemedies,
+        categories: selectedCategories,
         expertise: initialData?.expertise || [],
         preferredDays: initialData?.preferredDays || [],
         
@@ -224,6 +269,7 @@ export default function SkillsExpertise({ astrologerId, initialData, onUpdate }:
         setOriginalSkills(selectedSkills);
         setOriginalExpertise(selectedExpertise);
         setOriginalRemedies(selectedRemedies);
+        setOriginalCategories(selectedCategories);
         onUpdate();
       } else {
         toast.error(data.message || 'Failed to update');
@@ -236,7 +282,7 @@ export default function SkillsExpertise({ astrologerId, initialData, onUpdate }:
     }
   };
 
-  if (loading) {
+  if (loading || !initialData) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-200 border-t-red-500"></div>
@@ -246,9 +292,11 @@ export default function SkillsExpertise({ astrologerId, initialData, onUpdate }:
 
   return (
     <div className="space-y-8">
+  
+
       <div>
         <h2 className="text-2xl font-bold text-gray-900 mb-1">Skills & Expertise</h2>
-        <p className="text-gray-600 text-sm">Select skills, expertise areas, and remedies</p>
+        <p className="text-gray-600 text-sm">Select skills, expertise areas, remedies, and categories</p>
       </div>
 
       {/* Main Expertise Section */}
@@ -271,29 +319,24 @@ export default function SkillsExpertise({ astrologerId, initialData, onUpdate }:
             {allExpertise.map(expertise => {
               const isSelected = selectedExpertise.includes(expertise._id);
               return (
-                <label
+                <div
                   key={expertise._id}
+                  onClick={() => toggleExpertise(expertise._id)}
                   className={`flex items-center gap-2 p-3 rounded-lg cursor-pointer transition-all duration-200 border-2 ${
                     isSelected
                       ? 'bg-red-50 border-red-500'
                       : 'bg-white border-gray-300 hover:border-red-300'
                   }`}
                 >
-                  <input
-                    type="checkbox"
-                    checked={isSelected}
-                    onChange={() => toggleExpertise(expertise._id)}
-                    className="hidden"
-                  />
                   <div className={`flex-shrink-0 w-5 h-5 rounded flex items-center justify-center ${
-                    isSelected ? 'bg-red-600' : 'border-2 border-gray-300'
+                    isSelected ? 'bg-red-600' : 'border-2 border-gray-300 bg-white'
                   }`}>
                     {isSelected && <Check className="w-3 h-3 text-white" strokeWidth={3} />}
                   </div>
                   <span className={`text-sm font-medium ${isSelected ? 'text-gray-900' : 'text-gray-700'}`}>
                     {expertise.mainExpertise}
                   </span>
-                </label>
+                </div>
               );
             })}
           </div>
@@ -320,29 +363,24 @@ export default function SkillsExpertise({ astrologerId, initialData, onUpdate }:
             {allSkills.map(skill => {
               const isSelected = selectedSkills.includes(skill._id);
               return (
-                <label
+                <div
                   key={skill._id}
+                  onClick={() => toggleSkill(skill._id)}
                   className={`flex items-center gap-2 p-3 rounded-lg cursor-pointer transition-all duration-200 border-2 ${
                     isSelected
                       ? 'bg-red-50 border-red-500'
                       : 'bg-white border-gray-300 hover:border-red-300'
                   }`}
                 >
-                  <input
-                    type="checkbox"
-                    checked={isSelected}
-                    onChange={() => toggleSkill(skill._id)}
-                    className="hidden"
-                  />
                   <div className={`flex-shrink-0 w-5 h-5 rounded flex items-center justify-center ${
-                    isSelected ? 'bg-red-600' : 'border-2 border-gray-300'
+                    isSelected ? 'bg-red-600' : 'border-2 border-gray-300 bg-white'
                   }`}>
                     {isSelected && <Check className="w-3 h-3 text-white" strokeWidth={3} />}
                   </div>
                   <span className={`text-sm font-medium ${isSelected ? 'text-gray-900' : 'text-gray-700'}`}>
                     {skill.skill}
                   </span>
-                </label>
+                </div>
               );
             })}
           </div>
@@ -367,29 +405,66 @@ export default function SkillsExpertise({ astrologerId, initialData, onUpdate }:
             {allRemedies.map(remedy => {
               const isSelected = selectedRemedies.includes(remedy._id);
               return (
-                <label
+                <div
                   key={remedy._id}
+                  onClick={() => toggleRemedy(remedy._id)}
                   className={`flex items-center gap-2 p-3 rounded-lg cursor-pointer transition-all duration-200 border-2 ${
                     isSelected
                       ? 'bg-red-50 border-red-500'
                       : 'bg-white border-gray-300 hover:border-red-300'
                   }`}
                 >
-                  <input
-                    type="checkbox"
-                    checked={isSelected}
-                    onChange={() => toggleRemedy(remedy._id)}
-                    className="hidden"
-                  />
                   <div className={`flex-shrink-0 w-5 h-5 rounded flex items-center justify-center ${
-                    isSelected ? 'bg-red-600' : 'border-2 border-gray-300'
+                    isSelected ? 'bg-red-600' : 'border-2 border-gray-300 bg-white'
                   }`}>
                     {isSelected && <Check className="w-3 h-3 text-white" strokeWidth={3} />}
                   </div>
                   <span className={`text-sm font-medium ${isSelected ? 'text-gray-900' : 'text-gray-700'}`}>
                     {remedy.title}
                   </span>
-                </label>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Categories Section - WITH FULL DEBUG */}
+      <div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900">Categories</h3>
+            <p className="text-sm text-gray-600 mt-1">Astrological service categories</p>
+          </div>
+          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-red-100 text-red-700">
+            {selectedCategories.length} selected
+          </span>
+        </div>
+        {allCategories.length === 0 ? (
+          <p className="text-gray-500 text-sm">No categories available</p>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {allCategories.map((category, index) => {
+              const isSelected = selectedCategories.includes(category._id);
+              return (
+                <div
+                  key={category._id}
+                  onClick={() => toggleCategory(category._id)}
+                  className={`flex items-center gap-2 p-3 rounded-lg cursor-pointer transition-all duration-200 border-2 ${
+                    isSelected
+                      ? 'bg-red-50 border-red-500'
+                      : 'bg-white border-gray-300 hover:border-red-300'
+                  }`}
+                >
+                  <div className={`flex-shrink-0 w-5 h-5 rounded flex items-center justify-center ${
+                    isSelected ? 'bg-red-600' : 'border-2 border-gray-300 bg-white'
+                  }`}>
+                    {isSelected && <Check className="w-3 h-3 text-white" strokeWidth={3} />}
+                  </div>
+                  <span className={`text-sm font-medium ${isSelected ? 'text-gray-900' : 'text-gray-700'}`}>
+                    {category.categories}
+                  </span>
+                </div>
               );
             })}
           </div>

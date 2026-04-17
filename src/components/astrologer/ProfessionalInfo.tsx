@@ -28,6 +28,8 @@ export default function ProfessionalInfo({ astrologerId, initialData, onUpdate }
     languages: [] as string[],
     youtubeLink: initialData?.youtubeLink || '',
     workingOnOtherApps: initialData?.workingOnOtherApps === 'Yes' || initialData?.workingOnOtherApps === true,
+    expertTag: initialData?.expertTag || '',
+    astrologerCategory: initialData?.astrologerCategory || '',
   });
 
   const [originalForm, setOriginalForm] = useState(form);
@@ -243,6 +245,8 @@ export default function ProfessionalInfo({ astrologerId, initialData, onUpdate }
         
         isDealInReport: initialData?.isDealInReport || false,
         reportTypes: initialData?.reportTypes || [],
+        expertTag: form.expertTag,
+        astrologerCategory: form.astrologerCategory,
       };
 
       const response = await fetch(
@@ -366,6 +370,33 @@ export default function ProfessionalInfo({ astrologerId, initialData, onUpdate }
             </span>
           </label>
         </div>
+      </div>
+
+      <div className="col-span-3">
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Expert
+        </label>
+        <input
+          type="text"
+          name="expertTag"
+          value={form.expertTag}
+          onChange={handleChange}
+          placeholder="e.g., Financial Expert"
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+        />
+      </div>
+      <div className="col-span-3">
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Astrologer Category
+        </label>
+        <input
+          type="text"
+          name="astrologerCategory"
+          value={form.astrologerCategory}
+          onChange={handleChange}
+          placeholder="e.g., Financial Expert"
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+        />
       </div>
 
       {/* Second Row - Languages and YouTube Link */}
