@@ -29,7 +29,7 @@ import {
   SelectChangeEvent
 } from '@mui/material';
 import React, { useEffect, useRef, useState } from 'react';
-
+import { base_url } from '@/lib/api-routes';
 // Types
 interface StaticPageEditorProps {
   title: string;
@@ -77,6 +77,8 @@ const StaticPageEditor: React.FC<StaticPageEditorProps> = ({
     strikethrough: false,
   });
   const editorRef = useRef<HTMLDivElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null); // ✅ add this
+
 
   // Handle Input Field Error
   const handleInputFieldError = (input: keyof InputFieldError, value: string | null) => {
@@ -152,10 +154,42 @@ const StaticPageEditor: React.FC<StaticPageEditorProps> = ({
 
   const handleUnlink = () => executeCommand('unlink');
 
+  // const handleImage = () => {
+  //   const url = prompt('Enter image URL:');
+  //   if (url) executeCommand('insertImage', url);
+  // };
   const handleImage = () => {
-    const url = prompt('Enter image URL:');
-    if (url) executeCommand('insertImage', url);
-  };
+  imageInputRef.current?.click();
+};
+
+const handleImageFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+
+  if (file.size > 1 * 1024 * 1024) {
+    alert('Image must be less than 1MB');
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append('image', file);
+
+  try {
+    const res = await fetch(`${base_url}api/admin/upload-blog-image`, {
+      method: 'POST',
+      body: formData,
+    });
+    const data = await res.json();
+const imageUrl = `${process.env.NEXT_PUBLIC_PREFIX_IMAGE_URL1}/uploads/${data.image}`;
+    editorRef.current?.focus();
+    document.execCommand('insertImage', false, imageUrl);
+    handleContentChange();
+  } catch (err) {
+    alert('Image upload failed');
+  } finally {
+    if (imageInputRef.current) imageInputRef.current.value = '';
+  }
+};
 
   // Handle format dropdown change
   const handleFormatChange = (event: SelectChangeEvent<string>) => {
@@ -225,7 +259,45 @@ const StaticPageEditor: React.FC<StaticPageEditorProps> = ({
     document.addEventListener('selectionchange', handleSelectionChange);
     return () => document.removeEventListener('selectionchange', handleSelectionChange);
   }, []);
+// Block base64 paste — upload instead
+useEffect(() => {
+  const editor = editorRef.current;
+  if (!editor) return;
 
+  const handlePaste = async (e: ClipboardEvent) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+
+    for (const item of Array.from(items)) {
+      if (item.type.startsWith('image/')) {
+        e.preventDefault();
+        const file = item.getAsFile();
+        if (!file) continue;
+
+        const formData = new FormData();
+        formData.append('image', file);
+
+        try {
+          const res = await fetch(`${base_url}api/admin/upload-blog-image`, {
+            method: 'POST',
+            body: formData,
+          });
+          const data = await res.json();
+const imageUrl = `${process.env.NEXT_PUBLIC_PREFIX_IMAGE_URL1}/uploads/${data.image}`;
+
+          editorRef.current?.focus();
+          document.execCommand('insertImage', false, imageUrl);
+          handleContentChange();
+        } catch (err) {
+          alert('Pasted image upload failed');
+        }
+      }
+    }
+  };
+
+  editor.addEventListener('paste', handlePaste);
+  return () => editor.removeEventListener('paste', handlePaste);
+}, []);
   const getToolbarButtonStyle = (isActive: boolean = false) => ({
     padding: '6px',
     minwidth: '36px',
@@ -533,7 +605,15 @@ const StaticPageEditor: React.FC<StaticPageEditorProps> = ({
           font-weight: bold;
           margin: 2em 0;
         }
-      `}</style>
+          
+      `}
+      <input
+  ref={imageInputRef}
+  type="file"
+  accept="image/*"
+  hidden
+  onChange={handleImageFileChange}
+/></style>
     </div>
   );
 };
