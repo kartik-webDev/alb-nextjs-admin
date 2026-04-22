@@ -180,7 +180,7 @@ const handleImageFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => 
       body: formData,
     });
     const data = await res.json();
-const imageUrl = `${process.env.NEXT_PUBLIC_PREFIX_IMAGE_URL1}/uploads/${data.image}`;
+const imageUrl = `${process.env.NEXT_PUBLIC_IMAGE_URL3}/uploads/${data.image}`;
     editorRef.current?.focus();
     document.execCommand('insertImage', false, imageUrl);
     handleContentChange();
@@ -283,7 +283,7 @@ useEffect(() => {
             body: formData,
           });
           const data = await res.json();
-const imageUrl = `${process.env.NEXT_PUBLIC_PREFIX_IMAGE_URL1}/uploads/${data.image}`;
+const imageUrl = `${process.env.NEXT_PUBLIC_IMAGE_URL3}/uploads/${data.image}`;
 
           editorRef.current?.focus();
           document.execCommand('insertImage', false, imageUrl);
