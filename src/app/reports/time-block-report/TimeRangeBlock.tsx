@@ -16,6 +16,12 @@ const reportPrefixes = [
   { value: '#LR-', label: 'Love Report', code: 'LR' },
   { value: '#NNR-', label: 'Name Number Report' , code : 'NNR' },
   { value: '#VR-', label: 'Varshphal Report' , code : 'VR' },
+  { value: '#BNR-', label: 'Baby Name Report', code : 'BNR' },
+  { value : '#KSD' , label: 'Kaal Saarp Report', code: 'KSD' },
+  { value : '#BPR' , label: 'Bussiness Partner Report', code: 'BPR' },
+  { value : '#SSR' , label: 'Sade Sati Report', code: 'SSR' },
+  { value : '#WR' , label: 'Wealth Report', code: 'WR' },
+  { value : '#GR' , label: 'Government Report', code: 'GR' }
 ];
 
 interface Astrologer {

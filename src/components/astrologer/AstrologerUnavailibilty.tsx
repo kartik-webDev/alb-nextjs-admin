@@ -54,7 +54,12 @@ export default function ReportsAndAvailability({ astrologerId, initialData, onUp
     { code: '#KM-', name: 'Kundli Matching' },
     { code: '#NNR-', name: 'Name Number Report' },
     { code: '#VR-', name: 'Varshphal Report' },
-    { code: '#BNR-', name: 'Baby Name Report' }
+    { code: '#BNR-', name: 'Baby Name Report' },
+    { code : '#KSD' , name: 'Kaal Saarp Report' },
+    { code : '#BPR' , name: 'Bussiness Partner Report' },
+    { code : '#SSR' , name: 'Sade Sati Report' },
+    { code : '#WR' , name: 'Wealth Report' },
+    { code : '#GR' , name: 'Government Report' }
   ];
 
   const timeOptions = [
