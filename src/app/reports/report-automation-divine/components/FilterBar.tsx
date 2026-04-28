@@ -19,6 +19,7 @@ const REPORT_TYPE_OPTIONS = [
   // { label: "Pitra Dosha Report",          value: "#PDR-"  },
   // { label: "Comprehensive Dosha Report", value: "#CDRR-" },
   { label: "Government Job Report",        value: "#GR-"   },
+  { label: "Love Report",        value: "#LR-"   },
 ];
 
 interface Props {
