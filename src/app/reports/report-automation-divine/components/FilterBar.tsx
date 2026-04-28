@@ -12,7 +12,7 @@ const REPORT_TYPE_OPTIONS = [
   // { label: "Education & Academic Report",            value: "#EAR-"  },
   // { label: "Baby Child Report",         value: "#BCR-"  },
   // { label: "Business Partnership Report", value: "#BPR-"  },
-  // { label: "Nakshatra Analysis Report",   value: "#NAR-"  },
+  { label: "Nakshatra Analysis Report",   value: "#NAR-"  },
   // { label: "Sade Sati Report",            value: "#SSR-"  },
   // { label: "Mangal Dosha Report",         value: "#MDR-"  },
   // { label: "Kaal Sarp Dosha Report",      value: "#KSD-"  },
