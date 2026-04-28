@@ -3,7 +3,7 @@ export interface Filters {
   from: string;
   to: string;
   language: string;
-  planName: string;
+  reportType: string;
   status: string;
   reportDeliveryStatus: string; // ✅ NEW: Report delivery status
   sortBy: string;

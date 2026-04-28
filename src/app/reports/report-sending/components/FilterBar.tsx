@@ -1,6 +1,12 @@
 import React, { useMemo } from "react";
 import { Filters } from "../types";
-import moment from "moment-timezone";
+
+// ✅ Report type options mapped to order ID prefixes
+const REPORT_TYPE_OPTIONS = [
+  { label: "All Reports",                 value: "all"    },
+  { label: "Life Changing Report",      value: "#LCR-"   },
+  { label: "Name Number Report",        value: "#NNR-"   },
+];
 
 interface Props {
   filters: Filters;
@@ -11,21 +17,22 @@ interface Props {
   selectedCount: number;
 }
 
-export const FilterBar: React.FC<Props> = ({ 
-  filters, 
-  onChange, 
-  onRefresh, 
+export const FilterBar: React.FC<Props> = ({
+  filters,
+  onChange,
+  onRefresh,
   onReset,
   onProcessSelected,
-  selectedCount
+  selectedCount,
 }) => {
   const todayDate = useMemo(() => {
     const today = new Date();
     const year = today.getFullYear();
-    const month = String(today.getMonth() + 1).padStart(2, '0');
-    const day = String(today.getDate()).padStart(2, '0');
+    const month = String(today.getMonth() + 1).padStart(2, "0");
+    const day = String(today.getDate()).padStart(2, "0");
     return `${year}-${month}-${day}`;
   }, []);
+
   return (
     <div className="flex flex-wrap items-center gap-3 mb-4 text-sm">
       {/* Search */}
@@ -44,7 +51,6 @@ export const FilterBar: React.FC<Props> = ({
           type="date"
           value={filters.from}
           onChange={(e) => onChange({ from: e.target.value })}
-          // max={todayDate}
           className="px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500"
           placeholder="From date"
         />
@@ -53,7 +59,6 @@ export const FilterBar: React.FC<Props> = ({
           type="date"
           value={filters.to}
           onChange={(e) => onChange({ to: e.target.value })}
-          // max={todayDate}
           className="px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500"
           placeholder="To date"
         />
@@ -67,6 +72,19 @@ export const FilterBar: React.FC<Props> = ({
           </button>
         )}
       </div>
+
+      {/* ✅ Report Type Dropdown (replaces planName) */}
+      <select
+        value={filters.reportType}
+        onChange={(e) => onChange({ reportType: e.target.value })}
+        className="px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 min-w-[200px]"
+      >
+        {REPORT_TYPE_OPTIONS.map((opt) => (
+          <option key={opt.value} value={opt.value}>
+            {opt.label}
+          </option>
+        ))}
+      </select>
 
       {/* Report Delivery Status */}
       <select
@@ -92,7 +110,7 @@ export const FilterBar: React.FC<Props> = ({
         <option value="hindi">Hindi</option>
       </select>
 
-      {/* ✅ Auto-Select First N */}
+      {/* Auto-Select First N */}
       <div className="relative">
         <input
           type="number"
@@ -114,14 +132,14 @@ export const FilterBar: React.FC<Props> = ({
         )}
       </div>
 
-      {/* ✅ Process Selected Button */}
+      {/* Process Selected Button */}
       {selectedCount > 0 && (
         <button
           onClick={onProcessSelected}
           className="px-4 py-2 text-white bg-gradient-to-r from-purple-600 to-indigo-600 rounded-md hover:from-purple-700 hover:to-indigo-700 transition-all flex items-center gap-2 font-medium shadow-md"
         >
           <span>⚡</span>
-          Process {selectedCount} Report{selectedCount > 1 ? 's' : ''}
+          Process {selectedCount} Report{selectedCount > 1 ? "s" : ""}
         </button>
       )}
 
@@ -133,7 +151,7 @@ export const FilterBar: React.FC<Props> = ({
         >
           Refresh
         </button>
-        
+
         <button
           onClick={onReset}
           className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors flex items-center gap-2"
