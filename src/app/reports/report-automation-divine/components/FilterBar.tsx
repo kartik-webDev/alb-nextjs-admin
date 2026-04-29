@@ -7,7 +7,7 @@ const REPORT_TYPE_OPTIONS = [
   // { label: "Vedic Life Report",           value: "#VLR-"  },
   // { label: "Career Report",               value: "#CR1-"  },
   // { label: "Vedic Health Report",               value: "#VHR-"  },
-  // { label: "Marriage Love Life Report",      value: "#MLR-"  },
+  { label: "Marriage Love Life Report",      value: "#MLR-"  },
   { label: "Wealth & Finance Report",      value: "#WR-"   },
   // { label: "Education & Academic Report",            value: "#EAR-"  },
   // { label: "Baby Child Report",         value: "#BCR-"  },
