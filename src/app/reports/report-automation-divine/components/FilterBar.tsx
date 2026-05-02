@@ -21,6 +21,7 @@ const REPORT_TYPE_OPTIONS = [
   { label: "Government Job Report",        value: "#GR-"   },
   { label: "Love Report",        value: "#LR-"   },
   { label: "Kundli Match Report",        value: "#KM-"   },
+  { label: "Varshphal Report",        value: "#VR-"   },
 ];
 
 interface Props {
