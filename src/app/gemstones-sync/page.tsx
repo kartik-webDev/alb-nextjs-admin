@@ -553,12 +553,25 @@ type Product = {
   title: string;
   basePrice: number;
   shopifyPrice: number | null;
-sellingPrice: number | null;   // 👈 number → number | null
-  isEdited?: boolean;        images: string[];
+  sellingPrice: number | null;
+  isEdited?: boolean;
+  images: string[];
   videos: string[];
-  certificateUrl?: string;
+  certificateUrl?: string | null;
   status: "NEW" | "EXISTS";
   shopifyProductId?: string;
+
+  // ✅ Naye fields add kar
+  category_name?: string | null;
+  color?: string | null;
+  origin?: string | null;
+  shape?: string | null;
+  transparency?: string | null;
+  treatment?: string | null;
+  weight_in_carat?: string | null;
+  dimension?: string | null;
+  certifications_name?: string | null;
+  certifications_number?: string | null;
 };
 
 type SyncStatus = "idle" | "syncing" | "success" | "error";
@@ -677,14 +690,27 @@ const newProducts = products.filter(
           const res = await fetch("/api/shopify/create-product", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              title: p.title,
-              price: p.sellingPrice,
-              compareAtPrice: p.basePrice,
-              images: p.images,
-              videos: p.videos,
-              certificateUrl: p.certificateUrl,
-            }),
+          body: JSON.stringify({
+  product_name: p.title,
+  price: p.sellingPrice,
+  mrp: p.basePrice,
+  image_url: p.images[0] ?? null,
+  images: p.images.slice(1),
+  video_url: p.videos[0] ?? null,
+  certificate_url: p.certificateUrl ?? null,
+
+  // ✅ Ye naye fields
+  category_name: p.category_name,
+  color: p.color,
+  origin: p.origin,
+  shape: p.shape,
+  transparency: p.transparency,
+  treatment: p.treatment,
+  weight_in_carat: p.weight_in_carat,
+  dimension: p.dimension,
+  certifications_name: p.certifications_name,
+  certifications_number: p.certifications_number,
+}),
           });
 
           if (!res.ok) {
@@ -982,7 +1008,7 @@ const newProducts = products.filter(
                     <td className="border-b p-3 text-center">
                       <input
                         type="number"
-                        value={p.sellingPrice}
+value={p.sellingPrice ?? ""}
                         onChange={(e) =>
   setProducts((prev) =>
     prev.map((x) =>

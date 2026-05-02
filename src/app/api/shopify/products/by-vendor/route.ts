@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 
 const SHOPIFY_URL = `https://${process.env.SHOPIFY_STORE_DOMAIN}/admin/api/2024-10/graphql.json`;
 const SHOPIFY_TOKEN = process.env.SHOPIFY_ADMIN_TOKEN!;
-
+console.log("DOMAIN:", process.env.SHOPIFY_STORE_DOMAIN);
+console.log("URL:", SHOPIFY_URL);
 const QUERY = `
   query getProductsByVendor($vendor: String!, $cursor: String) {
     products(first: 250, after: $cursor, query: $vendor) {

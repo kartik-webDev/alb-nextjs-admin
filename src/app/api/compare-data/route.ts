@@ -1,63 +1,3 @@
-// import { NextResponse } from "next/server";
-
-// function normalizeTitle(title: any) {
-//   if (!title || typeof title !== "string") return "";
-//   return title.trim().toLowerCase();
-// }
-
-// function parsePrice(price: string | null) {
-//   if (!price) return 0;
-//   return Number(price.replace(/[^\d]/g, ""));
-// }
-
-// export async function GET() {
-//   try {
-//     const [shopifyRes, brahmaRes] = await Promise.all([
-//       fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/shopify/products/by-vendor?vendor=BrahmaGems`),
-//       fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/brahmagems`),
-//     ]);
-
-//     const shopifyData = await shopifyRes.json();
-//     const brahmaData = await brahmaRes.json();
-
-//     const shopifyMap = new Map<string, any>();
-//     (shopifyData.products ?? []).forEach((p: any) => {
-//       const key = normalizeTitle(p.title);
-//       if (key) shopifyMap.set(key, p);
-//     });
-
-//     const products = (brahmaData.products ?? []).map((p: any) => {
-//       const title = p.product_name;
-//       const key = normalizeTitle(title);
-//       const shopifyMatch = shopifyMap.get(key);
-
-//    return {
-//   id: String(p.product_id),
-//   title,
-//   basePrice: parsePrice(p.price),
-//   sellingPrice: parsePrice(p.price),
-
-//   shopifyPrice: shopifyMatch?.variants?.[0]?.price
-//     ? Number(shopifyMatch.variants[0].price)
-//     : null,
-//   images: p.image_url ? [p.image_url] : [],   // ✅ ARRAY
-//   videos: p.video_url ? [p.video_url] : [],   // ✅ ARRAY
-//   certificateUrl: p.certificate_url ?? null,
-
-//   status: shopifyMatch ? "EXISTS" : "NEW",
-//   shopifyProductId: shopifyMatch?.id ?? null,
-// };
-
-//     });
-
-//     return NextResponse.json({ products });
-//   } catch (e) {
-//     console.error(e);
-//     return NextResponse.json({ error: "Compare failed" }, { status: 500 });
-//   }
-// }
-
-
 
 import { NextResponse } from "next/server";
 
@@ -158,18 +98,33 @@ export async function GET() {
       // Parse prices from Brahma Gems
       const basePrice = parsePrice(brahmaProduct.price);
 
-      return {
-        id: String(brahmaProduct.product_id),
-        title,
-        basePrice,
-        sellingPrice: basePrice,
-        shopifyPrice, // ✅ Now correctly extracted from your API
-        images: brahmaProduct.image_url ? [brahmaProduct.image_url] : [],
-        videos: brahmaProduct.video_url ? [brahmaProduct.video_url] : [],
-        certificateUrl: brahmaProduct.certificate_url ?? null,
-        status: shopifyMatch ? ("EXISTS" as const) : ("NEW" as const),
-        shopifyProductId: shopifyMatch?.productId ?? null, // Using productId from your API
-      };
+     return {
+  id: String(brahmaProduct.product_id),
+  title,
+  basePrice,
+  shopifyPrice,
+  images: [
+    ...(brahmaProduct.image_url ? [brahmaProduct.image_url] : []),
+    ...(Array.isArray(brahmaProduct.images) ? brahmaProduct.images : []),
+  ].filter((src, i, arr) => src && arr.indexOf(src) === i),
+  videos: brahmaProduct.video_url ? [brahmaProduct.video_url] : [],
+  certificateUrl: brahmaProduct.certificate_url || null,
+
+  // ✅ Ye naye fields add kar
+  category_name: brahmaProduct.category_name || null,
+  color: brahmaProduct.color || null,
+  origin: brahmaProduct.origin || null,
+  shape: brahmaProduct.shape || null,
+  transparency: brahmaProduct.transparency || null,
+  treatment: brahmaProduct.treatment || null,
+  weight_in_carat: brahmaProduct.weight_in_carat || null,
+  dimension: brahmaProduct.dimension || null,
+  certifications_name: brahmaProduct.certifications_name || null,
+  certifications_number: brahmaProduct.certifications_number || null,
+
+  status: shopifyMatch ? ("EXISTS" as const) : ("NEW" as const),
+  shopifyProductId: shopifyMatch?.productId ?? null,
+};
     });
 
     const stats = {
