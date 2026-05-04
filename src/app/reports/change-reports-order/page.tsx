@@ -1,7 +1,7 @@
 // app/admin/reports/page.tsx
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Tooltip } from '@mui/material';
@@ -62,7 +62,7 @@ export default function ReportsAdmin() {
   const [searchText, setSearchText] = useState('');
   const [orderModal, setOrderModal] = useState(false);
   const [draggedReports, setDraggedReports] = useState<Report[]>([]);
-  const [draggedItemIndex, setDraggedItemIndex] = useState<number | null>(null);
+  const draggedItemIndex = useRef<number | null>(null);
 
   // Fetch Reports
   const fetchReports = async () => {
@@ -211,32 +211,28 @@ export default function ReportsAdmin() {
   };
 
   // Drag and Drop Handlers
-  const handleDragStart = (index: number) => {
-    setDraggedItemIndex(index);
-  };
+    const handleDragStart = (index: number) => {
+    draggedItemIndex.current = index;
+    };
 
-  const handleDragOver = (e: React.DragEvent, index: number) => {
+    const handleDragOver = (e: React.DragEvent, index: number) => {
     e.preventDefault();
-    if (draggedItemIndex === null || draggedItemIndex === index) return;
+    if (draggedItemIndex.current === null || draggedItemIndex.current === index) return;
 
-    const newReports = [...draggedReports];
-    const draggedItem = newReports[draggedItemIndex];
-    newReports.splice(draggedItemIndex, 1);
-    newReports.splice(index, 0, draggedItem);
-    
-    // Update display orders
-    const updatedReports = newReports.map((item, idx) => ({
-      ...item,
-      displayOrder: idx + 1
-    }));
-    
-    setDraggedReports(updatedReports);
-    setDraggedItemIndex(index);
-  };
+    setDraggedReports(prev => {
+        const newReports = [...prev];
+        const draggedItem = newReports[draggedItemIndex.current!];
+        newReports.splice(draggedItemIndex.current!, 1);
+        newReports.splice(index, 0, draggedItem);
+        return newReports;
+    });
 
-  const handleDragEnd = () => {
-    setDraggedItemIndex(null);
-  };
+    draggedItemIndex.current = index; // ref update → no re-render
+    };
+
+    const handleDragEnd = () => {
+    draggedItemIndex.current = null;
+    };
 
   // Save New Order
   const handleSaveOrder = async () => {
@@ -510,7 +506,6 @@ export default function ReportsAdmin() {
         url="/reports/add-report"
       />
 
-      {/* Order Management Modal - Drag and Drop */}
       {orderModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl mx-auto max-h-[90vh] flex flex-col">
@@ -542,9 +537,7 @@ export default function ReportsAdmin() {
                     onDragStart={() => handleDragStart(index)}
                     onDragOver={(e) => handleDragOver(e, index)}
                     onDragEnd={handleDragEnd}
-                    className={`bg-white border rounded-lg p-4 cursor-move transition-all ${
-                      draggedItemIndex === index ? 'opacity-50 bg-blue-50' : 'hover:shadow-md'
-                    }`}
+                    className="bg-white border rounded-lg p-4 cursor-move transition-all hover:shadow-md"
                   >
                     <div className="flex items-center gap-4">
                       {/* Drag Handle */}
