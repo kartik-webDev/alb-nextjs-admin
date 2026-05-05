@@ -457,12 +457,12 @@ export default function ReportsAdmin() {
           >
             <ViewSvg />
           </div> */}
-          <div
+          {/* <div
             onClick={() => router.push(`/reports/change-reports-order/edit-report?id=${row._id}`)}
             className="cursor-pointer hover:text-green-600 transition-colors"
           >
             <EditSvg />
-          </div>
+          </div> */}
           <div
             onClick={() => handleDeleteReport(row)}
             className="cursor-pointer hover:text-red-600 transition-colors"
