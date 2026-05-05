@@ -4,7 +4,6 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import moment from 'moment';
 import MainDatatable from '@/components/common/MainDatatable';
-import { base_url } from '@/lib/api-routes';
 import { DeleteSvg } from '@/components/svgs/page';
 import Swal from 'sweetalert2';
 
@@ -43,7 +42,7 @@ const PlatformCharges: React.FC = () => {
   const fetchPlatformCharges = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`${base_url}api/admin/platform-charges`, {
+      const res = await fetch(`/api/admin/platform-charges`, {
         cache: 'no-store',
         headers: {
           'Cache-Control': 'no-cache',
@@ -101,7 +100,7 @@ const PlatformCharges: React.FC = () => {
         }
       });
 
-      const res = await fetch(`${base_url}api/admin/del-platform-charges/${chargeId}`, {
+      const res = await fetch(`/api/admin/del-platform-charges/${chargeId}`, {
         method: 'DELETE',
       });
       

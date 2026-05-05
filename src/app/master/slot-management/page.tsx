@@ -6,7 +6,6 @@ import moment from 'moment';
 import { TableColumn } from 'react-data-table-component';
 import MainDatatable from '@/components/common/MainDatatable';
 import DatatableHeading from '@/components/datatable/DatatableHeading';
-import { base_url } from '@/lib/api-routes';
 import { SwitchOnSvg, SwitchOffSvg } from '@/components/svgs/page';
 import Swal from 'sweetalert2';
 
@@ -55,7 +54,7 @@ const SlotManagement: React.FC = () => {
   const fetchSlotDurations = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`${base_url}api/admin/get_slots_duration`, {
+      const res = await fetch(`/api/admin/get_slots_duration`, {
         cache: 'no-store',
         headers: {
           'Cache-Control': 'no-cache',
@@ -118,7 +117,7 @@ const SlotManagement: React.FC = () => {
 
       console.log('Updating slot status for ID:', slotId);
       
-      const res = await fetch(`${base_url}api/admin/update_slots_duration_status/${slotId}`, {
+      const res = await fetch(`/api/admin/update_slots_duration_status/${slotId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
