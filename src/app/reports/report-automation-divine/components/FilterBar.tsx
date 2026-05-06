@@ -5,7 +5,7 @@ import { Filters } from "../types";
 const REPORT_TYPE_OPTIONS = [
   { label: "All Reports",                 value: "all"    },
   { label: "Vedic Life Report",           value: "#VLR-"  },
-  { label: "Career Report",               value: "#CR1-"  },
+  { label: "Career Report",               value: "#CR-"  },
   { label: "Vedic Health Report",         value: "#VHR-"  },
   { label: "Marriage Love Life Report",   value: "#MLR-"  },
   { label: "Wealth & Finance Report",     value: "#WR-"   },
