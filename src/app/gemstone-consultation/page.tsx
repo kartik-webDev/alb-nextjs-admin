@@ -18,6 +18,8 @@ interface GemstoneConsultation {
   phone: string;
   message: string;
   DateofBirth: string;
+    timeOfBirth: string; // ✅ add this
+
   Status: "Paid" | "Unpaid";
   Action: string;
   createdAt: string;
@@ -38,6 +40,8 @@ const DeepSearchSpace = (
       item?.email,
       item?.phone,
       item?.message,
+        item?.timeOfBirth, // ✅
+
       item?.Status,
       item?.Action,
       moment(item?.DateofBirth).format("DD/MM/YYYY"),
@@ -198,6 +202,7 @@ export default function GemstoneConsultationPage() {
       "Phone": item?.phone || "N/A",
       "Message": item?.message || "N/A",
       "Date of Birth": item?.DateofBirth ? moment(item.DateofBirth).format("DD/MM/YYYY") : "N/A",
+      "Time of Birth": item?.timeOfBirth || "N/A",
       "Payment Status": item?.Status || "N/A",
       "Action Status": item?.Action || "N/A",
       "Created At": item?.createdAt
@@ -263,6 +268,16 @@ const columns = useMemo(() => [
     ),
     width: '160px',
   },
+  {
+  name: 'Time of Birth',
+  selector: (row: GemstoneConsultation) => row.timeOfBirth,
+  cell: (row: GemstoneConsultation) => (
+    <div className="text-sm text-gray-900">
+      {row.timeOfBirth || 'N/A'}
+    </div>
+  ),
+  width: '140px',
+},
   {
     name: 'Created At',
     selector: (row: GemstoneConsultation) => row.createdAt,
@@ -435,6 +450,10 @@ const columns = useMemo(() => [
               label="Date of Birth" 
               value={moment(viewModal.data.DateofBirth).format('DD/MM/YYYY')}
             />
+            <DetailRow 
+  label="Time of Birth" 
+  value={viewModal.data.timeOfBirth || "N/A"}
+/>
             <DetailRow 
               label="Consultation ID" 
               value={viewModal.data._id}
