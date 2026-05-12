@@ -21,6 +21,7 @@ export interface Order {
   email: string;
   whatsapp: string;
   gender: string;
+  partnerGender: string;
   reportLanguage: string;
   dateOfBirth: string;
   timeOfBirth: string | null;

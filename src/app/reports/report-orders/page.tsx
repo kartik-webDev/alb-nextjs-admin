@@ -22,6 +22,7 @@ interface Order {
   email: string;
   whatsapp: string;
   gender: string | null;
+  partnerGender: string | null;
   reportLanguage: string;
   dateOfBirth: string;
   timeOfBirth: string | null;
@@ -125,6 +126,7 @@ interface EditPayload {
   email?: string;
   whatsapp?: string;
   gender?: string;
+  partnerGender?: string;
   reportLanguage?: string;
   dateOfBirth?: string;
   timeOfBirth?: string;
@@ -438,7 +440,7 @@ const debouncedFetch = useMemo(() =>
       },
       partnerTimeOfBirth: { label: "Partner's TOB" },
       partnerPlaceOfBirth: { label: "Partner's POB", truncate: true },
-      
+      partnerGender: { label: "Partner's Gender" },
       // Order details
       orderID: { label: 'Order ID' },
       planName: { label: 'Plan Name', truncate: true },
@@ -582,6 +584,7 @@ const debouncedFetch = useMemo(() =>
       email: row?.email || "",
       whatsapp: row?.whatsapp || "",
       gender: row?.gender || "",
+      partnerGender: row?.partnerGender || "",
       reportLanguage: row?.reportLanguage || "",
       dateOfBirth: row?.dateOfBirth || "",
       timeOfBirth: row?.timeOfBirth || "",
@@ -651,7 +654,7 @@ const debouncedFetch = useMemo(() =>
     "expressDelivery", "questionOne", "questionTwo",
     "utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content", 
     "orderFingerprint", "attemptCount", "lastAttemptAt",
-    "createdAt", "updatedAt", "deletedAt", "expiresAt"
+    "createdAt", "updatedAt", "deletedAt", "expiresAt", "partnerGender"
   ];
 
   const csvRows = [
