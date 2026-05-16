@@ -5,6 +5,14 @@ import { NextResponse } from "next/server";
 /* ======================
    UTILITIES
 ====================== */
+function normalizeSku(sku: any): string {
+  if (!sku || typeof sku !== "string") return "";
+
+  return sku
+    .toUpperCase()
+    .replace(/\s/g, "")
+    .trim();
+}
 function normalizeTitle(title: any): string {
   if (!title || typeof title !== "string") return "";
 
@@ -70,26 +78,28 @@ export async function GET() {
 
     // Build Shopify lookup map
     // Your API returns: { title, price, productId, variantId }
-    const shopifyMap = new Map<string, any>();
-    (shopifyData.products ?? []).forEach((product: any) => {
-      const key = normalizeTitle(product.title);
-      if (key) {
-        shopifyMap.set(key, product);
-        console.log(`📝 Shopify: "${product.title}" → ₹${product.price}`);
-      }
-    });
+   const shopifyMap = new Map<string, any>();
+
+(shopifyData.products ?? []).forEach((product: any) => {
+  const key = normalizeSku(product.sku);
+
+  if (key) {
+    shopifyMap.set(key, product);
+    console.log(`📝 Shopify SKU: "${product.sku}"`);
+  }
+});
 
     console.log(`✅ Shopify map size: ${shopifyMap.size}`);
 const brahmaKeys = new Set(
   (brahmaData.products ?? []).map((p: any) =>
-    normalizeTitle(p.product_name)
+    normalizeSku(p.product_sku)
   )
 );
     // Map and compare products
     const products = (brahmaData.products ?? []).map((brahmaProduct: any) => {
-      const title = brahmaProduct.product_name;
-      const key = normalizeTitle(title);
-      const shopifyMatch = shopifyMap.get(key);
+    const title = brahmaProduct.product_name;
+const key = normalizeSku(brahmaProduct.product_sku);
+const shopifyMatch = shopifyMap.get(key);
 
       // 🔥 FIX: Your Shopify API returns price directly, not in variants!
       let shopifyPrice: number | null = null;
@@ -120,7 +130,9 @@ const brahmaKeys = new Set(
   shopifyPrice,
   shopifyStatus:
   shopifyMatch?.shopifyStatus ?? null,
-  images: [
+sku: brahmaProduct.product_sku || null,  
+shopifySku:
+  shopifyMatch?.sku ?? null,images: [
     ...(brahmaProduct.image_url ? [brahmaProduct.image_url] : []),
     ...(Array.isArray(brahmaProduct.images) ? brahmaProduct.images : []),
   ].filter((src, i, arr) => src && arr.indexOf(src) === i),
@@ -145,8 +157,7 @@ const brahmaKeys = new Set(
     });
 const missingProducts = (shopifyData.products ?? [])
   .filter((shopifyProduct: any) => {
-    const key = normalizeTitle(shopifyProduct.title);
-
+const key = normalizeSku(shopifyProduct.sku);
     return !brahmaKeys.has(key);
   })
   .map((shopifyProduct: any) => ({

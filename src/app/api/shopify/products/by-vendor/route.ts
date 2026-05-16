@@ -18,6 +18,7 @@ const QUERY = `
               node {
                 id
                 price
+                sku
               }
             }
           }
@@ -74,6 +75,7 @@ export async function GET(req: Request) {
       products.push({
         productId: product.id,
         variantId: variant?.id || null,
+        sku: variant?.sku || null,
         shopifyStatus: product.status,
         title: product.title,
         vendor: product.vendor,
