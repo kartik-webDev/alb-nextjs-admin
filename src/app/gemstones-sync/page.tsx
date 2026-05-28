@@ -387,37 +387,37 @@ if (failed.length > 0) {
       /* ======================
          DRAFT MISSING PRODUCTS
       ====================== */
-      const missingProducts =
-        filteredProducts.filter(
-          (p) =>
-            p.status ===
-            "MISSING_FROM_API"
-        );
+      // const missingProducts =
+      //   filteredProducts.filter(
+      //     (p) =>
+      //       p.status ===
+      //       "MISSING_FROM_API"
+      //   );
 
-      for (const p of missingProducts) {
-        const res = await fetch(
-          "/api/shopify/draft-product",
-          {
-            method: "POST",
+      // for (const p of missingProducts) {
+      //   const res = await fetch(
+      //     "/api/shopify/draft-product",
+      //     {
+      //       method: "POST",
 
-            headers: {
-              "Content-Type":
-                "application/json",
-            },
+      //       headers: {
+      //         "Content-Type":
+      //           "application/json",
+      //       },
 
-            body: JSON.stringify({
-              productId:
-                p.shopifyProductId,
-            }),
-          }
-        );
+      //       body: JSON.stringify({
+      //         productId:
+      //           p.shopifyProductId,
+      //       }),
+      //     }
+      //   );
 
-        if (!res.ok) {
-          throw new Error(
-            `Failed to draft ${p.title}`
-          );
-        }
-      }
+      //   if (!res.ok) {
+      //     throw new Error(
+      //       `Failed to draft ${p.title}`
+      //     );
+      //   }
+      // }
 
       /* ======================
          ACTIVATE DRAFT PRODUCTS
